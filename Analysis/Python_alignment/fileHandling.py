@@ -1,12 +1,13 @@
 import csv
 import os
-from typing import List
-
+import matplotlib.pyplot as plt
 import pandas as pd
-from matplotlib import pyplot as plt
-from pandas import DataFrame
+
 # import scipy.signal
-from scipy.signal import find_peaks
+
+rootDirectory = '/Users/yonghwanshin/OneDrive - unist.ac.kr/Research/2019_VOR_VR/Datasets/1stData/'
+processingDirectory = 'Processing_'
+hololensDirectory = 'result_sub'
 
 
 def makeTrialInfo(info):
@@ -73,12 +74,13 @@ def getProcessingFile(filename):
 
         data1 = pd.DataFrame()
         data2 = pd.DataFrame()
-        columns2 = ['UDPTimeStamp','PupilTimeStamp','ImuTimeStamp','QuatI','QuatJ','QuatK','QuatReal','QuatRadianAccuracy','pIntersectX','pIntersectZ']
+        columns2 = ['UDPTimeStamp', 'PupilTimeStamp', 'ImuTimeStamp', 'QuatI', 'QuatJ', 'QuatK', 'QuatReal',
+                    'QuatRadianAccuracy', 'pIntersectX', 'pIntersectZ']
         data1 = data1.append(data.loc[:int(pupilLength) - 1], ignore_index=True)
         data2 = data2.append(data.loc[int(pupilLength):], ignore_index=True)
         data1 = data1.astype(float, errors='ignore')
         data2 = data2.astype(float, errors='ignore')
-        data2.drop(data2.columns[range(10,41)],axis=1,inplace=True)
+        data2.drop(data2.columns[range(10, 41)], axis=1, inplace=True)
         data2.columns = columns2
     return [data1, data2]
 
@@ -107,7 +109,14 @@ def getHololensFile(filename):
                       'OverTarget']
         data1.columns = HoloColumn
         data2 = data2.append(data.loc[count:], ignore_index=True)
+        data1 = data1.astype(float, errors='ignore')
+        data2 = data2.astype(float, errors='ignore')
+        for i in range(0, len(data1['HeadAngleX'])):
+            if float(data1['HeadAngleX'][i]) > 180.0:
+                data1.at[i,'HeadAngleX']=float(data1['HeadAngleX'][i]) - 360
+            if float(data1['HeadAngleY'][i]) > 180.0:
+                data1.at[i,'HeadAngleY']=float(data1['HeadAngleY'][i]) - 360
+            if float(data1['HeadAngleZ'][i]) > 180.0:
+                data1.at[i,'HeadAngleZ']=float(data1['HeadAngleZ'][i]) - 360
 
     return [data1, data2]
-
-

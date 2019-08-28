@@ -1,11 +1,8 @@
+from scipy import interpolate
+
 from fileHandling import *
-from scipy import signal
-from scipy.spatial.transform import Rotation as R
 from signal_alignment import *
 
-rootDirectory = '/Users/yonghwanshin/OneDrive - unist.ac.kr/Research/2019_VOR_VR/Datasets/1stData/'
-processingDirectory = 'Processing_'
-hololensDirectory = 'result_sub'
 
 
 def getOneSubject(subjectNum):
@@ -53,39 +50,45 @@ def analyzeFile(ProcessingData, HololensData):
     QuatReal = ProcessingData[1]['QuatReal']
 
     HoloTimeStamp = HololensData[0]['UTC'].astype(float)
-    HeadForwardVectorZ = HololensData[0]['HeadForwardVectorZ'].astype(float)
 
-    peaks, _ = find_peaks(HeadForwardVectorZ)
+    HeadForwardVectorZ = HololensData[0]['HeadAngleX'].astype(float)
+    # peaks, _ = find_peaks(HeadForwardVectorZ)
     # peaks, _ = find_peaks(HeadForwardVectorZ, height=0)
-    peaks2, _ = find_peaks(pIntersectZ)
+    # peaks2, _ = find_peaks(pIntersectZ)
+
     fig = plt.figure()
     ax1 = fig.add_subplot(2, 1, 1)
+    ax1.title.set_text('original')
     ax2 = fig.add_subplot(2, 1, 2)
-    f = signal.resample(HeadForwardVectorZ, 1169)
+    ax2.title.set_text('shifted')
 
-    ax1.plot(f)
-    ax2.plot(pIntersectZ)
+    HololensInterpolatedFunction = interpolate.interp1d(HoloTimeStamp, HeadForwardVectorZ, kind='quadratic')
+    imuInterpolatedFunction = interpolate.interp1d(imuTimeStamp, pIntersectZ, kind='quadratic')
 
-    # # ax1.title('head vector Z')
-    # ax1.plot(HoloTimeStamp, HeadForwardVectorZ)
-    # ax1.plot(HoloTimeStamp[peaks], HeadForwardVectorZ[peaks], "rx")
-    #
-    # # ax2.title('intersect Z')
-    # ax2.plot(imuTimeStamp, pIntersectZ)
-    # # ax2.plot(imuTimeStamp[peaks2],pIntersectZ[peaks2],'rx')
-    #
-    # s = chisqr_align(HeadForwardVectorZ,pIntersectZ)
-    # ax2.plot(shift(imuTimeStamp,s,mode='nearest'),pIntersectZ, ls='--')
-    # ax1.plot(HeadForwardVectorZ)
-    # ax2.plot(pIntersectZ)
-    # print(len(HeadForwardVectorZ))
-    # print(len(pIntersectZ))
-    # s = chisqr_align(f, pIntersectZ)
-    s = phase_align(f, pIntersectZ, [10, 500])
-    ax2.plot(shift(pIntersectZ, s, mode='nearest'), ls='--', label='aligned data')
+    HololensInterpolatedTimeStamp = np.linspace(HoloTimeStamp[0], HoloTimeStamp.tail(1).values[0], 1170)
+    imuInterpolatedTimeStamp = np.linspace(imuTimeStamp[0], imuTimeStamp.tail(1).values[0], 1170)
+
+    headNew = HololensInterpolatedFunction(HololensInterpolatedTimeStamp)
+    imuNew = imuInterpolatedFunction(imuInterpolatedTimeStamp)
+
+    ax1.plot(HololensInterpolatedTimeStamp, headNew)
+    # ax2.plot(HololensInterpolatedTimeStamp, headNew)
+    ax2.plot(imuInterpolatedTimeStamp, imuNew)
+
+    s = phase_align(headNew, imuNew, [0, 500])
+    # s = phase_align(f, pIntersectZ, [10, 500])
+    # ax2.plot(shift(pIntersectZ, s, mode='nearest'), ls='--', label='aligned data')
     print('phase shift value to align is ', s)
-
-    r = R.from_quat([QuatReal[0], QuatI[0], QuatJ[0], QuatK[0]])
-    print(r.as_euler('zxy', degrees=True))
+    ax2.plot(imuInterpolatedTimeStamp, shift(imuNew, s, mode='nearest'), ls='--')
+    # Handle IMU values... quaternions.?
+    # r = R.from_quat([QuatReal[0], QuatI[0], QuatJ[0], QuatK[0]])
+    # print(r.as_euler('zxy', degrees=True))
 
     plt.show()
+
+
+def changeAngle(angle):
+    if angle > 180:
+        return angle - 360
+    else:
+        return angle
