@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 def euler_to_quaternion(roll, pitch, yaw):
@@ -28,14 +29,23 @@ def quaternion_to_euler(x, y, z, w):
     return X, Y, Z
 
 
-euler_Original = (np.random.random(3)).tolist()
-# Generate random rotation angles for XYZ within the range [0, 360)
+# euler_Original = (np.random.random(3)).tolist()
+# # Generate random rotation angles for XYZ within the range [0, 360)
+#
+# quat = euler_to_quaternion(euler_Original[0], euler_Original[1], euler_Original[2])
+# # Convert to Quaternion
+# newEulerRot = quaternion_to_euler(quat[0], quat[1], quat[2], quat[3])
+# # Convert the Quaternion to Euler angles
+#
+# print(euler_Original)
+# print(np.degrees(euler_Original[0]),np.degrees(euler_Original[1]),np.degrees(euler_Original[2]))
+# print(newEulerRot)
 
-quat = euler_to_quaternion(euler_Original[0], euler_Original[1], euler_Original[2])
-# Convert to Quaternion
-newEulerRot = quaternion_to_euler(quat[0], quat[1], quat[2], quat[3])
-# Convert the Quaternion to Euler angles
-
-print(euler_Original)
-print(np.degrees(euler_Original[0]),np.degrees(euler_Original[1]),np.degrees(euler_Original[2]))
-print(newEulerRot)
+# scipy rotation functions test...
+##########################
+# r = R.from_euler('zxy', [60, 40, 50], degrees=True)
+# print(r.as_euler('zxy', degrees=True))
+# print(r.as_quat())
+# rr = R.from_quat(r.as_quat())
+# print(rr.as_euler('zxy', degrees=True))
+###########################

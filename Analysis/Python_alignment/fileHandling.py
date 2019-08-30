@@ -1,6 +1,6 @@
 import csv
 import os
-import matplotlib.pyplot as plt
+
 import pandas as pd
 
 # import scipy.signal
@@ -42,6 +42,7 @@ def getFileNameList(rootDirectory, targetDirectory, subjectNumer):
             ext = os.path.splitext(filename)[-1]
             if ext == '.csv':
                 fileList.append(filename)
+    # fileList.sort()
     return fileList
 
 
@@ -113,10 +114,9 @@ def getHololensFile(filename):
         data2 = data2.astype(float, errors='ignore')
         for i in range(0, len(data1['HeadAngleX'])):
             if float(data1['HeadAngleX'][i]) > 180.0:
-                data1.at[i,'HeadAngleX']=float(data1['HeadAngleX'][i]) - 360
+                data1.at[i, 'HeadAngleX'] = float(data1['HeadAngleX'][i]) - 360
             if float(data1['HeadAngleY'][i]) > 180.0:
-                data1.at[i,'HeadAngleY']=float(data1['HeadAngleY'][i]) - 360
+                data1.at[i, 'HeadAngleY'] = float(data1['HeadAngleY'][i]) - 360
             if float(data1['HeadAngleZ'][i]) > 180.0:
-                data1.at[i,'HeadAngleZ']=float(data1['HeadAngleZ'][i]) - 360
-
+                data1.at[i, 'HeadAngleZ'] = float(data1['HeadAngleZ'][i]) - 360
     return [data1, data2]
