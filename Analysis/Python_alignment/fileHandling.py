@@ -83,6 +83,8 @@ def getProcessingFile(filename):
         data2 = data2.astype(float, errors='ignore')
         data2.drop(data2.columns[range(10, 41)], axis=1, inplace=True)
         data2.columns = columns2
+        data2 = data2.drop_duplicates(subset='ImuTimeStamp',keep='first')
+
     return [data1, data2]
 
 
@@ -119,4 +121,6 @@ def getHololensFile(filename):
                 data1.at[i, 'HeadAngleY'] = float(data1['HeadAngleY'][i]) - 360
             if float(data1['HeadAngleZ'][i]) > 180.0:
                 data1.at[i, 'HeadAngleZ'] = float(data1['HeadAngleZ'][i]) - 360
+        data1.drop_duplicates()
+        data2.drop_duplicates()
     return [data1, data2]
