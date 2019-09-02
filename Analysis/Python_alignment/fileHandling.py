@@ -1,6 +1,7 @@
 import csv
 import os
 
+import demjson
 import pandas as pd
 
 # import scipy.signal
@@ -80,12 +81,27 @@ def getProcessingFile(filename):
         data1 = data1.append(data.loc[:int(pupilLength) - 1], ignore_index=True)
         data2 = data2.append(data.loc[int(pupilLength):], ignore_index=True)
         data1 = data1.astype(float, errors='ignore')
+
+        pupil = data1[data1.columns[6:]]
+        pupilData = []
+        for index, row in pupil.iterrows():
+            # a = row.as_matrix()
+            a = row.values
+            # b = np.array2string(a, separator=',')
+            s = ""
+            for i in a:
+                s = s + "," + str(i)
+            s = s[1:]
+            dict = demjson.decode(s)
+            pupilData.append(dict)
+
+
         data2 = data2.astype(float, errors='ignore')
         data2.drop(data2.columns[range(10, 41)], axis=1, inplace=True)
         data2.columns = columns2
-        data2 = data2.drop_duplicates(subset='ImuTimeStamp',keep='first')
+        data2 = data2.drop_duplicates(subset='ImuTimeStamp', keep='first')
 
-    return [data1, data2]
+    return [pupilData, data2]
 
 
 def getHololensFile(filename):
