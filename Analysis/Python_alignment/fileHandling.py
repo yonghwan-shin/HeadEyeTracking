@@ -1,35 +1,36 @@
 import csv
 import os
+import time
 
 import demjson
 import pandas as pd
 
 # import scipy.signal
 
-rootDirectory = '/Users/yonghwanshin/OneDrive - unist.ac.kr/Research/2019_VOR_VR/Datasets/1stData/'
+rootDirectory = '/Users/yonghwanshin/Documents/GitHub/HeadEyeTracking/Datasets/1stData/'
 processingDirectory = 'Processing_'
 hololensDirectory = 'result_sub'
-
 
 def makeTrialInfo(info):
     target = info[0]
     env = info[1]
     pos = info[2]
     block = info[3]
-    c = info[4]
-    output = 'T' + str(target) + "_E" + str(env) + '_P' + str(pos) + '_B' + str(block) + '_C' + str(c)
+    # c = info[4]
+    # output = 'T' + str(target) + "_E" + str(env) + '_P' + str(pos) + '_B' + str(block) + '_C' + str(c)
+    output = 'T' + str(target) + "_E" + str(env) + '_P' + str(pos) + '_B' + str(block)
     return output
 
 
 def getTrialInfo(fileName):
-    output = [0, 0, 0, 0, 0]
+    output = [0, 0, 0, 0]
     try:
         target = fileName[1]
         env = fileName[4]
         pos = fileName[7]
         block = fileName[10]
-        c = fileName[13]
-        output = [target, env, pos, block, c]
+        # c = fileName[13]
+        output = [target, env, pos, block]
     except:
         print('something wrong in filename...')
     return output
@@ -62,6 +63,7 @@ def searchFiles(dirName):
 
 
 def getProcessingFile(filename):
+    prev = time.time()
     reader = []
     if not os.path.isfile(filename):
         csvfile = open(filename, "w")
@@ -84,27 +86,32 @@ def getProcessingFile(filename):
 
         pupil = data1[data1.columns[6:]]
         pupilData = []
+        pupilInitTime = 0;
         for index, row in pupil.iterrows():
-            # a = row.as_matrix()
             a = row.values
-            # b = np.array2string(a, separator=',')
             s = ""
             for i in a:
                 s = s + "," + str(i)
             s = s[1:]
             dict = demjson.decode(s)
+            # pupil timestamp is re-shaped(0 to ~6500)
+            if pupilInitTime ==0:
+                pupilInitTime = dict['timestamp']
+            dict['timestamp'] = dict['timestamp'] - pupilInitTime
             pupilData.append(dict)
-
 
         data2 = data2.astype(float, errors='ignore')
         data2.drop(data2.columns[range(10, 41)], axis=1, inplace=True)
         data2.columns = columns2
         data2 = data2.drop_duplicates(subset='ImuTimeStamp', keep='first')
-
+        data2['ImuTimeStamp'] = data2['ImuTimeStamp'] - data2['ImuTimeStamp'].head(1).values[0]
+        # IMU Timestamp is re-shaped(0 to ~6500)
+    # print(time.time() - prev, ' second used to prepare processing file')
     return [pupilData, data2]
 
 
 def getHololensFile(filename):
+    startTime = time.time()
     reader = []
     if not os.path.isfile(filename):
         csvfile = open(filename, "w")
@@ -129,6 +136,7 @@ def getHololensFile(filename):
         data1.columns = HoloColumn
         data2 = data2.append(data.loc[count:], ignore_index=True)
         data1 = data1.astype(float, errors='ignore')
+        data1['UTC'] = data1['UTC'].astype(float, errors='ignore')
         data2 = data2.astype(float, errors='ignore')
         for i in range(0, len(data1['HeadAngleX'])):
             if float(data1['HeadAngleX'][i]) > 180.0:
@@ -137,6 +145,9 @@ def getHololensFile(filename):
                 data1.at[i, 'HeadAngleY'] = float(data1['HeadAngleY'][i]) - 360
             if float(data1['HeadAngleZ'][i]) > 180.0:
                 data1.at[i, 'HeadAngleZ'] = float(data1['HeadAngleZ'][i]) - 360
-        data1.drop_duplicates()
-        data2.drop_duplicates()
+        # data1.drop_duplicates()
+        # data2.drop_duplicates()
+        data1['UTC'] = data1['UTC'] - data1['UTC'].head(1).values[0]
+        # Hololens UTC timestamp changed... (0 to ~6500)
+        # print((time.time()-startTime), ' second used to prepare Hololens file')
     return [data1, data2]
