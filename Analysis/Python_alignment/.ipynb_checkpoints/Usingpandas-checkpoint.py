@@ -14,9 +14,9 @@ hololensDirectory = 'result_sub'
 
 for subjectNum in range(1, 2):
     # get file names
-    processingFileNameList = getFileNameList(
+    processingFileNameList = get_filename_list(
         rootDirectory, processingDirectory, subjectNum)
-    hololensFileNameList = getFileNameList(
+    hololensFileNameList = get_filename_list(
         rootDirectory, hololensDirectory, subjectNum)
     # processingFileNameList.sort()
     # hololensFileNameList.sort()
@@ -25,15 +25,15 @@ for subjectNum in range(1, 2):
     for fileCount in range(1, 2):
 
         print("Analyzing...  " + processingFileNameList[fileCount])
-        ProcessingData = getProcessingFile(rootDirectory + processingDirectory +
-                                           str(getSubject(subjectNum)) + "/" + processingFileNameList[fileCount])
+        ProcessingData = get_processing_file(rootDirectory + processingDirectory +
+                                             str(get_subject(subjectNum)) + "/" + processingFileNameList[fileCount])
         HololensData = []
         # find holo data
         for name in hololensFileNameList:
-            trialDetail = getTrialInfo(processingFileNameList[fileCount])
-            if name[:14] == makeTrialInfo(trialDetail):
-                HololensData = getHololensFile(rootDirectory + hololensDirectory +
-                                               str(getSubject(subjectNum)) + "/" + name)
+            trialDetail = get_trial_info(processingFileNameList[fileCount])
+            if name[:14] == make_trial_info(trialDetail):
+                HololensData = get_hololens_file(rootDirectory + hololensDirectory +
+                                                 str(get_subject(subjectNum)) + "/" + name)
                 break
             else:
                 pass
