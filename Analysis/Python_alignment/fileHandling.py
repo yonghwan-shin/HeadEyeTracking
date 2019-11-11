@@ -76,6 +76,8 @@ def get_processing_file(filename):
 		check = next(reader)
 		pupilLength = check[3]
 		imuLength = check[5]
+		print(f"there are {pupilLength} pupil data and {imuLength} imu data")
+		# there should be ~770 and ~1160 pupil/imu data each...
 		data = pd.DataFrame(reader)
 
 		data1 = pd.DataFrame()
@@ -106,10 +108,12 @@ def get_processing_file(filename):
 		data2.drop(data2.columns[range(10, 41)], axis=1, inplace=True)
 		data2.columns = columns2
 		data2 = data2.drop_duplicates(subset='ImuTimeStamp', keep='first')
-		if data2['ImuTimeStamp'].size>100:
-			data2['ImuTimeStamp'] = data2['ImuTimeStamp'] - data2['ImuTimeStamp'].head(1).values[0]
-		else:
-			return[None,None]
+		if data2['ImuTimeStamp'].size < 100:
+			raise ValueError(' too short imu data')
+		# if data2['ImuTimeStamp'].size>100:
+		data2['ImuTimeStamp'] = data2['ImuTimeStamp'] - data2['ImuTimeStamp'].head(1).values[0]
+		# else:
+		# 	return[None,None]
 	# IMU Timestamp is re-shaped(0 to ~6500)
 	# print(time.time() - prev, ' second used to prepare processing file')
 	return [pupilData, data2]
@@ -163,7 +167,8 @@ def organise_pupil_data(pupilDataFile):
 
 	pupilData = pd.DataFrame(columns=['timestamp', 'norm_posX', 'norm_posY', 'confidence','theta','phi'])
 	if pupilDataFile is None:
-		return [None, None, None, None, None, None]
+		raise ValueError('pupil data is empty')
+		# return [None, None, None, None, None, None]
 	pupilTimeStamp = []
 	pupilNorm_PosX = []
 	pupilNorm_PosY = []
@@ -171,7 +176,7 @@ def organise_pupil_data(pupilDataFile):
 	pupilTheta = []
 	pupilPhi = []
 	for i in pupilDataFile:
-		pupilTimeStamp.append(i['timestamp'])
+		pupilTimeStamp.append(i['timestamp']*1000)  # to match timescale within other data...
 		pupilNorm_PosX.append(i['norm_pos'][0])
 		pupilNorm_PosY.append(i['norm_pos'][1])
 		pupilConfidence.append(i['confidence'])
@@ -187,14 +192,15 @@ def organise_pupil_data(pupilDataFile):
 	confidenceThreshold = 0.6
 	pupilData = pupilData[pupilData.confidence > confidenceThreshold]
 	pupilData.drop_duplicates('timestamp')
-	pupilTimeStamp = pupilData['timestamp']
-	pupilNorm_PosX = pupilData['norm_posX']
-	pupilNorm_PosY = pupilData['norm_posY']
-	pupilConfidence = pupilData['confidence']
-	pupilTheta = pupilData['theta']
-	pupilPhi = pupilData['phi']
+	# pupilTimeStamp = pupilData['timestamp']
+	# pupilNorm_PosX = pupilData['norm_posX']
+	# pupilNorm_PosY = pupilData['norm_posY']
+	# pupilConfidence = pupilData['confidence']
+	# pupilTheta = pupilData['theta']
+	# pupilPhi = pupilData['phi']
+	return pupilData
 
-	return [pupilTimeStamp, pupilNorm_PosX, pupilNorm_PosY, pupilConfidence,pupilTheta,pupilPhi]
+	# return [pupilTimeStamp, pupilNorm_PosX, pupilNorm_PosY, pupilConfidence,pupilTheta,pupilPhi]
 
 
 def organise_imu_data(imu_data):
@@ -215,4 +221,5 @@ def organise_imu_data(imu_data):
 	AngleX = imu_data['angleX'].astype(float)
 	AngleY = imu_data['angleY'].astype(float)
 	AngleZ = imu_data['angleZ'].astype(float)
-	return [AngleX, AngleY, AngleZ, imuTimeStamp]
+	return imu_data
+	# return [AngleX, AngleY, AngleZ, imuTimeStamp]

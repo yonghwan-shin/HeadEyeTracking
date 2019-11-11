@@ -28,13 +28,14 @@ def get_each_file(processingFileNameList, hololensFileNameList, subjectNum, info
 	# ProcessingData = getProcessingFile(rootDirectory + processingDirectory +
 	#                                    str(getSubject(subjectNum)) + "/" + processingFileNameList[fileCount])
 	HololensData = []
+	ProcessingData = []
 	# find holo data
 	trialInfo = make_trial_info(info)
 	for name in processingFileNameList:
 		if name[:11] == trialInfo:
 			ProcessingData = get_processing_file(
 				ROOT_DIRECTORY + PROCESSING_DIRECTORY + str(get_subject(subjectNum)) + "/" + name)
-			print(f"Analyzing file: '{name}'...")
+			print(f"Getting file: '{name}'...")
 			break
 	for name in hololensFileNameList:
 		if name[:11] == trialInfo:
@@ -44,39 +45,66 @@ def get_each_file(processingFileNameList, hololensFileNameList, subjectNum, info
 		else:
 			pass
 	# handle empty file
-	if not HololensData or not ProcessingData:
-		print('lost file...')
-		return [None,None,None]
+	if not HololensData:
+		print(f"no Hololens Data for {trialInfo}")
+		raise ValueError("hololens data is empty")
+	elif not ProcessingData:
+		print(f"no Processing Data for {trialInfo}")
+		raise ValueError("processing data is empty")
+	return [ProcessingData, HololensData, trialInfo]
+	# return [ProcessingData, HololensData, name]
+
+def filter_files(ProcessingData,HololensData,filename):
+
+	[pupil_data, imu_data] = ProcessingData
+	pupil_dataframe = organise_pupil_data(pupil_data)
+	imu_dataframe = organise_imu_data(imu_data)
+
+	currentDirectory = os.getcwd()
+	filePath = os.path.join(currentDirectory,"refined_data")
+	if os.path.exists(filePath):
+		pass
 	else:
-		return [ProcessingData, HololensData, name]
+		os.mkdir(filePath)
+	pupil_dataframe.to_csv(filePath +"/pupil_"+ str(filename)+".csv", index=False)
+	imu_dataframe.to_csv(filePath +"/imu_"+str(filename)+".csv",index=False)
+
 
 
 def lookup_file(ProcessingData, HololensData, filename):
 	startTime = time.time()
-	if not ProcessingData or not HololensData:
-		print('file seems lost...')
-		return None
-	[pupil_data_file, imu_data] = ProcessingData
+	[pupil_data, imu_data] = ProcessingData
+
 	# get eye values from pupil-cam
-	[pupil_timestamp, pupil_norm_pos_x, pupil_norm_pos_y, pupil_confidence,pupil_theta,pupil_phi] = organise_pupil_data(pupil_data_file)
+	# [pupil_timestamp, pupil_norm_pos_x, pupil_norm_pos_y, pupil_confidence,pupil_theta,pupil_phi] = organise_pupil_data(pupil_data_file)
+	pupil_dataframe = organise_pupil_data(pupil_data)
+	pupil_timestamp = pupil_dataframe['timestamp']
+	pupil_norm_pos_x = pupil_dataframe['norm_posX']
+	pupil_norm_pos_y = pupil_dataframe['norm_posY']
+	pupil_confidence = pupil_dataframe['confidence']
+	pupil_theta = pupil_dataframe['theta']
+	pupil_phi = pupil_dataframe['phi']
 	if pupil_timestamp is None:
 		return None
 	if pupil_timestamp.size <100:
 		print(filename, 'pupil data loss')
 		return None
-	pupil_timestamp = pupil_timestamp * 1000
-	# get angle values from IMU
 
-	[imu_angle_x, imu_angle_y, imu_angle_z, imu_timestamp] = organise_imu_data(imu_data)
+	# pupil_timestamp = pupil_timestamp * 1000
+	# get angle values from IMU
+	imu_dataframe = organise_imu_data(imu_data)
+	imu_timestamp = imu_dataframe['ImuTimeStamp'].astype(float)
+	imu_angle_x = imu_dataframe['angleX'].astype(float)
+	imu_angle_y = imu_dataframe['angleY'].astype(float)
+	imu_angle_z = imu_dataframe['angleZ'].astype(float)
+	# [imu_angle_x, imu_angle_y, imu_angle_z, imu_timestamp] = organise_imu_data(imu_data)
 	# get Hololnes data
 	hololens_timestamp = HololensData[0]['UTC'].astype(float)
 	hololens_angle_x = HololensData[0]['HeadAngleX'].astype(float)
 	hololens_angle_y = HololensData[0]['HeadAngleY'].astype(float)
 	hololens_angle_z = HololensData[0]['HeadAngleZ'].astype(float)
+
 	# peaks, _ = find_peaks(Conv_HeadAngleX)
-
-
-
 	# Interpolations...
 	# interpolate_hololens_angle_x = interpolate.interp1d(hololens_timestamp, hololens_angle_x, kind='quadratic')
 	# interpolate_hololens_angle_y = interpolate.interp1d(hololens_timestamp, hololens_angle_y, kind='quadratic')
