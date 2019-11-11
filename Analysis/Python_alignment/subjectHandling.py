@@ -44,8 +44,9 @@ def get_each_file(processingFileNameList, hololensFileNameList, subjectNum, info
 		else:
 			pass
 	# handle empty file
-	if not HololensData:
-		return
+	if not HololensData or not ProcessingData:
+		print('lost file...')
+		return [None,None,None]
 	else:
 		return [ProcessingData, HololensData, name]
 
@@ -54,59 +55,90 @@ def lookup_file(ProcessingData, HololensData, filename):
 	startTime = time.time()
 	if not ProcessingData or not HololensData:
 		print('file seems lost...')
-		return
-	[pupil_data_file,imu_data] = ProcessingData
-
+		return None
+	[pupil_data_file, imu_data] = ProcessingData
 	# get eye values from pupil-cam
-	[pupil_timestamp, pupil_norm_pos_x, pupil_norm_pos_y, pupil_confidence] = organise_pupil_data(pupil_data_file)
+	[pupil_timestamp, pupil_norm_pos_x, pupil_norm_pos_y, pupil_confidence,pupil_theta,pupil_phi] = organise_pupil_data(pupil_data_file)
+	if pupil_timestamp is None:
+		return None
+	if pupil_timestamp.size <100:
+		print(filename, 'pupil data loss')
+		return None
+	pupil_timestamp = pupil_timestamp * 1000
 	# get angle values from IMU
+
 	[imu_angle_x, imu_angle_y, imu_angle_z, imu_timestamp] = organise_imu_data(imu_data)
 	# get Hololnes data
 	hololens_timestamp = HololensData[0]['UTC'].astype(float)
-	transformed_hololens_angle_x = HololensData[0]['HeadAngleX'].astype(float)
+	hololens_angle_x = HololensData[0]['HeadAngleX'].astype(float)
 	hololens_angle_y = HololensData[0]['HeadAngleY'].astype(float)
 	hololens_angle_z = HololensData[0]['HeadAngleZ'].astype(float)
 	# peaks, _ = find_peaks(Conv_HeadAngleX)
 
+
+
 	# Interpolations...
-	interpolate_hololens_angle_x = interpolate.interp1d(hololens_timestamp, transformed_hololens_angle_x,
-	                                                    kind='quadratic')
-	interpolate_hololens_angle_y = interpolate.interp1d(hololens_timestamp, hololens_angle_y, kind='quadratic')
-	interpolate_hololens_angle_z = interpolate.interp1d(hololens_timestamp, hololens_angle_z, kind='quadratic')
+	# interpolate_hololens_angle_x = interpolate.interp1d(hololens_timestamp, hololens_angle_x, kind='quadratic')
+	# interpolate_hololens_angle_y = interpolate.interp1d(hololens_timestamp, hololens_angle_y, kind='quadratic')
+	# interpolate_hololens_angle_z = interpolate.interp1d(hololens_timestamp, hololens_angle_z, kind='quadratic')
 	interpolate_imu_angle_x = interpolate.interp1d(imu_timestamp, imu_angle_x, kind='quadratic')
 	interpolate_imu_angle_y = interpolate.interp1d(imu_timestamp, imu_angle_y, kind='quadratic')
 	interpolate_imu_angle_z = interpolate.interp1d(imu_timestamp, imu_angle_z, kind='quadratic')
 	interpolate_pupil_x = interpolate.interp1d(pupil_timestamp, pupil_norm_pos_x, kind='quadratic')
 	interpolate_pupil_y = interpolate.interp1d(pupil_timestamp, pupil_norm_pos_y, kind='quadratic')
-	interpolate_pupil_confidence = interpolate.interp1d(pupil_timestamp, pupil_confidence, kind='quadratic')
+	# interpolate_pupil_confidence = interpolate.interp1d(pupil_timestamp, pupil_confidence, kind='quadratic')
+	interpolate_pupil_theta = interpolate.interp1d(pupil_timestamp, pupil_theta, kind='quadratic')
+	interpolate_pupil_phi = interpolate.interp1d(pupil_timestamp, pupil_phi, kind='quadratic')
+
 
 	# fix timestamp count into 1170 (= 6.5s * 180Hz)
-	hololens_transformed_timestamp = np.linspace(hololens_timestamp[0], hololens_timestamp.tail(1).values[0],
+	hololens_transformed_timestamp = np.linspace(hololens_timestamp.iloc[0], hololens_timestamp.tail(1).values[0],
 	                                             1170).squeeze()
-	imu_transformed_timestamp = np.linspace(imu_timestamp[0], imu_timestamp.tail(1).values[0], 1170)
-	pupil_transformed_timestamp = np.linspace(pupil_timestamp[0], pupil_timestamp.tail(1).values[0], 1170)
+	imu_transformed_timestamp = np.linspace(imu_timestamp.iloc[0], imu_timestamp.tail(1).values[0], 1170)
+
+	pupil_transformed_timestamp = np.linspace(pupil_timestamp.iloc[0], pupil_timestamp.tail(1).values[0], 1170).squeeze()
 
 	# Calculate new interpolated-points including proper timestamp
-	transformed_hololens_angle_x = interpolate_hololens_angle_x(hololens_transformed_timestamp)
-	transformed_hololens_angle_y = interpolate_hololens_angle_y(hololens_transformed_timestamp)
-	transformed_hololens_angle_z = interpolate_hololens_angle_z(hololens_transformed_timestamp)
+	# transformed_hololens_angle_x = interpolate_hololens_angle_x(hololens_transformed_timestamp)
+	# transformed_hololens_angle_y = interpolate_hololens_angle_y(hololens_transformed_timestamp)
+	# transformed_hololens_angle_z = interpolate_hololens_angle_z(hololens_transformed_timestamp)
 
-	transformed_imu_angle_x = interpolate_imu_angle_x(imu_transformed_timestamp)
-	transformed_imu_angle_y = interpolate_imu_angle_y(imu_transformed_timestamp)
-	transformed_imu_angle_z = interpolate_imu_angle_z(imu_transformed_timestamp)
+	transformed_imu_angle_x = interpolate_imu_angle_x(imu_transformed_timestamp[270:])
+	transformed_imu_angle_y = interpolate_imu_angle_y(imu_transformed_timestamp[270:])
+	transformed_imu_angle_z = interpolate_imu_angle_z(imu_transformed_timestamp[270:])
 
-	transformed_pupil_norm_x = interpolate_pupil_x(pupil_transformed_timestamp)
-	transformed_pupil_norm_y = interpolate_pupil_y(pupil_transformed_timestamp)
-	transformed_pupil_confidence = interpolate_pupil_confidence(pupil_transformed_timestamp)
+	transformed_pupil_norm_x = interpolate_pupil_x(pupil_transformed_timestamp[270:])
+	transformed_pupil_norm_y = interpolate_pupil_y(pupil_transformed_timestamp[270:])
+	# transformed_pupil_confidence = interpolate_pupil_confidence(pupil_transformed_timestamp)
+	transformed_pupil_theta = interpolate_pupil_theta(pupil_transformed_timestamp)
+	transformed_pupil_phi = interpolate_pupil_phi(pupil_transformed_timestamp)
 
-	# TODO[DONE]: find pupil positions' peak and see motion vector arrangements
+
+	# return np.array([np.max(transformed_imu_angle_z) - np.min(transformed_imu_angle_z),
+	#                  np.max(transformed_imu_angle_x) - np.min(transformed_imu_angle_x),
+	#                  np.max(transformed_pupil_norm_x) - np.min(transformed_pupil_norm_x),
+	#                  np.max(transformed_pupil_norm_y) - np.min(transformed_pupil_norm_y),
+	#                  np.max(transformed_pupil_theta) - np.min(transformed_pupil_theta),
+	#                  np.max(transformed_pupil_phi) - np.min(transformed_pupil_phi)
+	#                  ])
+
+	# print(pupil_transformed_timestamp[:3])
+	# print(hololens_transformed_timestamp[:3])
+	# print(imu_transformed_timestamp[:3])
 	# TODO: see pupil diameter...
 	# TODO: try this with original pupil data... <- watch difference between interpolated function and original one
-
-	pca_analysis(transformed_pupil_norm_x, transformed_pupil_norm_y)
-
+	# fig =plt.figure()
 	# ax1 = fig.add_subplot(2, 1, 1)
 	# ax2 = fig.add_subplot(2, 1, 2)
+	# pca_analysis(transformed_pupil_norm_x, transformed_pupil_norm_y)
+	# ax1.plot(pupil_transformed_timestamp[270:],transformed_pupil_phi[270:])
+	# ax2.plot(pupil_transformed_timestamp[270:], transformed_pupil_norm_x)
+	# ax2.plot(pupil_transformed_timestamp[270:], transformed_pupil_phi[270:])
+	# ax1.plot(pupil_transformed_timestamp[270:],transformed_pupil_norm_y,'rx')
+	# ax2.plot(imu_transformed_timestamp[270:],transformed_imu_angle_x,'bx')
+	# plt.plot(transformed_imu_angle_x,transformed_pupil_norm_y,'rx')
+	# plt.plot(transformed_imu_angle_z,transformed_pupil_norm_x,'bx')
+
 
 
 	# Alignment
@@ -123,13 +155,13 @@ def lookup_file(ProcessingData, HololensData, filename):
 	#
 	#   # x -> x , y -> z , z -> y
 	# ax3.plot(hololens_transformed_timestamp, transformed_hololens_angle_x, 'k', label='hololens Angle X', ls='--')
-	# ax1.plot(hololens_transformed_timestamp, transformed_hololens_angle_y, 'g',label='hololens Angle Y')
-	# ax1.plot(hololens_transformed_timestamp, transformed_hololens_angle_z, 'b', label='hololens Angle Z')
-	#
-	# ax2.plot(imu_transformed_timestamp, transformed_imu_angle_x, 'r', label='imu Angle X', ls='--')
+	# ax1.plot(hololens_transformed_timestamp, transformed_hololens_angle_y, 'g',label='hololens Angle Y', ls='--')
+	# ax1.plot(hololens_transformed_timestamp, transformed_hololens_angle_z, 'b', label='hololens Angle Z', ls='--')
+
+	# ax1.plot(imu_transformed_timestamp, transformed_imu_angle_x, 'r', label='imu Angle X')
 	# ax2.plot(imu_transformed_timestamp, transformed_imu_angle_y, 'g', label='imu Angle Y')
 	# ax2.plot(imu_transformed_timestamp, transformed_imu_angle_z, 'b',label='imu Angle Z')
-	#
+
 	# angleX_shift = phase_align(transformed_hololens_angle_x, transformed_imu_angle_x, [0, 500])
 	# angleX_shift = phase_align(transformed_imu_angle_x, transformed_hololens_angle_x, [200, 800])
 	# angleY_shift = phase_align(transformed_imu_angle_y, transformed_hololens_angle_z, [200, 800])
@@ -154,12 +186,13 @@ def lookup_file(ProcessingData, HololensData, filename):
 	# plt.plot(pupil_norm_pos_x,pupil_norm_pos_y,'x')
 	# plt.plot(pupil_norm_pos_x[250:650],pupil_norm_pos_y[250:650],'x')
 
-	plt.title(filename)
-
-	plt.show()
+	# plt.title(filename)
+	#
+	# plt.show()
 
 
 # print((time.time() - startTime), ' second passed while analyzing both file')
+# def compensation(imu_data,pupil_data):
 
 def pca_analysis(x_list, y_list):
 	Xpeaks = peakdetect(x_list, lookahead=15)
@@ -184,6 +217,7 @@ def pca_analysis(x_list, y_list):
 	Xpeakmax += Ypeakmin
 	finalPeaks = list(set(Xpeakmax))
 	finalPeaks.sort()
+
 	Xpeakpoints = [x_list[0]]
 	Xpeakpoints += x_list[finalPeaks]
 	Xpeakpoints += [x_list[-1]]
@@ -203,7 +237,7 @@ def pca_analysis(x_list, y_list):
 
 	pca = PCA(n_components=2)
 	pca.fit(vectors)
-	
+
 	first_axis = pca.components_[0]
 
 	# print(pca.explained_variance_)
