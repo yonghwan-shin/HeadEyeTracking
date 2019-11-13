@@ -54,7 +54,7 @@ def get_each_file(processingFileNameList, hololensFileNameList, subjectNum, info
 	return [ProcessingData, HololensData, trialInfo]
 	# return [ProcessingData, HololensData, name]
 
-def filter_files(ProcessingData,HololensData,filename):
+def filter_files(ProcessingData,HololensData,filename,subjectNum):
 
 	[pupil_data, imu_data] = ProcessingData
 	pupil_dataframe = organise_pupil_data(pupil_data)
@@ -66,8 +66,8 @@ def filter_files(ProcessingData,HololensData,filename):
 		pass
 	else:
 		os.mkdir(filePath)
-	pupil_dataframe.to_csv(filePath +"/pupil_"+ str(filename)+".csv", index=False)
-	imu_dataframe.to_csv(filePath +"/imu_"+str(filename)+".csv",index=False)
+	pupil_dataframe.to_csv(filePath +"/pupil_"+ str(subjectNum)+"_"+str(filename)+".csv", index=False)
+	imu_dataframe.to_csv(filePath +"/imu_" + str(subjectNum) + "_" +str(filename)+".csv",index=False)
 
 
 

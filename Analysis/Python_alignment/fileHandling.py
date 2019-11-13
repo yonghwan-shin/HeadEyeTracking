@@ -109,7 +109,7 @@ def get_processing_file(filename):
 		data2.columns = columns2
 		data2 = data2.drop_duplicates(subset='ImuTimeStamp', keep='first')
 		if data2['ImuTimeStamp'].size < 100:
-			raise ValueError(' too short imu data')
+			raise ValueError('IMU data is too short...')
 		# if data2['ImuTimeStamp'].size>100:
 		data2['ImuTimeStamp'] = data2['ImuTimeStamp'] - data2['ImuTimeStamp'].head(1).values[0]
 		# else:
