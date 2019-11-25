@@ -12,6 +12,15 @@ ROOT_DIRECTORY = '/Users/yonghwanshin/Documents/GitHub/HeadEyeTracking/Datasets/
 PROCESSING_DIRECTORY = 'Processing_'
 HOLOLENS_DIRECTORY = 'result_sub'
 
+def get_refined_files(filename):
+	currentDirectory = os.getcwd()
+	file_path = os.path.join(currentDirectory,"refined_data_saved",filename)
+	print(file_path)
+	if not os.path.isfile(file_path):
+		raise ValueError("there is no file:" + filename)
+	file = pd.read_csv(file_path)
+	print(file)
+	return file
 
 def make_trial_info(info):
 	target = info[0]
