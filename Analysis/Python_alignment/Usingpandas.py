@@ -1,17 +1,20 @@
 from subjectHandling import *
 from oneEuroFilter import *
+from refined_data_handling import *
 import itertools
 
 # Full test
-TARGETS = range(8)
-ENVIRONMENTS = ['U', 'W']
-POSTURES = ['W', 'S']
+# TARGETS = range(8)
+TARGETS = [4]
+# ENVIRONMENTS = ['U', 'W']
+# POSTURES = ['W', 'S']
+ENVIRONMENTS = ['W']
+POSTURES = ['W']
 BLOCKS = range(5)
-
+# BLOCKS = [0]
 
 def analyse_refined_data():
-	# get_refined_files('imu_1_T0_EU_PS_B0.csv')
-	for subjectNum in range(1, 17):
+	for subjectNum in range(1,8):
 		for target, env, pos, block in itertools.product(TARGETS, ENVIRONMENTS, POSTURES, BLOCKS):
 			trial_info = str(subjectNum) + "_" + make_trial_info([target, env, pos, block])
 			imu_filename = "imu_" + trial_info +".csv"
@@ -20,6 +23,10 @@ def analyse_refined_data():
 				imu = get_refined_files(imu_filename)
 				pupil = get_refined_files((pupil_filename))
 
+				try:
+					look_refined_data(imu, pupil, trial_info)
+				except ValueError as err:
+					print(err.args)
 			except ValueError as err:
 				print(err.args)
 
@@ -41,8 +48,8 @@ def analyse_raw_data():
 				trial_info = [target, env, pos, block]
 				[ProcessingData, HololensData, filename] = get_each_file(fileLists[0], fileLists[1], subjectNum,
 				                                                         trial_info)
-				filter_files(ProcessingData, HololensData, filename, subjectNum)
-			# data = lookup_file(ProcessingData, HololensData, filename)
+				# filter_files(ProcessingData, HololensData, filename, subjectNum)
+				data = lookup_file(ProcessingData, HololensData, filename)
 			except ValueError as err:
 				print(err.args)
 		print('-' * 80)
@@ -50,4 +57,5 @@ def analyse_raw_data():
 
 if __name__ == "__main__":
 	analyse_refined_data()
+	# analyse_raw_data()
 	pass;
