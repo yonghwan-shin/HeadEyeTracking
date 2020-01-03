@@ -8,13 +8,13 @@ import itertools
 TARGETS = [4]
 # ENVIRONMENTS = ['U', 'W']
 # POSTURES = ['W', 'S']
-ENVIRONMENTS = ['W']
+ENVIRONMENTS = ['U']
 POSTURES = ['W']
 BLOCKS = range(5)
 # BLOCKS = [0]
 
 def analyse_refined_data():
-	for subjectNum in range(1,8):
+	for subjectNum in range(11,12):
 		for target, env, pos, block in itertools.product(TARGETS, ENVIRONMENTS, POSTURES, BLOCKS):
 			trial_info = str(subjectNum) + "_" + make_trial_info([target, env, pos, block])
 			imu_filename = "imu_" + trial_info +".csv"

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import scipy.signal
+from peakdetect import *
 def get_refined_files(filename):
 	currentDirectory = os.getcwd()
 	file_path = os.path.join(currentDirectory, "refined_data_saved", filename)
@@ -36,10 +37,12 @@ def get_refined_files(filename):
 
 def look_refined_data(imu_data, pupil_data,trial_info):
 	# graph settings
-	plt.rcParams["figure.figsize"]= (6,3)
+	plt.rcParams["figure.figsize"]= (12,6)
 	plt.rcParams["axes.grid"] = True
 	imu = imu_data.query("ImuTimeStamp >= 1950 and ImuTimeStamp <=6500")
 	pupil = pupil_data.query("timestamp >= 1950 and timestamp <=6500")
+	# imu = imu_data
+	# pupil = pupil_data
 	# normalized_imu_X = normalize(imu["angleX"])
 	# normalized_pupil_Y = normalize(pupil["norm_posY"])
 
@@ -52,24 +55,48 @@ def look_refined_data(imu_data, pupil_data,trial_info):
 	if start2 >2000:
 		raise ValueError("Too short pupil data", trial_info)
 	timestamp = np.linspace(2000,6000,4001)
+	# timestamp = np.linspace(0,6000,6001)
 	xhat = scipy.signal.savgol_filter(interpolate_normalized_imu_X(timestamp), 255, 2)
 	yhat = scipy.signal.savgol_filter(interpolate_normalized_pupil_Y(timestamp),255,2)
 	xhat = normalize(xhat)
 	yhat = normalize(yhat)
-	# print(interpolate_normalized_imu_X(timestamp))
-	# print(interpolate_normalized_imu_X(timestamp) + interpolate_normalized_pupil_Y(timestamp))
+
 	try:
-		# plt.plot(timestamp,interpolate_normalized_imu_X(timestamp),'r')
-		# plt.plot(timestamp,interpolate_normalized_pupil_Y(timestamp),'b')
-		# add = interpolate_normalized_imu_X(timestamp) - interpolate_normalized_pupil_Y(timestamp)
-		# plt.plot(interpolate_normalized_imu_X(timestamp),'b')
-		# plt.plot(interpolate_normalized_pupil_Y(timestamp),'b')
-		plt.plot(xhat,'r')
-		# plt.plot(yhat,'b')
-		# plt.plot((xhat+yhat)/2,'x')
-		# plt.plot(xhat-yhat)
-		# plt.plot(add)
-		# plt.plot(timestamp)
+		Xpeaks = peakdetect(xhat, lookahead=15)
+		Xpeaksmax = Xpeaks[0]
+		Xpeaksmin = Xpeaks[1]
+		Xpeakmax = [Xpeaksmax[i][0] for i in range(len(Xpeaksmax))]
+		Xpeakmin = [Xpeaksmin[i][0] for i in range(len(Xpeaksmin))]
+		Ypeaks = peakdetect(yhat, lookahead=15)
+		Ypeaksmax = Ypeaks[0]
+		Ypeaksmin = Ypeaks[1]
+		Ypeakmax = [Ypeaksmax[i][0] for i in range(len(Ypeaksmax))]
+		Ypeakmin = [Ypeaksmin[i][0] for i in range(len(Ypeaksmin))]
+		Xpeakmax += Xpeakmin
+		# Xpeakmax += Ypeakmax
+		# Xpeakmax += Ypeakmin
+		Ypeakmax += Ypeakmin
+		XfinalPeaks = list(set(Xpeakmax))
+		YfinalPeaks = list(set(Ypeakmax))
+		XfinalPeaks.sort()
+		YfinalPeaks.sort()
+		Xdiff = np.diff(xhat[XfinalPeaks])
+		Ydiff = np.diff(yhat[YfinalPeaks])
+		X_positive = Xdiff[Xdiff>=0]
+		X_negative = Xdiff[Xdiff<0]
+		Y_positive = Ydiff[Ydiff>=0]
+		Y_negative = Ydiff[Ydiff<0]
+		avg_X_positive = np.average(X_positive)
+		avg_X_negative = np.average(X_negative)
+		avg_Y_positive = np.average(Y_positive)
+		avg_Y_negative = np.average(Y_negative)
+		# print(avg_X_positive,avg_X_negative,avg_Y_positive,avg_Y_negative)
+		# xhat *= (avg_Y_positive-avg_Y_negative) / (avg_X_positive-avg_X_negative)
+		# yhat *= (1/2)*(avg_X_positive-avg_X_negative) / (avg_Y_positive-avg_Y_negative)
+		plt.plot(xhat,'r',linestyle ='dashed' ,label="imu X")
+		plt.plot(yhat,'b', linestyle = 'dashed',label = "pupil Y")
+		plt.plot((xhat+yhat)/2,'k',label = "Compensation")
+		plt.legend(loc= "uppemr left")
 	except:
 		print("error in timestamp")
 
@@ -81,5 +108,5 @@ def normalize(df):
 	max = np.max(df)
 	min = np.min(df)
 	output = (df - min)/(max-min)
-	print(max-min)
+	# print(max-min)
 	return output
