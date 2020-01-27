@@ -2,14 +2,12 @@ import threading
 from time import sleep
 import zmq
 from UDP_sender import *
-
 ctx = zmq.Context()
 pupil_remote = ctx.socket(zmq.REQ)
 ip = 'localhost'
 # ip = '192.168.0.49'
 port = 50020
 ZMQ_stop = False
-
 
 def ZMQ_connect():
 	try:
@@ -47,6 +45,7 @@ def ZMQ_connect():
 
 
 class ZMQ_listener(threading.Thread):
+
 	def __del__(self):
 		if threading.Thread.isAlive(self):
 			self.join()
@@ -55,6 +54,7 @@ class ZMQ_listener(threading.Thread):
 	def __init__(self, args, name="Pupil Listener"):
 		threading.Thread.__init__(self)
 		threading.Thread.daemon = True
+		self.string2send = ""
 		self.name = name
 		self.args = args
 
@@ -70,17 +70,20 @@ class ZMQ_listener(threading.Thread):
 			try:
 				topic, payload = subscriber.recv_multipart()
 				message = msgpack.unpackb(payload, encoding='utf-8')
-				string2send = "#"
+				# string2send = "#"
 				# f1 = str(message['norm_pos'][0])
 				# f2 = str(message['norm_pos'][1])
 				f1 = str(message['phi'])
 				f2 = str(message['theta'])
 				f3 = str(message['confidence'])
-				string2send = string2send + f1 + "$" + f2+"$" + f3 + "$@"
+				global string2send
+				self.string2send = 'pos：{}'.format(message['norm_pos']) + ' {}'.format(f3)
 
-				send_message(bytes(string2send,'utf-8'))
-				print(message['norm_pos'],f3)
-				print("------------------------")
+				# print(self.string2send)
+				# send_message(bytes(string2send,'utf-8'))
+
+				# print(message['norm_pos'],f3)
+				# print("------------------------")
 			except KeyboardInterrupt:
 				break
 		sleep(0.1)
@@ -95,5 +98,8 @@ def ZMQ_listener_main():
 	zmq_thread.start()
 
 
+
 if __name__ == "__main__":
 	ZMQ_listener_main()
+
+# print(message)
