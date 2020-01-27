@@ -1,8 +1,7 @@
 import threading
 from time import sleep
 import zmq
-from UDP_sender import *
-
+import Serial_communication
 ctx = zmq.Context()
 pupil_remote = ctx.socket(zmq.REQ)
 ip = 'localhost'
@@ -78,9 +77,11 @@ class ZMQ_listener(threading.Thread):
 				f3 = str(message['confidence'])
 				string2send = string2send + f1 + "$" + f2+"$" + f3 + "$@"
 
-				send_message(bytes(string2send,'utf-8'))
+				# send_message(bytes(string2send,'utf-8'))
+				Serial_communication.sendtoHololens(string2send)
 				print(message['norm_pos'],f3)
 				print("------------------------")
+
 			except KeyboardInterrupt:
 				break
 		sleep(0.1)

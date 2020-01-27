@@ -1,0 +1,3 @@
+Put this python file to...
+
+OSX: username/pupil_capture_settings/plugins
