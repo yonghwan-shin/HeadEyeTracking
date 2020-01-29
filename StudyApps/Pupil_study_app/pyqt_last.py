@@ -2,6 +2,7 @@ import sys
 import csv
 import os.path
 import timeit
+import time
 
 import serial
 import serial.tools.list_ports
@@ -51,12 +52,13 @@ class MyAppGUI(QWidget):
 
         self.setWindowTitle('Head_Eye_Tracking')
 
+
 class MyApp(MyAppGUI):
     port_signal = pyqtSignal(str)
     port2_signal = pyqtSignal(str)
     sub = pyqtSignal(str)
 
-    def __init__(self,parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
         self.btn1.clicked.connect(self.exp_start)
@@ -78,7 +80,7 @@ class MyApp(MyAppGUI):
     def _fill_serial_info(self):
         self.cb_port.insertItems(0, [str(x[0]) for x in self._get_available_port()])
         self.cb_port2.insertItems(0, [str(x[0]) for x in self._get_available_port()])
-        self.sub_number.insertItems(0, [str(x) for x in range(1,50)])
+        self.sub_number.insertItems(0, [str(x) for x in range(1, 50)])
 
     def _get_available_port(self):
         available_port = serial.tools.list_ports.comports()
@@ -87,18 +89,12 @@ class MyApp(MyAppGUI):
     @pyqtSlot()
     def exp_start(self):
         self.qtxt2.append('Experiment Start')
-        self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
-        self.serial = serial.Serial(self.cb_port.currentText(), 9600)
-        self.serial2 = serial.Serial(self.cb_port2.currentText(), 9600)
         self.th.start()
         self.th.working = True
 
     @pyqtSlot()
     def exp_stop(self):
         self.qtxt2.append('Experiment Stop')
-        self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
-        self.serial.close()
-        self.serial2.close()
         self.th.working = False
 
     @pyqtSlot()
@@ -108,17 +104,16 @@ class MyApp(MyAppGUI):
 
     @pyqtSlot()
     def send_port_signal(self):
-        portname = self.cb_port.currentText()
-        self.port_signal.emit(portname)
-        port2name = self.cb_port2.currentText()
-        self.port2_signal.emit(port2name)
         subnumber = self.sub_number.currentText()
         self.sub.emit(subnumber)
         self.qtxt2.append('Arduino connected')
         self.qtxt2.append('HOLO connected')
         zmq_thread.start()
         self.qtxt2.append('Zmq started')
-        self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
+        global arduino
+        arduino = serial.Serial(self.cb_port.currentText(), 9600)
+        global Holo
+        Holo = serial.Serial(self.cb_port2.currentText(), 115200)
 
     @pyqtSlot(str)
     def exp_update(self, msg):
@@ -129,6 +124,7 @@ class MyApp(MyAppGUI):
         if msg == "Recording":
             self.qtxt2.setStyleSheet("color: rgb(200, 0, 0);")
 
+
 class MyAppThread(QThread):
     viewer = pyqtSignal(str)
     recording = pyqtSignal(str)
@@ -137,57 +133,80 @@ class MyAppThread(QThread):
         super().__init__()
         self.main = parent
         self.working = False
-
+        global holodata
+        holodata = ["#START"]
 
     def __del__(self):
         print(".... end thread.....")
         self.wait()
 
+    def view(self):
+        if (arduino.in_waiting > 0):
+            res = arduino.readline()
+            global dataline
+            dataline = res.decode()[:len(res) - 3].split(',')
+            self.viewer.emit('Arduino：{}'.format(dataline) + '\n' + 'Pupil : {}'.format(zmq_thread.string2send))
+
+    def Holo_encoder(self,string):
+        Holo.write(string.encode("UTF-8"))
+
+    def Holo_data_receive(self):
+        signal = Holo.read(Holo.in_waiting)
+        if signal.decode("utf-8") != False:
+            holodata.append(signal.decode("utf-8"))
+
+    def Holo_START(self):
+        if (holodata[-1] == "#START"):
+            self.Holo_encoder("#SUB" + str(self.sub))
+        sleep(1)
+
+
+    def Holo_INIT(self):
+        if ((holodata[-1] == "#INIT") and (holodata[-2] != "#INIT")):
+            curr_file = current_add(filename.pop())
+            self.Holo_encoder("#NEXT_" + curr_file)
+            holodata.append("#INIT")
+
+    def Holo_TRIAL(self):
+        if (holodata[-1] == "#TRIAL"):
+            self.recording.emit("Recording")
+            if os.path.isfile(
+                    "/Users/Jiwan/Documents/GitHub/HeadEyeTracking/StudyApps/Pupil_study_app/%.csv" % curr_file):  # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
+                f = open('%.csv' % curr_file, 'a')
+                wr = csv.writer(f, lineterminator='\n')
+                stop = timeit.default_timer()
+                wr.writerow(dataline + zmq_thread.string2send + [stop - start])
+            else:  # 초기 헤더값 설정
+                f = open('%.csv' % curr_file, 'w')
+                wr = csv.writer(f, lineterminator='\n')
+                start = timeit.default_timer()
+                wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y",
+                             "zmq_confidence", "IMUtimestamp"])
+
+    def Holo_END(self):
+        if (holodata[-1] == "#END"):
+            if (filename[-1] == 'BREAK'):
+                self.Holo_encoder("#BREAK")
+            elif (filename[-1] == 'FINISH'):
+                self.Holo_encoder("#FINISH")
+            else:
+                holodata.append("INIT")
+
     def run(self):
         while self.working:
-            # arduino, zmq read
-            arduino = serial.Serial(self.port, 9600)
-            if (arduino.in_waiting > 0):
-                res = arduino.readline()
-                global dataline
-                dataline = res.decode()[:len(res) - 3].split(',')
-                self.viewer.emit('Arduino：{}'.format(dataline)+ '\n' + 'Pupil : {}'.format(zmq_thread.string2send))
-
-            # Holo connect / sub send
-            Holo = serial.Serial(self.port2, 115200)
-            Holo.write(("#SUB"+str(self.sub)).encode("UTF-8"))
-
-            # HOLO read # HOLO read 설정 필요합니다.
+            # print current data in viewer
+            self.view()
             if (Holo.in_waiting > 0):
-                signal = Holo.readline()
-                global holodata
-                holodata = []
-                holodata.append(signal.decode())
-                # holodata = "#TRIAL"
-
-                if (holodata == "#TRIAL"):
-                    self.recording.emit("Recording")
-                    if ((holodata[-1] == "#TRIAL") and (holodata[-2] == "#TRIAL")):
-                        curr_file = current_add(filename.pop())
-                    if os.path.isfile("Path_location/file name"): #Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
-                        f = open('%.csv' % curr_file, 'a')
-                        wr = csv.writer(f, lineterminator='\n')
-                        stop = timeit.default_timer()
-                        wr.writerow(dataline + zmq_thread.string2send[1:4] + [stop-start])
-                    else: #초기 헤더값 설정
-                        f = open('%.csv' % curr_file, 'w')
-                        wr = csv.writer(f, lineterminator='\n')
-                        start = timeit.default_timer()
-                        wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y", "zmq_confidence", "IMUtimestamp"])
-
-                elif (holodata == "#END"):
-                    if (filename[-1] == 'BREAK'):
-                        Holo.write(("#BREAK").encode("UTF-8"))
-                    elif (filename[-1] == 'FINISH'):
-                        Holo.write(("#FINISH").encode("UTF-8"))
-                    else:
-                        Holo.write(("#NEXT").encode("UTF-8"))
-
+                # Holo signal read
+                self.Holo_data_receive()
+                # connect -> subject send # send sub number 안받으면 쌓여서 에러남.
+                self.Holo_START()
+                # INIT -> curr_file send
+                self.Holo_INIT()
+                # TRIAL -> file save
+                self.Holo_TRIAL()
+                # END -> NEXT or BREAK or FINISH, NEXT: INIT 상태로 만들기.
+                self.Holo_END()
 
     @pyqtSlot(str)
     def receive_port_singal(self, inst):
@@ -205,6 +224,6 @@ class MyAppThread(QThread):
 
 
 if __name__ == '__main__':
-   app = QApplication(sys.argv)
-   ex = MyApp()
-   sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    ex = MyApp()
+    sys.exit(app.exec_())
