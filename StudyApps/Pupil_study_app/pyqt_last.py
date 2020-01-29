@@ -1,4 +1,7 @@
 import sys
+import csv
+import os.path
+import timeit
 
 import serial
 import serial.tools.list_ports
@@ -64,6 +67,7 @@ class MyApp(MyAppGUI):
         self.th = MyAppThread(parent=self)
 
         self.th.viewer.connect(self.exp_update)
+        self.th.recording.connect(self.rec_update)
 
         self.port_signal.connect(self.th.receive_port_singal)
         self.port2_signal.connect(self.th.receive_port2_singal)
@@ -83,6 +87,7 @@ class MyApp(MyAppGUI):
     @pyqtSlot()
     def exp_start(self):
         self.qtxt2.append('Experiment Start')
+        self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
         self.serial = serial.Serial(self.cb_port.currentText(), 9600)
         self.serial2 = serial.Serial(self.cb_port2.currentText(), 9600)
         self.th.start()
@@ -91,6 +96,7 @@ class MyApp(MyAppGUI):
     @pyqtSlot()
     def exp_stop(self):
         self.qtxt2.append('Experiment Stop')
+        self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
         self.serial.close()
         self.serial2.close()
         self.th.working = False
@@ -112,20 +118,26 @@ class MyApp(MyAppGUI):
         self.qtxt2.append('HOLO connected')
         zmq_thread.start()
         self.qtxt2.append('Zmq started')
+        self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
 
     @pyqtSlot(str)
     def exp_update(self, msg):
         self.qtxt1.clear()
         self.qtxt1.append(msg)
 
+    def rec_update(self, msg):
+        if msg == "Recording":
+            self.qtxt2.setStyleSheet("color: rgb(200, 0, 0);")
 
 class MyAppThread(QThread):
     viewer = pyqtSignal(str)
+    recording = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__()
         self.main = parent
-        self.working = True
+        self.working = False
+
 
     def __del__(self):
         print(".... end thread.....")
@@ -135,30 +147,47 @@ class MyAppThread(QThread):
         while self.working:
             # arduino, zmq read
             arduino = serial.Serial(self.port, 9600)
-            if arduino.readable():
+            if (arduino.in_waiting > 0):
                 res = arduino.readline()
+                global dataline
                 dataline = res.decode()[:len(res) - 3].split(',')
-            self.viewer.emit('Arduino：{}'.format(dataline)+ '\n' + 'Pupil : {}'.format(zmq_thread.string2send))
+                self.viewer.emit('Arduino：{}'.format(dataline)+ '\n' + 'Pupil : {}'.format(zmq_thread.string2send))
 
             # Holo connect / sub send
             Holo = serial.Serial(self.port2, 115200)
             Holo.write(("#SUB"+str(self.sub)).encode("UTF-8"))
 
-            # HOLO read
-            # if Holo.readable():
-            #     signal = Holo.readline() #<< 여기서 에러 발생 print 해보고 알맞게 수정 필요.
-            #     holodata = signal.decode()
-            #     # holodata = "#TRIAL"
-            #
-            # # Experiment
-            # if (holodata == "#TRIAL"):
-            #     self.viewer.emit("Record Starting")
-            #
+            # HOLO read # HOLO read 설정 필요합니다.
+            if (Holo.in_waiting > 0):
+                signal = Holo.readline()
+                global holodata
+                holodata = []
+                holodata.append(signal.decode())
+                # holodata = "#TRIAL"
 
+                if (holodata == "#TRIAL"):
+                    self.recording.emit("Recording")
+                    if ((holodata[-1] == "#TRIAL") and (holodata[-2] == "#TRIAL")):
+                        curr_file = current_add(filename.pop())
+                    if os.path.isfile("Path_location/file name"): #Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
+                        f = open('%.csv' % curr_file, 'a')
+                        wr = csv.writer(f, lineterminator='\n')
+                        stop = timeit.default_timer()
+                        wr.writerow(dataline + zmq_thread.string2send[1:4] + [stop-start])
+                    else: #초기 헤더값 설정
+                        f = open('%.csv' % curr_file, 'w')
+                        wr = csv.writer(f, lineterminator='\n')
+                        start = timeit.default_timer()
+                        wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y", "zmq_confidence", "IMUtimestamp"])
 
+                elif (holodata == "#END"):
+                    if (filename[-1] == 'BREAK'):
+                        Holo.write(("#BREAK").encode("UTF-8"))
+                    elif (filename[-1] == 'FINISH'):
+                        Holo.write(("#FINISH").encode("UTF-8"))
+                    else:
+                        Holo.write(("#NEXT").encode("UTF-8"))
 
-
-            # self.sleep(1)
 
     @pyqtSlot(str)
     def receive_port_singal(self, inst):
@@ -171,6 +200,9 @@ class MyAppThread(QThread):
     @pyqtSlot(str)
     def sub_singal(self, inst):
         self.sub = inst
+        global filename
+        filename = make_experiment_array(int(self.sub))
+
 
 if __name__ == '__main__':
    app = QApplication(sys.argv)
