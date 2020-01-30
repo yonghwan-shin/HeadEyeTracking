@@ -29,7 +29,7 @@ def EP_update(sub_number):
         EPblock.append(env[0] + '_' + pos[0])
         EPblock.append(env[0] + '_' + pos[1])
         EPblock.append(env[1] + '_' + pos[0])
-    print(EPblock)
+    # print(EPblock)
     return EPblock
 
 def make_file_name(target, env, pos, block, c, sub_num):
@@ -57,6 +57,7 @@ def make_experiment_array(sub_num):
             total_array.append("FINISH")
         else:
             total_array.append("BREAK")
+    total_array.reverse()
     return total_array
 
 def current_add(title):
@@ -68,4 +69,4 @@ def current_add(title):
 exp = make_experiment_array(1)
 print(exp)
 print(exp[-1])
-print(len(exp))
+# print(len(exp))

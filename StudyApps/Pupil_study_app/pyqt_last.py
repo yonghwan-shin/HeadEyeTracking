@@ -1,6 +1,7 @@
 import sys
 import csv
 import os.path
+import os
 import timeit
 import time
 
@@ -12,6 +13,21 @@ from zmq_pupil import *
 from Naming import *
 
 zmq_thread = ZMQ_listener(name='ZMQ_listener', args=[True])
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
+
+# os.mkdir(DATA_ROOT)
+
+start_stop = True
+trial_stop = False
+
+
+# TODO: make directory
+def checkDirectory(path):
+    if os.path.exists(path):
+        pass
+    else:
+        os.mkdir(path)
 
 
 class MyAppGUI(QWidget):
@@ -123,6 +139,7 @@ class MyApp(MyAppGUI):
     def rec_update(self, msg):
         if msg == "Recording":
             self.qtxt2.setStyleSheet("color: rgb(200, 0, 0);")
+            self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
 
 
 class MyAppThread(QThread):
@@ -133,8 +150,12 @@ class MyAppThread(QThread):
         super().__init__()
         self.main = parent
         self.working = False
+
+        checkDirectory(DATA_ROOT)
         global holodata
         holodata = ["#START"]
+        global trial_start_time
+        trial_start_time = 0
 
     def __del__(self):
         print(".... end thread.....")
@@ -147,39 +168,48 @@ class MyAppThread(QThread):
             dataline = res.decode()[:len(res) - 3].split(',')
             self.viewer.emit('Arduino：{}'.format(dataline) + '\n' + 'Pupil : {}'.format(zmq_thread.string2send))
 
-    def Holo_encoder(self,string):
+    def Holo_encoder(self, string):
         Holo.write(string.encode("UTF-8"))
+        print("write to hololens : ", string.encode("UTF-8"))
 
     def Holo_data_receive(self):
         signal = Holo.read(Holo.in_waiting)
         if signal.decode("utf-8") != False:
             holodata.append(signal.decode("utf-8"))
+            print('received :' ,signal.decode("utf-8"))
+        print(holodata)
 
     def Holo_START(self):
         if (holodata[-1] == "#START"):
             self.Holo_encoder("#SUB" + str(self.sub))
-        sleep(1)
-
+            sleep(1)
 
     def Holo_INIT(self):
         if ((holodata[-1] == "#INIT") and (holodata[-2] != "#INIT")):
+            global curr_file
             curr_file = current_add(filename.pop())
             self.Holo_encoder("#NEXT_" + curr_file)
             holodata.append("#INIT")
+            # TODO
+            start_stop = False
 
     def Holo_TRIAL(self):
         if (holodata[-1] == "#TRIAL"):
             self.recording.emit("Recording")
             if os.path.isfile(
-                    "/Users/Jiwan/Documents/GitHub/HeadEyeTracking/StudyApps/Pupil_study_app/%.csv" % curr_file):  # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
-                f = open('%.csv' % curr_file, 'a')
+                    DATA_ROOT + "/" + self.sub + "/" + curr_file+".csv"): # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
+                f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'a')
                 wr = csv.writer(f, lineterminator='\n')
-                stop = timeit.default_timer()
-                wr.writerow(dataline + zmq_thread.string2send + [stop - start])
+                # stop = timeit.default_timer()
+                ts = time.time()
+                current_time = []
+                current_time.append(ts)
+                print(dataline)
+                wr.writerow(dataline + zmq_thread.string2send + current_time)
             else:  # 초기 헤더값 설정
-                f = open('%.csv' % curr_file, 'w')
+                f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'w')
                 wr = csv.writer(f, lineterminator='\n')
-                start = timeit.default_timer()
+                # trial_start_time = timeit.default_timer()
                 wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y",
                              "zmq_confidence", "IMUtimestamp"])
 
@@ -190,7 +220,8 @@ class MyAppThread(QThread):
             elif (filename[-1] == 'FINISH'):
                 self.Holo_encoder("#FINISH")
             else:
-                holodata.append("INIT")
+                holodata.append("#INIT")
+
 
     def run(self):
         while self.working:
@@ -199,14 +230,16 @@ class MyAppThread(QThread):
             if (Holo.in_waiting > 0):
                 # Holo signal read
                 self.Holo_data_receive()
-                # connect -> subject send # send sub number 안받으면 쌓여서 에러남.
-                self.Holo_START()
-                # INIT -> curr_file send
-                self.Holo_INIT()
-                # TRIAL -> file save
-                self.Holo_TRIAL()
-                # END -> NEXT or BREAK or FINISH, NEXT: INIT 상태로 만들기.
-                self.Holo_END()
+
+            self.Holo_START()
+            # connect -> subject send # send sub number 안받으면 쌓여서 에러남.
+            # self.Holo_START()
+            # INIT -> curr_file send
+            self.Holo_INIT()
+            # TRIAL -> file save
+            self.Holo_TRIAL()
+            # END -> NEXT or BREAK or FINISH, NEXT: INIT 상태로 만들기.
+            self.Holo_END()
 
     @pyqtSlot(str)
     def receive_port_singal(self, inst):
@@ -221,6 +254,7 @@ class MyAppThread(QThread):
         self.sub = inst
         global filename
         filename = make_experiment_array(int(self.sub))
+        checkDirectory(DATA_ROOT + "/" + self.sub)
 
 
 if __name__ == '__main__':
