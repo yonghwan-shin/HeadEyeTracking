@@ -1,7 +1,7 @@
 import threading
 from time import sleep
 import zmq
-from UDP_sender import *
+
 ctx = zmq.Context()
 pupil_remote = ctx.socket(zmq.REQ)
 ip = 'localhost'
