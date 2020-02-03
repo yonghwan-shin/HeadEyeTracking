@@ -1,11 +1,12 @@
 import random
 import time
 
-targets = [0, 1, 2, 3, 4, 5, 6, 7]
+# targets = [0, 1, 2, 3, 4, 5, 6, 7]
+targets = [0, 1]
 env = ['EU', 'EW']
 pos = ['PS', 'PW']
-rep = 5
-
+# rep = 5
+rep = 2
 
 def EP_update(sub_number):
     EPblock = []
@@ -66,7 +67,7 @@ def current_add(title):
     output = title + "_" + current_time
     return output
 
-exp = make_experiment_array(1)
-print(exp)
-print(exp[-1])
+# exp = make_experiment_array(1)
+# print(exp)
+# print(exp[-1])
 # print(len(exp))

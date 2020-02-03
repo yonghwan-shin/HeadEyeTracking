@@ -139,6 +139,7 @@ class MyApp(MyAppGUI):
     def rec_update(self, msg):
         if msg == "Recording":
             self.qtxt2.setStyleSheet("color: rgb(200, 0, 0);")
+        elif msg == "Record stop":
             self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
 
 
@@ -177,7 +178,7 @@ class MyAppThread(QThread):
         if signal.decode("utf-8") != False:
             holodata.append(signal.decode("utf-8"))
             print('received :' ,signal.decode("utf-8"))
-        print(holodata)
+        # print(holodata)
 
     def Holo_START(self):
         if (holodata[-1] == "#START"):
@@ -204,7 +205,6 @@ class MyAppThread(QThread):
                 ts = time.time()
                 current_time = []
                 current_time.append(ts)
-                print(dataline)
                 wr.writerow(dataline + zmq_thread.string2send + current_time)
             else:  # 초기 헤더값 설정
                 f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'w')
@@ -215,10 +215,15 @@ class MyAppThread(QThread):
 
     def Holo_END(self):
         if (holodata[-1] == "#END"):
-            if (filename[-1] == 'BREAK'):
+            self.recording.emit("Record stop")
+            if (filename[-1] == 'BREAK' and (holodata[-2] != "BREAK")):
                 self.Holo_encoder("#BREAK")
-            elif (filename[-1] == 'FINISH'):
+                filename.pop()
+                holodata.append('BREAK')
+            elif (filename[-1] == 'FINISH' and (holodata[-2] != "FINISH")):
                 self.Holo_encoder("#FINISH")
+                filename.pop()
+                holodata.append('FINISH')
             else:
                 holodata.append("#INIT")
 
