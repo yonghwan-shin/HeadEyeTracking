@@ -1,34 +1,49 @@
 import time
 import serial
 import serial.tools.list_ports
-print('serial ', serial.__version__)
+import threading
 
-# set a port number & baud rate
-list = serial.tools.list_ports.comports()
-PORT = ""
-BaudRate = 115200
-# print(list)
-for element in list:
-	print("PORT:", str(element.device))
+connected = False
 
-for port, desc, hwid in sorted(list):
-	print(f"{port}: {desc} {hwid}")
-	if "Bl" in port:
-		PORT = port
-#
-Serial = serial.Serial(PORT,BaudRate)
-Serial.write("hello".encode("UTF-8"))
-#
-# while(True):
-# 	info = "#0.1$0.9$0.9$@"
-# 	# Serial.write(info)
-# 	Serial.write(info.encode('UTF-8'))
-# 	time.sleep(0.05)
-# 	# info = "#0.9$0.1$0.9$"
-# 	# # Serial.write(info)
-# 	# Serial.write(info.encode('UTF-8'))
-# 	# time.sleep(0.05)
-# 	print(Serial.read(Serial.inWaiting()))
+arduino = serial.Serial()
 
-# if __name__ == "__main__":
+dataline = [0.0,0.0,0.0,0.0,0.0]
 
+def connectArduino():
+	ports = serial.tools.list_ports.comports()
+	print('reconnecting')
+	for port in ports:
+		# print(port.device)
+		if port.device.startswith('/dev/cu.usbmodem'):
+			return serial.Serial(port.device, 9600);
+
+
+# def handle_data(data):
+# 	print(data)
+# 	pass
+
+def read_from_arduino(port):
+	while True:
+		try:
+			if port ==None:
+				port =connectArduino()
+
+			res = port.readline()
+			global dataline
+			dataline = res.decode()[:len(res) - 3].split(',')
+			# print(dataline)
+
+		except:
+			if not port == None:
+				port.close()
+				port = None
+				print('disconnecting')
+				dataline = [0.0,0.0,0.0,0.0,0.0]
+			time.sleep(2)
+
+
+
+if __name__ == "__main__":
+	arduino = connectArduino()
+	arduinoThread = threading.Thread(target = read_from_arduino, args = (arduino,))
+	arduinoThread.start()

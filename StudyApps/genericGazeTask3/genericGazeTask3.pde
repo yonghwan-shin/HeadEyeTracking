@@ -101,13 +101,14 @@ int modeIndex = 0;       // current step/trial
 void settings()
 {
   size(w, h);
+  smooth(8);
 }
 
 // init everything
 void setup()
 {
   targetSize = (int)pixelsPerDegree; 
-  smooth(8);
+  
 
 
   trials = new ArrayList<trial>();

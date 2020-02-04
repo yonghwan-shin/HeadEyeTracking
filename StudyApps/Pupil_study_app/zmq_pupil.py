@@ -54,7 +54,7 @@ class ZMQ_listener(threading.Thread):
 	def __init__(self, args, name="Pupil Listener"):
 		threading.Thread.__init__(self)
 		threading.Thread.daemon = True
-		self.string2send = ['NaN']
+		self.string2send = ['NaN','NaN','NaN','NaN','NaN']
 		self.name = name
 		self.args = args
 
@@ -73,11 +73,11 @@ class ZMQ_listener(threading.Thread):
 				# string2send = "#"
 				f1 = str(message['norm_pos'][0])
 				f2 = str(message['norm_pos'][1])
-				# f1 = str(message['phi'])
-				# f2 = str(message['theta'])
-				f3 = str(message['confidence'])
+				f3 = str(message['phi'])
+				f4 = str(message['theta'])
+				f5 = str(message['confidence'])
 				global string2send
-				self.string2send = [f1,f2,f3]
+				self.string2send = [f1,f2,f3,f4,f5]
 
 				# print(self.string2send)
 				# send_message(bytes(string2send,'utf-8'))
