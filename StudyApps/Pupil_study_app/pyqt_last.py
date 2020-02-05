@@ -16,22 +16,13 @@ import Serial_communication
 
 zmq_thread = ZMQ_listener(name='ZMQ_listener', args=[True])
 imu_thread = IMU_listener(name='IMU_listener',args=[True])
-# arduinoThread = threading.Thread(target = Serial_communication.read_from_arduino, args = (Serial_communication.arduino,))
+
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
 zmq_thread.DATA_ROOT = DATA_ROOT
 imu_thread.DATA_ROOT = DATA_ROOT
-# Serial_communication.IMU_DATA_ROOT = DATA_ROOT
-
-
-# os.mkdir(DATA_ROOT)
-
 dataline = [0.0,0.0,0.0,0.0,0.0]
-
 trial_start_time = 0
-
-# global arduino
-# arduino = serial.Serial()
 
 # TODO: make directory
 def checkDirectory(path):
@@ -39,7 +30,6 @@ def checkDirectory(path):
         pass
     else:
         os.mkdir(path)
-
 
 class MyAppGUI(QWidget):
     def __init__(self, parent=None):
