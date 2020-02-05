@@ -17,6 +17,9 @@ zmq_thread = ZMQ_listener(name='ZMQ_listener', args=[True])
 arduinoThread = threading.Thread(target = Serial_communication.read_from_arduino, args = (Serial_communication.arduino,))
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
+zmq_thread.ZMQ_DATA_ROOT = DATA_ROOT
+Serial_communication.IMU_DATA_ROOT = DATA_ROOT
+
 
 # os.mkdir(DATA_ROOT)
 
@@ -145,7 +148,6 @@ class MyApp(MyAppGUI):
         elif msg == "Record stop":
             self.qtxt2.setStyleSheet("color: rgb(0, 0, 0);")
 
-
 class MyAppThread(QThread):
     viewer = pyqtSignal(str)
     recording = pyqtSignal(str)
@@ -188,6 +190,8 @@ class MyAppThread(QThread):
         if ((holodata[-1] == "#INIT") and (holodata[-2] != "#INIT")):
             global curr_file
             curr_file = current_add(filename.pop())
+            Serial_communication.IMU_CURRFILE = curr_file
+            zmq_thread.ZMQ_CURRFILE = curr_file
             print(len(filename))
             self.Holo_encoder("#NEXT_" + curr_file)
             holodata.append("#INIT")
@@ -197,25 +201,29 @@ class MyAppThread(QThread):
     def Holo_TRIAL(self):
         if (holodata[-1] == "#TRIAL"):
             self.recording.emit("Recording")
-            if os.path.isfile(
-                    DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv"):  # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
-                f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'a')
-                wr = csv.writer(f, lineterminator='\n')
-                # stop = timeit.default_timer()
-                ts = time.time()
-                current_time = []
-                current_time.append(ts)
-                wr.writerow(Serial_communication.dataline + zmq_thread.string2send + current_time)
-            else:  # 초기 헤더값 설정
-                f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'w')
-                wr = csv.writer(f, lineterminator='\n')
-                # trial_start_time = timeit.default_timer()
-                wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y"
-                             ,"phi", "theta", "zmq_confidence", "IMUtimestamp"])
+            Serial_communication.IMU_RECORDING = "RECORD"
+            zmq_thread.ZMQ_RECORDING = "RECORD"
+            # if os.path.isfile(
+            #         DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv"):  # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
+            #     f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'a')
+            #     wr = csv.writer(f, lineterminator='\n')
+            #     # stop = timeit.default_timer()
+            #     ts = time.time()
+            #     current_time = []
+            #     current_time.append(ts)
+            #     wr.writerow(Serial_communication.dataline + zmq_thread.string2send + current_time)
+            # else:  # 초기 헤더값 설정
+            #     f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'w')
+            #     wr = csv.writer(f, lineterminator='\n')
+            #     # trial_start_time = timeit.default_timer()
+            #     wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y"
+            #                  ,"phi", "theta", "zmq_confidence", "IMUtimestamp"])
 
     def Holo_END(self):
         if (holodata[-1] == "#END"):
             self.recording.emit("Record stop")
+            Serial_communication.IMU_RECORDING = "NOT_RECORD"
+            zmq_thread.ZMQ_RECORDING = "NOT_RECORD"
             if (filename[-1] == 'BREAK' and (holodata[-2] != "BREAK")):
                 self.Holo_encoder("#BREAK")
                 filename.pop()
@@ -256,6 +264,8 @@ class MyAppThread(QThread):
     @pyqtSlot(str)
     def sub_singal(self, inst):
         self.sub = inst
+        Serial_communication.IMU_SUBJECT = self.sub
+        zmq_thread.ZMQ_SUBJECT = self.sub
         global filename
         filename = make_experiment_array(int(self.sub))
         checkDirectory(DATA_ROOT + "/" + self.sub)

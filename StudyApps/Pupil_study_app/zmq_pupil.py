@@ -1,6 +1,11 @@
 import threading
+import time
 from time import sleep
 import zmq
+
+import os
+import csv
+
 
 ctx = zmq.Context()
 pupil_remote = ctx.socket(zmq.REQ)
@@ -8,6 +13,7 @@ ip = 'localhost'
 # ip = '192.168.0.49'
 port = 50020
 ZMQ_stop = False
+
 
 def ZMQ_connect():
 	try:
@@ -54,6 +60,10 @@ class ZMQ_listener(threading.Thread):
 	def __init__(self, args, name="Pupil Listener"):
 		threading.Thread.__init__(self)
 		threading.Thread.daemon = True
+		self.ZMQ_DATA_ROOT = ""
+		self.ZMQ_SUBJECT = 0
+		self.ZMQ_CURRFILE = ""
+		self.ZMQ_RECORDING = ""
 		self.string2send = ['NaN','NaN','NaN','NaN','NaN']
 		self.name = name
 		self.args = args
@@ -78,6 +88,8 @@ class ZMQ_listener(threading.Thread):
 				f5 = str(message['confidence'])
 				global string2send
 				self.string2send = [f1,f2,f3,f4,f5]
+				if self.ZMQ_RECORDING == "RECORD":
+					savefile_ZMQ(self, self.string2send)
 
 				# print(self.string2send)
 				# send_message(bytes(string2send,'utf-8'))
@@ -96,6 +108,22 @@ def ZMQ_listener_main():
 	zmq_receiver_name = "ZMQ_listener"
 	zmq_thread = ZMQ_listener(name='ZMQ_listener', args=(zmq_receiver_name,True))
 	zmq_thread.start()
+
+def savefile_ZMQ(self, data):
+	if os.path.isfile(
+			self.ZMQ_DATA_ROOT + "/" + self.ZMQ_SUBJECT + "/" + "EYE_" + self.ZMQ_CURRFILE + ".csv"):  # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
+		f = open(self.ZMQ_DATA_ROOT + "/" + self.ZMQ_SUBJECT + "/" + "EYE_" + self.ZMQ_CURRFILE + ".csv", 'a')
+		wr = csv.writer(f, lineterminator='\n')
+		# stop = timeit.default_timer()
+		ts = time.time()
+		current_time = []
+		current_time.append(ts)
+		wr.writerow(data + current_time)
+	else:  # 초기 헤더값 설정
+		f = open(self.ZMQ_DATA_ROOT + "/" + self.ZMQ_SUBJECT + "/" + "EYE_" + self.ZMQ_CURRFILE + ".csv", 'w')
+		wr = csv.writer(f, lineterminator='\n')
+		# trial_start_time = timeit.default_timer()
+		wr.writerow(["zmq_X", "zmq_Y", "phi", "theta", "zmq_confidence", "ZMQtimestamp"])
 
 
 
