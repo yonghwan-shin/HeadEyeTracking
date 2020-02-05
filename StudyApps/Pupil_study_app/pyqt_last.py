@@ -11,21 +11,24 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from zmq_pupil import *
 from Naming import *
+from Serial_communication import *
 import Serial_communication
 
 zmq_thread = ZMQ_listener(name='ZMQ_listener', args=[True])
-arduinoThread = threading.Thread(target = Serial_communication.read_from_arduino, args = (Serial_communication.arduino,))
+imu_thread = IMU_listener(name='IMU_listener',args=[True])
+# arduinoThread = threading.Thread(target = Serial_communication.read_from_arduino, args = (Serial_communication.arduino,))
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
-zmq_thread.ZMQ_DATA_ROOT = DATA_ROOT
-Serial_communication.IMU_DATA_ROOT = DATA_ROOT
+zmq_thread.DATA_ROOT = DATA_ROOT
+imu_thread.DATA_ROOT = DATA_ROOT
+# Serial_communication.IMU_DATA_ROOT = DATA_ROOT
 
 
 # os.mkdir(DATA_ROOT)
 
 dataline = [0.0,0.0,0.0,0.0,0.0]
-start_stop = True
-trial_stop = False
+
+trial_start_time = 0
 
 # global arduino
 # arduino = serial.Serial()
@@ -100,7 +103,7 @@ class MyApp(MyAppGUI):
 
     def _fill_serial_info(self):
         self.cb_port2.insertItems(0, [str(x[0]) for x in self._get_available_port()])
-        self.sub_number.insertItems(0, [str(x) for x in range(1, 50)])
+        self.sub_number.insertItems(0, [str(x) for x in range(1, 25)])
 
     def _get_available_port(self):
         available_port = serial.tools.list_ports.comports()
@@ -126,7 +129,8 @@ class MyApp(MyAppGUI):
     def send_port_signal(self):
         subnumber = self.sub_number.currentText()
         zmq_thread.start()
-        arduinoThread.start()
+        imu_thread.start()
+        # arduinoThread.start()
 
         self.sub.emit(subnumber)
 
@@ -156,12 +160,10 @@ class MyAppThread(QThread):
         super().__init__()
         self.main = parent
         self.working = False
-
+        self.sub = 0
         checkDirectory(DATA_ROOT)
         global holodata
         holodata = ["#START"]
-        global trial_start_time
-        trial_start_time = 0
 
     def __del__(self):
         print(".... end thread.....")
@@ -179,51 +181,38 @@ class MyAppThread(QThread):
         if signal.decode("utf-8") != False:
             holodata.append(signal.decode("utf-8"))
             print('received :', signal.decode("utf-8"))
-        # print(holodata)
 
     def Holo_START(self):
         if (holodata[-1] == "#START"):
             self.Holo_encoder("#SUB" + str(self.sub))
-            sleep(1)
+            sleep(2)
 
     def Holo_INIT(self):
         if ((holodata[-1] == "#INIT") and (holodata[-2] != "#INIT")):
             global curr_file
             curr_file = current_add(filename.pop())
-            Serial_communication.IMU_CURRFILE = curr_file
-            zmq_thread.ZMQ_CURRFILE = curr_file
-            print(len(filename))
+            zmq_thread.Set_filename(curr_file)
+            imu_thread.Set_filename(curr_file)
+            print('remain trials:'. len(filename))
             self.Holo_encoder("#NEXT_" + curr_file)
             holodata.append("#INIT")
-            # TODO
-            start_stop = False
+            global trial_start_time
+            trial_start_time = time.time()
 
     def Holo_TRIAL(self):
         if (holodata[-1] == "#TRIAL"):
             self.recording.emit("Recording")
-            Serial_communication.IMU_RECORDING = "RECORD"
-            zmq_thread.ZMQ_RECORDING = "RECORD"
-            # if os.path.isfile(
-            #         DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv"):  # Path location 할당해줘야합니다. 초기 헤더값 이후 데이터 어펜드.
-            #     f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'a')
-            #     wr = csv.writer(f, lineterminator='\n')
-            #     # stop = timeit.default_timer()
-            #     ts = time.time()
-            #     current_time = []
-            #     current_time.append(ts)
-            #     wr.writerow(Serial_communication.dataline + zmq_thread.string2send + current_time)
-            # else:  # 초기 헤더값 설정
-            #     f = open(DATA_ROOT + "/" + self.sub + "/" + curr_file + ".csv", 'w')
-            #     wr = csv.writer(f, lineterminator='\n')
-            #     # trial_start_time = timeit.default_timer()
-            #     wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "zmq_X", "zmq_Y"
-            #                  ,"phi", "theta", "zmq_confidence", "IMUtimestamp"])
+
+            imu_thread.Start_trial()
+            zmq_thread.Start_trial()
 
     def Holo_END(self):
         if (holodata[-1] == "#END"):
+            imu_thread.End_trial()
+            zmq_thread.End_trial()
             self.recording.emit("Record stop")
-            Serial_communication.IMU_RECORDING = "NOT_RECORD"
-            zmq_thread.ZMQ_RECORDING = "NOT_RECORD"
+            # Serial_communication.IMU_RECORDING = "NOT_RECORD"
+            # zmq_thread.ZMQ_RECORDING = "NOT_RECORD"
             if (filename[-1] == 'BREAK' and (holodata[-2] != "BREAK")):
                 self.Holo_encoder("#BREAK")
                 filename.pop()
@@ -234,6 +223,7 @@ class MyAppThread(QThread):
                 holodata.append('FINISH')
             else:
                 holodata.append("#INIT")
+            print('trial takes', trial_start_time -time.time() , 'second')
 
     def run(self):
         while self.working:
@@ -264,8 +254,11 @@ class MyAppThread(QThread):
     @pyqtSlot(str)
     def sub_singal(self, inst):
         self.sub = inst
-        Serial_communication.IMU_SUBJECT = self.sub
-        zmq_thread.ZMQ_SUBJECT = self.sub
+        imu_thread.Set_sub_num(self.sub)
+        zmq_thread.Set_sub_num(self.sub)
+        print('subject number was set as', self.sub)
+        # Serial_communication.IMU_SUBJECT = self.sub
+        # zmq_thread.ZMQ_SUBJECT = self.sub
         global filename
         filename = make_experiment_array(int(self.sub))
         checkDirectory(DATA_ROOT + "/" + self.sub)
