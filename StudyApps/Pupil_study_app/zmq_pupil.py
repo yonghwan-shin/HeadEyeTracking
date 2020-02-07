@@ -68,7 +68,7 @@ class ZMQ_listener(threading.Thread):
 		self.name = name
 		self.args = args
 		self.stored_data = []
-
+		self.timestapmes = []
 	def run(self):
 		# actual part
 		print(threading.currentThread().getName(), " is started")
@@ -88,9 +88,11 @@ class ZMQ_listener(threading.Thread):
 				f5 = str(message['confidence'])
 				global string2send
 				self.string2send = [f1,f2,f3,f4,f5]
-				if self.recording:
 
-					self.stored_data.append(message)
+				if self.recording:
+					self.stored_data.append([str(time.time()),str(message)])
+
+					# self.timestapmes.append(time.time())
 					# savefile_ZMQ(self, self.string2send)
 
 			except KeyboardInterrupt:
@@ -103,10 +105,10 @@ class ZMQ_listener(threading.Thread):
 		full_name = 'EYE_' + self.filename + '.csv'
 		file_path = os.path.join(self.DATA_ROOT,str(self.sub_num),full_name)
 
-		if os.path.isfile(file_path):
-			f = open(file_path,'a')
-		else:
-			f= open(file_path,'w')
+		# if os.path.isfile(file_path):
+		# 	f = open(file_path,'a')
+		# else:
+		f= open(file_path,'w')
 
 		wr = csv.writer(f, lineterminator='\n')
 		wr.writerow(['eye_packets',len(self.stored_data)])
@@ -119,9 +121,9 @@ class ZMQ_listener(threading.Thread):
 	def End_trial(self):
 		self.recording = False
 		self.save_data()
-		self.stored_data.clear()	#just to be sure
+		# self.stored_data.clear()	#just to be sure
 	def Start_trial(self):
-		self.stored_data.clear()	#just to be sure
+		# self.stored_data.clear()	#just to be sure
 		self.recording = True
 	def Set_filename(self,_filename):
 		self.filename = _filename

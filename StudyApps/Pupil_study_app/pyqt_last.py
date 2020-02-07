@@ -154,6 +154,7 @@ class MyAppThread(QThread):
         checkDirectory(DATA_ROOT)
         global holodata
         holodata = ["#START"]
+        # holodata=[]
 
     def __del__(self):
         print(".... end thread.....")
@@ -183,16 +184,16 @@ class MyAppThread(QThread):
             curr_file = current_add(filename.pop())
             zmq_thread.Set_filename(curr_file)
             imu_thread.Set_filename(curr_file)
-            print('remain trials:'. len(filename))
+            print('remain trials:', len(filename))
             self.Holo_encoder("#NEXT_" + curr_file)
             holodata.append("#INIT")
-            global trial_start_time
-            trial_start_time = time.time()
+
 
     def Holo_TRIAL(self):
         if (holodata[-1] == "#TRIAL"):
             self.recording.emit("Recording")
-
+            global trial_start_time
+            trial_start_time = time.time()
             imu_thread.Start_trial()
             zmq_thread.Start_trial()
 
@@ -213,7 +214,7 @@ class MyAppThread(QThread):
                 holodata.append('FINISH')
             else:
                 holodata.append("#INIT")
-            print('trial takes', trial_start_time -time.time() , 'second')
+            print('trial takes', time.time()-trial_start_time , 'second')
 
     def run(self):
         while self.working:

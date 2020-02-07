@@ -11,7 +11,7 @@ connected = False
 
 arduino = serial.Serial()
 
-dataline = [0.0,0.0,0.0,0.0,0.0]
+dataline = [0.0,0.0,0.0,0.0,0.0,0.0]
 
 IMU_DATA_ROOT =""
 IMU_SUBJECT=0
@@ -25,8 +25,6 @@ def connectArduino():
 		# print(port.device)
 		if port.device.startswith('/dev/cu.usbmodem'):
 			return serial.Serial(port.device, 9600);
-		else:
-			return None
 
 
 def read_from_arduino(port):
@@ -85,7 +83,8 @@ class IMU_listener(threading.Thread):
 		self.filename = ""
 		self.recording = False
 		self.stored_data = []
-
+		self.buffer = ''
+		self.timer=0
 	def run(self):
 		print(threading.current_thread().getName(), 'is started')
 		IMU = connectArduino()
@@ -94,13 +93,14 @@ class IMU_listener(threading.Thread):
 			try:
 				if IMU == None:
 					IMU = connectArduino()
-				res = IMU.readline()
-				global dataline
-				dataline = res.decode()[:len(res) - 3].split(',')
 
-				if self.recording:
-					self.stored_data.append(dataline)
-					# savefile_arduino(dataline,self.filename)
+				# while IMU.in_waiting >0:
+				self.buffer += IMU.read(IMU.in_waiting).decode()
+				while '\n' in self.buffer:
+					data, self.buffer = self.buffer.split('\n',1)
+					if self.recording:
+						dataline = data[:-3].split(',')
+						self.stored_data.append([str(time.time())] + dataline)
 
 			except:
 				if not IMU == None:		# Handle disconnection error
@@ -108,20 +108,22 @@ class IMU_listener(threading.Thread):
 					IMU = None
 					print('disconnected')
 					dataline = [0.0, 0.0, 0.0, 0.0, 0.0]
-				time.sleep(0.5)
+				# print('something other error')
+				# time.sleep(0.5)
 
 	def save_data(self):
 		full_name = 'IMU_' + self.filename + '.csv'
 		file_path = os.path.join(self.DATA_ROOT,str(self.sub_num),full_name)
 
-		if os.path.isfile(file_path):
-			f = open(file_path,'a')
-		else:
-			f = open(file_path,'w')
+		# if os.path.isfile(file_path):
+		# 	f = open(file_path,'a')
+		# else:
+		f = open(file_path,'w')
 		wr = csv.writer(f, lineterminator='\n')
 		wr.writerow(['imu_packets',len(self.stored_data)])
-		wr.writerow(["quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy", "IMUtimestamp"])
+		wr.writerow(["IMUtimestamp","quatI", "quatJ", "quatK", "quatReal", "quatRadianAccuracy"])
 		for line in self.stored_data:
+			# print(line)
 			wr.writerow(line)
 		f.close()
 		print('saved', full_name, ' total', len(self.stored_data), 'imu packets')
@@ -129,10 +131,12 @@ class IMU_listener(threading.Thread):
 	def End_trial(self):
 		self.recording = False
 		self.save_data()
-		self.stored_data.clear()	#just to be sure
+		# print('trial takes' , time.time() - self.timer, 'seconds')
+		# self.stored_data.clear()	#just to be sure
 	def Start_trial(self):
-		self.stored_data.clear()	#just to be sure
+		# self.stored_data.clear()	#just to be sure
 		self.recording = True
+		self.timer=time.time()
 	def Set_filename(self,_filename):
 		self.filename = _filename
 	def Set_sub_num(self,_sub_num):
