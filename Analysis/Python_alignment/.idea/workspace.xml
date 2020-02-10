@@ -2,12 +2,19 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6d4f6691-81e8-4e0a-9770-a95cc1b3b79b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/SecondAnalysis.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/dictionaries/shin_yonghwan.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SecondAnalysis/Analysis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Usingpandas.py" beforeDir="false" afterPath="$PROJECT_DIR$/Usingpandas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/refined_data_handling.py" beforeDir="false" afterPath="$PROJECT_DIR$/refined_data_handling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Datasets/Surveys/NASA-TLX_VOR.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../Datasets/Surveys/NASA-TLX_VOR.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../StudyApps/Pupil_study_app/Naming.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../StudyApps/Pupil_study_app/Naming.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../StudyApps/Pupil_study_app/pupil_experiment.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../StudyApps/Pupil_study_app/savefile.py" beforeDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -44,8 +51,14 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="ToolWindowRun.ShowToolbar" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -53,18 +66,6 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="Errors" />
-  </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
   </component>
   <component name="RunManager" selected="Python.Usingpandas">
     <configuration name="Usingpandas" type="PythonConfigurationType" factoryName="Python" temporary="true">
@@ -174,6 +175,7 @@
       <workItem from="1574669133850" duration="21000" />
       <workItem from="1575007076336" duration="26182000" />
       <workItem from="1577426016000" duration="438000" />
+      <workItem from="1581309263958" duration="5556000" />
     </task>
     <servers />
   </component>

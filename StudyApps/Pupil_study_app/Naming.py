@@ -48,7 +48,7 @@ def make_experiment_array(sub_num):
             random.shuffle(targets)
             for c in range(len(targets)):
                 sendstring = make_file_name(target=targets[c], env=EPblock[block][1:2], pos=EPblock[block][4:5],
-                                            block=block, c=c, sub_num=sub_num)
+                                            block=repetition, c=c, sub_num=sub_num)
                 total_array.append(sendstring)
         # end of one block
         # send "BREAK"
