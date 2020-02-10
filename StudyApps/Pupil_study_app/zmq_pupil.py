@@ -53,22 +53,22 @@ def ZMQ_connect():
 class ZMQ_listener(threading.Thread):
 
 	def __del__(self):
-		if threading.Thread.isAlive(self):
+		if threading.Thread.is_alive(self):
 			self.join()
 		print("ZMQ thread dead")
 
 	def __init__(self, args, name="Pupil Listener"):
 		threading.Thread.__init__(self)
 		threading.Thread.daemon = True
-		self.ZMQ_DATA_ROOT = ""
-		self.ZMQ_SUBJECT = 0
-		self.ZMQ_CURRFILE = ""
-		self.ZMQ_RECORDING = ""
+		self.DATA_ROOT =""
+		self.sub_num = 0
+		self.filename = ""
+		self.recording = False
 		self.string2send = ['NaN','NaN','NaN','NaN','NaN']
 		self.name = name
 		self.args = args
-
-
+		self.stored_data = []
+		self.timestapmes = []
 	def run(self):
 		# actual part
 		print(threading.currentThread().getName(), " is started")
@@ -88,21 +88,47 @@ class ZMQ_listener(threading.Thread):
 				f5 = str(message['confidence'])
 				global string2send
 				self.string2send = [f1,f2,f3,f4,f5]
-				if self.ZMQ_RECORDING == "RECORD":
-					savefile_ZMQ(self, self.string2send)
 
-				# print(self.string2send)
-				# send_message(bytes(string2send,'utf-8'))
+				if self.recording:
+					self.stored_data.append([str(time.time()),str(message)])
 
-				# print(message['norm_pos'],f3)
-				# print("------------------------")
+					# self.timestapmes.append(time.time())
+					# savefile_ZMQ(self, self.string2send)
+
 			except KeyboardInterrupt:
 				break
 		sleep(0.1)
 		self.join()
-		print('end')
 		return
 
+	def save_data(self):
+		full_name = 'EYE_' + self.filename + '.csv'
+		file_path = os.path.join(self.DATA_ROOT,str(self.sub_num),full_name)
+
+		# if os.path.isfile(file_path):
+		# 	f = open(file_path,'a')
+		# else:
+		f= open(file_path,'w')
+
+		wr = csv.writer(f, lineterminator='\n')
+		wr.writerow(['eye_packets',len(self.stored_data)])
+		wr.writerow(["norm_X", "norm_Y", "phi", "theta", "confidence", "timestamp"])
+		for line in self.stored_data:
+			wr.writerow(line)
+		f.close()
+		print('saved', full_name, ' total', len(self.stored_data), 'eye packets')
+		self.stored_data.clear()
+	def End_trial(self):
+		self.recording = False
+		self.save_data()
+		# self.stored_data.clear()	#just to be sure
+	def Start_trial(self):
+		# self.stored_data.clear()	#just to be sure
+		self.recording = True
+	def Set_filename(self,_filename):
+		self.filename = _filename
+	def Set_sub_num(self,_sub_num):
+		self.sub_num = _sub_num
 
 def ZMQ_listener_main():
 	zmq_receiver_name = "ZMQ_listener"
@@ -122,12 +148,10 @@ def savefile_ZMQ(self, data):
 	else:  # 초기 헤더값 설정
 		f = open(self.ZMQ_DATA_ROOT + "/" + self.ZMQ_SUBJECT + "/" + "EYE_" + self.ZMQ_CURRFILE + ".csv", 'w')
 		wr = csv.writer(f, lineterminator='\n')
-		# trial_start_time = timeit.default_timer()
 		wr.writerow(["zmq_X", "zmq_Y", "phi", "theta", "zmq_confidence", "ZMQtimestamp"])
+
 
 
 
 if __name__ == "__main__":
 	ZMQ_listener_main()
-
-# print(message)
