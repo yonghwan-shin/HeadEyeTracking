@@ -40,7 +40,8 @@ def connectHolo(): #init
 def Holo_data_receive():
     signal = Holo.read(Holo.in_waiting)
     if signal.decode("utf-8") != False:
-        holodata.append(signal.decode("utf-8"))
+        if signal.decode("utf-8").startswith('#'):
+            holodata.append(signal.decode("utf-8"))
         print('received :', signal.decode("utf-8"))
 
 def Holo_START():
