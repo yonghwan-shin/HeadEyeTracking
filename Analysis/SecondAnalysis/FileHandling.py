@@ -2,7 +2,7 @@ import os.path
 from pathlib import Path
 import pprint
 import pandas as pd
-import demjson
+
 
 pd.set_option('display.max_columns', 30)
 
@@ -68,32 +68,17 @@ def get_one_subject_files(_sub_num):
 
 def file_as_pandas(_file_path):
     if _file_path.exists() and _file_path.is_file():
-        # with _file_path.open() as f:
         dataframe = pd.read_csv(_file_path, index_col=False, header=1)
-        # print(dataframe.columns.values)
-
         return dataframe
 
 
-def change_eye_dataframe(_dataframe: pd.DataFrame):
-    # for row in _dataframe.itertuples():
-    #     python_timestamp = row[1]
-    #     pupil_row = row[2]
-    #     json_dict = demjson.decode(pupil_row)
-    #     print(json_dict['timestamp'], json_dict['norm_pos'], json_dict['phi'], json_dict['theta'])
-    #     output.append({'python_timestamp': python_timestamp, 'timestamp': json_dict['timestamp'],
-    #                    'norm_pos_x': json_dict['norm_pos'][0], 'norm_pos_y': json_dict['norm_pos'][1],
-    #                    'phi': json_dict['phi'], 'theta': json_dict['theta']}, ignore_index=True)
-    _dataframe.drop(_dataframe.columns[2:],axis=1,inplace=True)
-    _dataframe.columns = ['python_timestamp','pupil_data']
-    return _dataframe
+
+
 
 def main():
     [imu_file_list, eye_file_list, hololens_file_list] = get_one_subject_files(6)
     # pprint.pprint(hololens_file_list)
     ss = get_file_by_info(hololens_file_list, [0, 'U', 'S', 1])
-
-    pass
 
 
 if __name__ == "__main__":
