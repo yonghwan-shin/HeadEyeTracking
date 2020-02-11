@@ -5,7 +5,7 @@ targets = [0, 1, 2, 3, 4, 5, 6, 7]
 # targets = [0]
 env = ['EU', 'EW']
 pos = ['PS', 'PW']
-rep = 5
+rep = 1
 # rep = 1
 
 def EP_update(sub_number):
@@ -59,6 +59,7 @@ def make_experiment_array(sub_num):
         else:
             total_array.append("BREAK")
     total_array.reverse()
+    print(total_array)
     return total_array
 
 def current_add(title):
