@@ -42,7 +42,7 @@ void setup()
   }
 
   Wire.setClock(400000); //Increase I2C data rate to 400kHz
-  //Wire.setClock  (1000000); //Increase I2C data rate to 400kHz
+//  Wire.setClock  (1000000); //Increase I2C data rate to 400kHz
 
   myIMU.enableRotationVector(5); //Send data update every 50ms
 

@@ -2,11 +2,9 @@ import random
 import time
 
 targets = [0, 1, 2, 3, 4, 5, 6, 7]
-# targets = [0]
 env = ['EU', 'EW']
 pos = ['PS', 'PW']
-rep = 1
-# rep = 1
+rep = 5
 
 def EP_update(sub_number):
     EPblock = []
@@ -59,8 +57,14 @@ def make_experiment_array(sub_num):
         else:
             total_array.append("BREAK")
     total_array.reverse()
+
+
+    # for _ in range(120):
+    #     total_array.pop()
     print(total_array)
     return total_array
+
+
 
 def current_add(title):
     t = time.localtime()

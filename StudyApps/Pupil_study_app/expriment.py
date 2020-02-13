@@ -14,40 +14,67 @@ DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
 zmq_thread.DATA_ROOT = DATA_ROOT
 imu_thread.DATA_ROOT = DATA_ROOT
 
-sub = 0
+sub = 202
 dataline = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+#
 holodata = ['#START']
+restart = False
+
+# restart_number = 8
+# restart = True
+# holodata = ['#START','#INIT']
+
+
 filename = []
+global timer
 timer = 0
+global holo_buffer
+holo_buffer = []
+
+
 # curr_file = []
 
-def threadcontrol(): #init
+def threadcontrol():  # init
     zmq_thread.start()
     imu_thread.start()
 
-def checkDirectory( path):
+
+def checkDirectory(path):
     if os.path.exists(path):
         pass
     else:
         os.mkdir(path)
 
-def connectHolo(): #init
+
+def connectHolo():  # init
     ports = serial.tools.list_ports.comports()
     for port in ports:
         if port.device.startswith('/dev/cu.Bluetooth'):
             return serial.Serial(port.device, 115200)
 
-def Holo_data_receive():
-    signal = Holo.read(Holo.in_waiting)
-    if signal.decode("utf-8") != False:
-        if signal.decode("utf-8").startswith('#'):
-            holodata.append(signal.decode("utf-8"))
-        print('received :', signal.decode("utf-8"))
+
+def Holo_data_receive(buffer):
+    buffer += Holo.read(Holo.in_waiting).decode()
+    while '\n' in buffer:
+        data, buffer = buffer.split('\n', 1)
+        if data.startswith('#'):
+            holodata.append(data)
+        print('received:', data)
+
+    # signal = Holo.read(Holo.in_waiting)
+    #
+    # if signal.decode("utf-8") != False:
+    #     if signal.decode("utf-8").startswith('#'):
+    #         holodata.append(signal.decode("utf-8"))
+    #     print('received :', signal.decode("utf-8"))
+
 
 def Holo_START():
     if (holodata[-1] == "#START"):
         Holo_encoder("#SUB" + str(sub))
         sleep(2)
+
 
 def Holo_INIT():
     if ((holodata[-1] == "#INIT") and (holodata[-2] != "#INIT")):
@@ -59,18 +86,23 @@ def Holo_INIT():
         Holo_encoder("#NEXT_" + curr_file)
         holodata.append("#INIT")
 
+
 def Holo_TRIAL():
-    if (holodata[-1] == "#TRIAL"):
+    if (holodata[-1] == "#TRIAL") and (holodata[-2] != "#TRIAL"):
         imu_thread.Start_trial()
         zmq_thread.Start_trial()
         global timer
-        timer = timeit.default_timer()
+        timer = time.time()
+        holodata.append("#TRIAL")
+
 
 def Holo_END():
     if (holodata[-1] == "#END"):
+        global timer
         imu_thread.End_trial()
         zmq_thread.End_trial()
-        print('trial takes', timeit.default_timer() - timer, 'seconds')
+        now = time.time()
+        print('trial takes', now - timer, 'seconds')
         if (filename[-1] == 'BREAK' and (holodata[-2] != "BREAK")):
             Holo_encoder("#BREAK")
             filename.pop()
@@ -82,19 +114,24 @@ def Holo_END():
         else:
             holodata.append("#INIT")
 
+
 def sub_singal():  # init
     imu_thread.Set_sub_num(str(sub))
     zmq_thread.Set_sub_num(str(sub))
     print('subject number was set as', str(sub))
     global filename
     filename = make_experiment_array(int(sub))
-    checkDirectory(DATA_ROOT + "/" + str(sub))
 
+    if restart:
+        for _ in range(restart_number):
+            filename.pop()
+    checkDirectory(DATA_ROOT + "/" + str(sub))
 
 
 def Holo_encoder(string):
     Holo.write(string.encode("UTF-8"))
     print("write to hololens : ", string.encode("UTF-8"))
+
 
 def setup():
     #     connect hololens
@@ -107,11 +144,18 @@ def setup():
     checkDirectory(DATA_ROOT)
     sub_singal()
 
+
 def loop():
+    global holo_buffer
+    # global Holo
     while True:
-        # print('Arduino：{}\n'.format(Serial_communication.dataline) + '\n' + 'Pupil : {}\n'.format(zmq_thread.string2send))
         if Holo.in_waiting > 0:
-            Holo_data_receive()
+            holo_buffer.append(Holo.read(Holo.in_waiting).decode('utf-8'))
+            for component in holo_buffer:
+                if component.startswith('#'):
+                    holodata.append(component)
+                print(f'received: {component}')
+            holo_buffer = []
         # Holo_START(): INIT -> curr_file send
         Holo_START()
         Holo_INIT()
@@ -121,10 +165,11 @@ def loop():
         Holo_END()
 
 
-def main():
 
+def main():
     setup()
     loop()
+
 
 if __name__ == "__main__":
     main()
