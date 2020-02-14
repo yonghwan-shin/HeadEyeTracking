@@ -14,14 +14,14 @@ DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
 zmq_thread.DATA_ROOT = DATA_ROOT
 imu_thread.DATA_ROOT = DATA_ROOT
 
-sub = 202
+sub = 204
 dataline = [0.0, 0.0, 0.0, 0.0, 0.0]
 
 #
 holodata = ['#START']
 restart = False
 
-# restart_number = 8
+# restart_number = 49
 # restart = True
 # holodata = ['#START','#INIT']
 

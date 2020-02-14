@@ -59,7 +59,7 @@ def make_experiment_array(sub_num):
     total_array.reverse()
 
 
-    # for _ in range(120):
+    # for _ in range(49):
     #     total_array.pop()
     print(total_array)
     return total_array
