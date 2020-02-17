@@ -3,18 +3,19 @@ from pathlib import Path
 import pprint
 import pandas as pd
 
-
 pd.set_option('display.max_columns', 30)
 
-dataset_folder_name = "2ndData_pilot"
+dataset_folder_name = "2ndData"
 
 PROJECT_ROOT = Path.cwd()
 DATA_ROOT = PROJECT_ROOT.parent.parent / 'Datasets' / dataset_folder_name
+print('DATA ROOT:', DATA_ROOT)
 pp = pprint.PrettyPrinter(indent=4)
 
 
 # example: EYE_T0_EU_PW_B2_C7_S7_0206164759.csv
 def get_file_by_info(_file_list, _info):
+    print('getting', make_trial_info(_info))
     for file in _file_list:
         if make_trial_info(_info) in file.name:
             return file
@@ -50,7 +51,7 @@ def get_trial_info(_file_name):
 
 def get_one_subject_files(_sub_num):
     subject_folder = DATA_ROOT / str(_sub_num)
-    hololens_folder = DATA_ROOT / 'HololensData' / ('compressed_sub' + str(_sub_num))
+    hololens_folder = DATA_ROOT / 'hololens_data' / ('compressed_sub' + str(_sub_num))
     eye_file_list = []
     imu_file_list = []
     hololens_file_list = []
@@ -70,9 +71,6 @@ def file_as_pandas(_file_path):
     if _file_path.exists() and _file_path.is_file():
         dataframe = pd.read_csv(_file_path, index_col=False, header=1)
         return dataframe
-
-
-
 
 
 def main():
