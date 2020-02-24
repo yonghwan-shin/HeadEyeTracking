@@ -20,5 +20,4 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
         eye_list.append(json_dict)
     output = pd.DataFrame(eye_list)
     output = output[output.confidence > 0.6]
-    print(output)
     return output
