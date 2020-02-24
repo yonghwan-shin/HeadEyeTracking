@@ -59,8 +59,9 @@ def make_experiment_array(sub_num):
     total_array.reverse()
 
 
-    # for _ in range(49):
+    # for _ in range(123):
     #     total_array.pop()
+    print(len(total_array))
     print(total_array)
     return total_array
 

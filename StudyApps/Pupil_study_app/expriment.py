@@ -14,7 +14,7 @@ DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
 zmq_thread.DATA_ROOT = DATA_ROOT
 imu_thread.DATA_ROOT = DATA_ROOT
 
-sub = 204
+sub = 211
 dataline = [0.0, 0.0, 0.0, 0.0, 0.0]
 
 #
