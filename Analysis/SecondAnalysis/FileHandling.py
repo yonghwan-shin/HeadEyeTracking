@@ -15,9 +15,9 @@ pp = pprint.PrettyPrinter(indent=4)
 
 # example: EYE_T0_EU_PW_B2_C7_S7_0206164759.csv
 def get_file_by_info(_file_list, _info):
-    print('getting', make_trial_info(_info))
     for file in _file_list:
         if make_trial_info(_info) in file.name:
+            # print('getting', make_trial_info(_info), file.name)
             return file
     return None
 
