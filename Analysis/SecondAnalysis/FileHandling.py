@@ -49,13 +49,16 @@ def get_trial_info(_file_name):
     return output
 
 
-def get_one_subject_files(_sub_num):
+def get_one_subject_files(_sub_num, refined=False):
     subject_folder = DATA_ROOT / str(_sub_num)
+    refined_eye_data_folder = DATA_ROOT / 'refined_eye_data'
     hololens_folder = DATA_ROOT / 'hololens_data' / ('compressed_sub' + str(_sub_num))
     eye_file_list = []
     imu_file_list = []
     hololens_file_list = []
-    eye_files = subject_folder.rglob('EYE*.csv')
+
+    eye_files = subject_folder.rglob('EYE*.csv') if refined is False else refined_eye_data_folder.rglob(
+        '*S' + str(_sub_num) + '*.csv')
     imu_files = subject_folder.rglob('IMU*.csv')
     hololens_files = hololens_folder.rglob('*.csv')
     for file in eye_files:
@@ -67,10 +70,16 @@ def get_one_subject_files(_sub_num):
     return [imu_file_list, eye_file_list, hololens_file_list]
 
 
-def file_as_pandas(_file_path):
-    if _file_path.exists() and _file_path.is_file():
-        dataframe = pd.read_csv(_file_path, index_col=False, header=1)
-        return dataframe
+def file_as_pandas(_file_path, refined=False):
+    try:
+        if _file_path.exists() and _file_path.is_file():
+            dataframe = pd.read_csv(_file_path, index_col=False, header=1) if refined is False else pd.read_csv(
+                _file_path,
+                index_col=False)
+
+            return dataframe
+    except:
+        raise ValueError('error in reading csv file', _file_path)
 
 
 def main():
