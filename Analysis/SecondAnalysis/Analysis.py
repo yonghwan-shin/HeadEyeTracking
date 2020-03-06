@@ -6,17 +6,17 @@ import itertools
 from scipy import interpolate
 from scipy.signal import find_peaks
 import numpy as np
-import torch
+# import torch
 import statistics
 import signal_detection
 
 # subjects = range(201, 216)
-subjects = range(201, 212)
+subjects = range(204, 212)
 # subjects=range(201,202)
 targets = range(8)
 envs = ['U', 'W']
-poss = ['S', 'W']
-# poss = ['W']
+# poss = ['S', 'W']
+poss = ['W']
 blocks = range(5)
 
 
@@ -347,25 +347,27 @@ def manual_filter():
                 df_norm_pos = df_eye['norm_pos']
                 norm_pos_x = []
                 norm_pos_y = []
-                for row in df_norm_pos:
-                    output = row.split('[')[1]
-                    output = output.split(']')[0]
-                    output = output.split(',')
-                    row_x = output[0]
-                    row_y = output[1]
-                    if 'Decimal' in output[0]:
-                        row_x = output[0].split('(')[1]
-                        row_x = row_x.split(')')[0]
-                        row_x = ''.join(c for c in row_x if c.isdigit() or c == '.')
-
-                    if 'Decimal' in output[1]:
-                        row_y = output[1].split('(')[1]
-                        row_y = row_y.split(')')[0]
-                        row_y = ''.join(c for c in row_y if c.isdigit() or c == '.')
-                    norm_pos_x.append(float(row_x))
-                    norm_pos_y.append(float(row_y))
-                df_eye_x = pd.Series(norm_pos_x)
-                df_eye_y = pd.Series(norm_pos_y)
+                # for row in df_norm_pos:
+                #     output = row.split('[')[1]
+                #     output = output.split(']')[0]
+                #     output = output.split(',')
+                #     row_x = output[0]
+                #     row_y = output[1]
+                #     if 'Decimal' in output[0]:
+                #         row_x = output[0].split('(')[1]
+                #         row_x = row_x.split(')')[0]
+                #         row_x = ''.join(c for c in row_x if c.isdigit() or c == '.')
+                #
+                #     if 'Decimal' in output[1]:
+                #         row_y = output[1].split('(')[1]
+                #         row_y = row_y.split(')')[0]
+                #         row_y = ''.join(c for c in row_y if c.isdigit() or c == '.')
+                #     norm_pos_x.append(float(row_x))
+                #     norm_pos_y.append(float(row_y))
+                # df_eye_x = pd.Series(norm_pos_x)
+                # df_eye_y = pd.Series(norm_pos_y)
+                df_eye_x = pd.Series(list(map(float, df_eye['norm_x'])))
+                df_eye_y = pd.Series(list(map(float, df_eye['norm_y'])))
 
                 filtered_phi, filtered_the = eye_one_euro_filtering(df_eye_phi, df_eye_the)
                 filtered_x, filtered_y = eye_one_euro_filtering(df_eye_x, df_eye_y)
@@ -422,8 +424,12 @@ def manual_filter():
                 # ax2.plot(peaks,eyeX_raw[peaks],'x')
                 ax1.plot(imuZ)
                 ax2.plot(imuX)
-                ax3.plot(eyePhi_raw)
-                ax4.plot(eyeThe_raw)
+                ax3.plot(eyeX_raw)
+                ax4.plot(eyeY_raw)
+                # ax1.plot(eyeX)
+                # ax2.plot(eyeX_raw)
+                # ax3.plot(eyeY)
+                # ax4.plot(eyeY_raw)
 
                 plt.show()
             except ValueError as err:
@@ -466,7 +472,7 @@ def main():
 
 
 if __name__ == "__main__":
-    create_eye_csv()
+    manual_filter()
 # from FileHandling import *
 # from DataManipulation import*
 # import matplotlib.pyplot as plt
