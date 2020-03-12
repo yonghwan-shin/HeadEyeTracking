@@ -8,18 +8,24 @@ from scipy.signal import find_peaks
 import numpy as np
 # import torch
 import statistics
+import vg
 import signal_detection
 
 # subjects = range(201, 216)
-subjects = range(204, 212)
+subjects = range(201, 212)
 # subjects=range(201,202)
 targets = range(8)
-envs = ['U', 'W']
+# envs = ['U', 'W']
+envs = ['U']
 # poss = ['S', 'W']
 poss = ['W']
 blocks = range(5)
 
 
+# eye columns
+# circle_3d	confidence	timestamp	diameter_3d	ellipse	location	diameter	sphere	projected_sphere	model_confidence	model_id	model_birth_timestamp	theta	phi	norm_pos	topic	id	method	norm_x	norm_y
+# holo columns
+# Timestamp	HeadPositionX	HeadPositionY	HeadPositionZ	HeadRotationX	HeadRotationY	HeadRotationZ	HeadForwardX	HeadForwardY	HeadForwardZ	TargetPositionX	TargetPositionY	TargetPositionZ	TargetEntered	TargetAngularDistance
 def create_eye_csv():
     # To reduce parsing json time...
     for subject in subjects:
@@ -125,10 +131,10 @@ def summary_holo_data():
         WS = df_WS.mean()
         WS['env'] = 'W'
         WS['pos'] = 'S'
-        df_output = df_output.append(WW,ignore_index=True)
-        df_output = df_output.append(UW,ignore_index=True)
-        df_output = df_output.append(US,ignore_index=True)
-        df_output = df_output.append(WS,ignore_index=True)
+        df_output = df_output.append(WW, ignore_index=True)
+        df_output = df_output.append(UW, ignore_index=True)
+        df_output = df_output.append(US, ignore_index=True)
+        df_output = df_output.append(WS, ignore_index=True)
 
         # df_output.append(df_WW.mean(),ignore_index=True)
         # df_WW = df_holo[(df_holo['env'] == 'W') & (df_holo['pos'] == 'W')]
@@ -324,116 +330,161 @@ def manual_filter():
         for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
             current_info = [target, env, pos, block]
             try:
+                df_imu, df_eye, df_holo = bring_dataframe(
+                    imu_file_list, eye_file_list, hololens_file_list, current_info)
 
-                imu_data = get_file_by_info(imu_file_list, current_info)
-                eye_data = get_file_by_info(eye_file_list, current_info)
-                hololens_data = get_file_by_info(hololens_file_list, current_info)
-                df_imu = manipulate_imu(file_as_pandas(imu_data))
-                df_eye = file_as_pandas(eye_data, refined=True)
-                df_holo = file_as_pandas(hololens_data)
-                check_imu_file(df_imu, current_info)
-                check_refined_eye_file(df_eye, current_info)
-                check_holo_file(df_holo, current_info)
+                # df_eye = centralise_dataframes(df_eye,'theta','phi','norm_x','norm_y')
 
-                timestamp_imu = df_imu['IMUtimestamp'] - df_imu['IMUtimestamp'][0]
-                timestamp_holo = df_holo['Timestamp'] - df_holo['Timestamp'][0]
-                timestamp_eye = df_eye['timestamp'] - df_eye['timestamp'][0]
+                timestamps = {'imu': df_imu['IMUtimestamp'], 'eye': df_eye['timestamp'], 'holo': df_holo['Timestamp']}
+                df_eye_conf = df_eye[df_eye['confidence'] > 0.6]
+                df_eye_low_conf = df_eye[df_eye['confidence'] <= 0.6]
+                timestamps['eye_conf'] = df_eye_conf['timestamp']
 
-                # df_eye = df_eye[df_eye['confidence']>0.6]
-
-                df_eye_phi = pd.Series(list(map(float, df_eye['phi'])))
-                df_eye_the = pd.Series(list(map(float, df_eye['theta'])))
-
-                df_norm_pos = df_eye['norm_pos']
-                norm_pos_x = []
-                norm_pos_y = []
-                # for row in df_norm_pos:
-                #     output = row.split('[')[1]
-                #     output = output.split(']')[0]
-                #     output = output.split(',')
-                #     row_x = output[0]
-                #     row_y = output[1]
-                #     if 'Decimal' in output[0]:
-                #         row_x = output[0].split('(')[1]
-                #         row_x = row_x.split(')')[0]
-                #         row_x = ''.join(c for c in row_x if c.isdigit() or c == '.')
-                #
-                #     if 'Decimal' in output[1]:
-                #         row_y = output[1].split('(')[1]
-                #         row_y = row_y.split(')')[0]
-                #         row_y = ''.join(c for c in row_y if c.isdigit() or c == '.')
-                #     norm_pos_x.append(float(row_x))
-                #     norm_pos_y.append(float(row_y))
-                # df_eye_x = pd.Series(norm_pos_x)
-                # df_eye_y = pd.Series(norm_pos_y)
-                df_eye_x = pd.Series(list(map(float, df_eye['norm_x'])))
-                df_eye_y = pd.Series(list(map(float, df_eye['norm_y'])))
+                df_eye_phi = pd.Series(list(map(float, df_eye_conf['phi'])))
+                df_eye_the = pd.Series(list(map(float, df_eye_conf['theta'])))
+                df_eye_x = pd.Series(list(map(float, df_eye_conf['norm_x'])))
+                df_eye_y = pd.Series(list(map(float, df_eye_conf['norm_y'])))
 
                 filtered_phi, filtered_the = eye_one_euro_filtering(df_eye_phi, df_eye_the)
                 filtered_x, filtered_y = eye_one_euro_filtering(df_eye_x, df_eye_y)
+                rs = []
+                thetas = []
+                phis = []
+                for index, row in df_holo.iterrows():
+                    x = row['TargetPositionX'] - row['HeadPositionX']
+                    y = row['TargetPositionY'] - row['HeadPositionY']
+                    z = row['TargetPositionZ'] - row['HeadPositionZ']
+                    [r, theta, phi] = asSpherical([x, z, y])
+                    rs.append(r)
+                    thetas.append(90 - theta)
+                    phis.append(90 - phi)
 
-                interpolation_imu_z = interpolate.interp1d(timestamp_imu, df_imu['rotationZ'])
-                interpolation_imu_y = interpolate.interp1d(timestamp_imu, df_imu['rotationY'])
-                interpolation_imu_x = interpolate.interp1d(timestamp_imu, df_imu['rotationX'])
-                interpolation_eye_phi = interpolate.interp1d(timestamp_eye, filtered_phi)
-                interpolation_eye_the = interpolate.interp1d(timestamp_eye, filtered_the)
-                interpolation_eye_x = interpolate.interp1d(timestamp_eye, filtered_x)
-                interpolation_eye_y = interpolate.interp1d(timestamp_eye, filtered_y)
-                interpolation_eye_phi_raw = interpolate.interp1d(timestamp_eye, df_eye_phi)
-                interpolation_eye_the_raw = interpolate.interp1d(timestamp_eye, df_eye_the)
-                interpolation_eye_x_raw = interpolate.interp1d(timestamp_eye, df_eye_x)
-                interpolation_eye_y_raw = interpolate.interp1d(timestamp_eye, df_eye_y)
+                df_holo['R'] = rs
+                df_holo['Theta'] = thetas
+                df_holo['Phi'] = phis
 
-                interpolate_normalized_imu_Z = interpolate.interp1d(timestamp_imu, df_imu['rotationZ'])
-                interpolate_normalized_pupil_Y = interpolate.interp1d(timestamp_eye, filtered_x)
-                ximu = np.arange(2, 6.4, 0.005)
-                xeye = np.arange(2, 6.4, 0.005)
+                # df_target_position_x = df_holo['TargetPositionX'] - df_holo['HeadPositionX']
+                # df_target_position_y = df_holo['TargetPositionY'] - df_holo['HeadPositionY']
+                # df_target_position_z = df_holo['TargetPositionZ'] - df_holo['HeadPositionZ']
 
-                imuZ = interpolation_imu_z(ximu)
-                imuY = interpolation_imu_y(ximu)
-                imuX = interpolation_imu_x(ximu)
+                [interpolation_imu_z, interpolation_imu_y, interpolation_imu_x] = get_interpolation_function(
+                    timestamps['imu'], df_imu['rotationZ'], df_imu['rotationY'], df_imu['rotationX'])
+                [interpolation_eye_phi, interpolation_eye_the, interpolation_eye_x,
+                 interpolation_eye_y] = get_interpolation_function(
+                    timestamps['eye_conf'], filtered_phi, filtered_the, filtered_x, filtered_y
+                )
+                [interpolation_holo_x, interpolation_holo_y, interpolation_holo_z,
+                 interpolation_holo_theta, interpolation_holo_phi] = get_interpolation_function(
+                    timestamps['holo'], df_holo['HeadRotationX'], df_holo['HeadRotationY'], df_holo['HeadRotationZ'],
+                    df_holo['Theta'], df_holo['Phi']
+                )
+                # interpolation_eye_phi_raw = interpolate.interp1d(timestamps['eye_conf'], df_eye_phi)
+                # interpolation_eye_the_raw = interpolate.interp1d(timestamps['eye_conf'], df_eye_the)
+                # interpolation_eye_x_raw = interpolate.interp1d(timestamps['eye_conf'], df_eye_x)
+                # interpolation_eye_y_raw = interpolate.interp1d(timestamps['eye_conf'], df_eye_y)
 
-                eyeX_raw = interpolation_eye_x_raw(xeye)
-                eyeY_raw = interpolation_eye_y_raw(xeye)
-                eyePhi_raw = interpolation_eye_phi_raw(xeye)
-                eyeThe_raw = interpolation_eye_the_raw(xeye)
-                eyeX = interpolation_eye_x(xeye)
-                eyeY = interpolation_eye_y(xeye)
-                eyePhi = interpolation_eye_phi(xeye)
-                eyeThe = interpolation_eye_the(xeye)
+                x_imu = make_x_axis(timestamps['imu'], interval=0.005)
+                x_eye = make_x_axis(timestamps['eye_conf'], interval=0.005)
+                x_holo = make_x_axis(timestamps['holo'], interval=0.005)
 
-                # sd = signal_detection.real_time_peak_detection(eyeX_raw[0:2],lag=1,threshold=10,influence=0.5)
-                # for row in eyeX_raw:
-                #     sd.thresholding_algo(row)
+                imuZ = interpolation_imu_z(x_imu)
+                imuY = interpolation_imu_y(x_imu)
+                imuX = interpolation_imu_x(x_imu)
 
-                fig = plt.figure(figsize=(6, 6))
-                # fig.title(str(subject) + str(current_info))
-                ax1 = plt.subplot(4, 1, 1)
-                ax2 = plt.subplot(4, 1, 2)
-                ax3 = plt.subplot(4, 1, 3)
-                ax4 = plt.subplot(4, 1, 4)
+                # eyeX_raw = interpolation_eye_x_raw(x_eye)
+                # eyeY_raw = interpolation_eye_y_raw(x_eye)
+                # eyePhi_raw = interpolation_eye_phi_raw(x_eye)
+                # eyeThe_raw = interpolation_eye_the_raw(x_eye)
+                eyeX = interpolation_eye_x(x_eye)
+                eyeY = interpolation_eye_y(x_eye)
+                eyePhi = interpolation_eye_phi(x_eye)
+                eyeThe = interpolation_eye_the(x_eye)
 
-                peaks, _ = find_peaks(eyeX_raw, height=eyeX_raw.mean() + 0.02)
+                holoX = interpolation_holo_x(x_holo)
+                holoY = interpolation_holo_y(x_holo)
+                holoZ = interpolation_holo_z(x_holo)
+                holoThe = interpolation_holo_theta(x_holo)
+                holoPhi = interpolation_holo_phi(x_holo)
 
-                # ax1.plot(eyeX)
+                fig, axs = plt.subplots(2, 1, figsize=[8, 8])
 
+                # Vertical:     imu-x/head-rotation-x/holo-the/eye-y/eye-the
+                # Horizontal:   imu-z/head-rotation-y/holo-phi/eye-x/eye-phi
+
+                # peaks, _ = find_peaks(eyeX_raw, height=eyeX_raw.mean() + 0.02)
+
+                axs[0].set_title(current_info)
+
+                # axs[0].plot(x_eye, normalize(eyeY, (holoX + holoThe)), 'r')
+                # axs[0].plot(x_holo, holoX + holoThe, 'b')
+                # axs[0].vlines(df_eye_low_conf['timestamp'], ymin=(holoX + holoThe).min(), ymax=(holoX + holoThe).max())
+                # axs[0].plot(x_holo,-holoThe,'k')
+                axs[1].plot(x_eye, eyeThe)
+                axs[1].vlines(df_eye_low_conf[df_eye_low_conf['timestamp'] > 1]['timestamp'], ymin=(eyeThe).min(),
+                              ymax=(eyeThe).max())
+
+                # axs[0].plot(x_holo, holoX)
+                # axs[0].plot(x_holo, -holoThe)
+                axs[0].plot(x_holo, holoX + holoThe)
+                axs[0].hlines(0, xmin=1, xmax=6)
+
+                # axs[1].plot(x_eye, normalize(eyeX, (holoPhi - holoY)), 'r')
+                # axs[1].plot(x_holo, holoPhi - holoY, 'b')
+                # axs[1].plot(x_holo,holoPhi,'k')
+
+                # axs[2].plot(x_eye, eyeX)
+                # axs[3].plot(x_holo, holoY)
+                # axs[3].plot(x_holo, holoPhi)
+
+                # axs[0].plot(x_eye, eyeY)
+                # axs[0].set_title('eye-y')
+                # axs[0].vlines(df_eye_low_conf['timestamp'], ymin=eyeY.min(), ymax=eyeY.max())
+                # axs[0].plot(x_eye,eyePhi)
+                # axs[0].set_title('eye-phi')
+
+                # axs[1].plot(x_holo, holoX)
+                # axs[1].plot(x_eye, normalize(eyeY, holoX))
+                # axs[1].set_title('head-rotation-x')
+                # axs[1].plot(x_holo,holoThe)
+
+                # axs[2].plot(x_eye, eyeX)
+                # axs[2].set_title('eye-x')
+                # axs[2].plot(x_eye,eyeThe)
+                # axs[2].vlines(df_eye_low_conf['timestamp'], ymin=eyeX.min(), ymax=eyeX.max())
+                # axs[2].set_title('eye-theta')
+
+                # axs[3].plot(x_holo,holoPhi)
+                # axs[3].plot(x_holo, holoY)
+                # axs[3].plot(x_eye, normalize(eyeX, holoY))
+                # axs[3].set_title('head-rotation-y')
+
+                # ax3.plot(imuZ)
+                # ax4.plot(df_holo['HeadRotationY'])
                 # ax2.plot(df_eye['confidence'],'r-')
                 # ax2.hlines(0.6,xmin=10,xmax=500)
                 # ax1.hlines(df_eye_x.mean(),xmin=1,xmax=500,color='r')
                 # ax2.plot(eyeX_raw)
                 # ax2.plot(peaks,eyeX_raw[peaks],'x')
-                ax1.plot(imuZ)
-                ax2.plot(imuX)
-                ax3.plot(eyeX_raw)
-                ax4.plot(eyeY_raw)
-                # ax1.plot(eyeX)
-                # ax2.plot(eyeX_raw)
-                # ax3.plot(eyeY)
-                # ax4.plot(eyeY_raw)
 
                 plt.show()
             except ValueError as err:
                 print(subject, current_info, err)
+
+
+def bring_dataframe(imu_file_list, eye_file_list, hololens_file_list, current_info):
+    try:
+        df_imu = manipulate_imu(file_as_pandas(get_file_by_info(imu_file_list, current_info)))
+        df_eye = file_as_pandas(get_file_by_info(eye_file_list, current_info), refined=True)
+        df_holo = file_as_pandas(get_file_by_info(hololens_file_list, current_info))
+        check_imu_file(df_imu, current_info)
+        check_refined_eye_file(df_eye, current_info)
+        check_holo_file(df_holo, current_info)
+        df_imu['IMUtimestamp'] = df_imu['IMUtimestamp'] - df_imu['IMUtimestamp'].head(1).values[0]
+        df_eye['timestamp'] = df_eye['timestamp'] - df_eye['timestamp'].head(1).values[0]
+        df_holo['Timestamp'] = df_holo['Timestamp'] - df_holo['Timestamp'].head(1).values[0]
+    except ValueError as err:
+        print(current_info, err)
+    return df_imu, df_eye, df_holo
 
 
 def main():

@@ -1,9 +1,12 @@
 from OneEuroFilter import *
 import pandas as pd
+# from sympy import *
+import math
 
-def normalize(dataset):
+def normalize(dataset, to_dataset):
     # dataset = ((dataset - dataset.mean()) / (dataset.max() - dataset.min()))
-    dataset = dataset / (dataset.max() - dataset.min())
+    multiple = (to_dataset.max() - to_dataset.min()) / (dataset.max() - dataset.min())
+    dataset = multiple * (dataset - dataset.min()) + to_dataset.min()
     return dataset
 
 
@@ -30,3 +33,14 @@ def eye_one_euro_filtering(x, y):
         filtered_y.append(oneeuroy(y[i]))
 
     return pd.Series(filtered_x), pd.Series(filtered_y)
+
+
+def asSpherical(xyz: list):
+    # takes list xyz (single coord)
+    x = xyz[0]
+    y = xyz[1]
+    z = xyz[2]
+    r = math.sqrt(x * x + y * y + z * z)
+    theta = math.acos(z / r) * 180 / math.pi  # to degrees
+    phi = math.atan2(y, x) * 180 / math.pi
+    return [r, theta, phi]
