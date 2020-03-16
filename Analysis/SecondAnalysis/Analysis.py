@@ -338,6 +338,10 @@ def manual_filter():
                 timestamps = {'imu': df_imu['IMUtimestamp'], 'eye': df_eye['timestamp'], 'holo': df_holo['Timestamp']}
                 df_eye_conf = df_eye[df_eye['confidence'] > 0.6]
                 df_eye_low_conf = df_eye[df_eye['confidence'] <= 0.6]
+                # print(current_info, round((df_eye_low_conf.shape[0] / df_eye.shape[0]) * 100, 2),
+                #       '% of low confidence eye data')
+                if round((df_eye_low_conf.shape[0] / df_eye.shape[0]) * 100 ,2)> 30:
+                    raise ValueError('too many low confidence eye data')
                 timestamps['eye_conf'] = df_eye_conf['timestamp']
 
                 df_eye_phi = pd.Series(list(map(float, df_eye_conf['phi'])))
@@ -390,7 +394,6 @@ def manual_filter():
                 imuZ = interpolation_imu_z(x_imu)
                 imuY = interpolation_imu_y(x_imu)
                 imuX = interpolation_imu_x(x_imu)
-
                 # eyeX_raw = interpolation_eye_x_raw(x_eye)
                 # eyeY_raw = interpolation_eye_y_raw(x_eye)
                 # eyePhi_raw = interpolation_eye_phi_raw(x_eye)
@@ -413,59 +416,24 @@ def manual_filter():
 
                 # peaks, _ = find_peaks(eyeX_raw, height=eyeX_raw.mean() + 0.02)
 
-                axs[0].set_title(current_info)
+                axs[0].set_title(str(current_info)+ 'horizontal')
+                axs[1].set_title('vertical')
 
-                # axs[0].plot(x_eye, normalize(eyeY, (holoX + holoThe)), 'r')
-                # axs[0].plot(x_holo, holoX + holoThe, 'b')
-                # axs[0].vlines(df_eye_low_conf['timestamp'], ymin=(holoX + holoThe).min(), ymax=(holoX + holoThe).max())
-                # axs[0].plot(x_holo,-holoThe,'k')
-                axs[1].plot(x_eye, eyeThe)
-                axs[1].vlines(df_eye_low_conf[df_eye_low_conf['timestamp'] > 1]['timestamp'], ymin=(eyeThe).min(),
-                              ymax=(eyeThe).max())
+                # axs[0].plot(x_imu,normalize(imuX,holoX))
+                # axs[0].plot(x_holo,holoX)
+                # axs[1].plot(x_imu,normalize(imuZ,holoY))
+                # axs[1].plot(x_holo,holoY)
 
-                # axs[0].plot(x_holo, holoX)
-                # axs[0].plot(x_holo, -holoThe)
-                axs[0].plot(x_holo, holoX + holoThe)
-                axs[0].hlines(0, xmin=1, xmax=6)
 
-                # axs[1].plot(x_eye, normalize(eyeX, (holoPhi - holoY)), 'r')
-                # axs[1].plot(x_holo, holoPhi - holoY, 'b')
-                # axs[1].plot(x_holo,holoPhi,'k')
+                axs[0].plot(x_holo,holoY-holoPhi)
+                axs[0].plot(x_eye,-normalize(eyePhi,(holoY-holoPhi)),'r')
 
-                # axs[2].plot(x_eye, eyeX)
-                # axs[3].plot(x_holo, holoY)
-                # axs[3].plot(x_holo, holoPhi)
+                axs[1].plot(x_holo,holoX+holoThe,label='target')
+                axs[1].plot(x_eye,normalize(eyeThe,(holoX+holoThe)),'r',label='eye')
+                axs[1].vlines(df_eye_low_conf[df_eye_low_conf['timestamp'] > 1]['timestamp'], ymin=(holoX+holoThe).min(),
+                              ymax=(holoX+holoThe).max())
 
-                # axs[0].plot(x_eye, eyeY)
-                # axs[0].set_title('eye-y')
-                # axs[0].vlines(df_eye_low_conf['timestamp'], ymin=eyeY.min(), ymax=eyeY.max())
-                # axs[0].plot(x_eye,eyePhi)
-                # axs[0].set_title('eye-phi')
-
-                # axs[1].plot(x_holo, holoX)
-                # axs[1].plot(x_eye, normalize(eyeY, holoX))
-                # axs[1].set_title('head-rotation-x')
-                # axs[1].plot(x_holo,holoThe)
-
-                # axs[2].plot(x_eye, eyeX)
-                # axs[2].set_title('eye-x')
-                # axs[2].plot(x_eye,eyeThe)
-                # axs[2].vlines(df_eye_low_conf['timestamp'], ymin=eyeX.min(), ymax=eyeX.max())
-                # axs[2].set_title('eye-theta')
-
-                # axs[3].plot(x_holo,holoPhi)
-                # axs[3].plot(x_holo, holoY)
-                # axs[3].plot(x_eye, normalize(eyeX, holoY))
-                # axs[3].set_title('head-rotation-y')
-
-                # ax3.plot(imuZ)
-                # ax4.plot(df_holo['HeadRotationY'])
-                # ax2.plot(df_eye['confidence'],'r-')
-                # ax2.hlines(0.6,xmin=10,xmax=500)
-                # ax1.hlines(df_eye_x.mean(),xmin=1,xmax=500,color='r')
-                # ax2.plot(eyeX_raw)
-                # ax2.plot(peaks,eyeX_raw[peaks],'x')
-
+                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
                 plt.show()
             except ValueError as err:
                 print(subject, current_info, err)
