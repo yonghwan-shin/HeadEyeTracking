@@ -4,6 +4,7 @@ from Analysing_functions import *
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
+
 import itertools
 import seaborn as sns
 from scipy import interpolate
@@ -327,7 +328,7 @@ def summary_eye_data():
 def get_final_dataset(_target, _env, _pos, _block, _subject):
     [imu_file_list, eye_file_list, hololens_file_list] = get_one_subject_files(_subject, refined=True)
     current_info = [_target, _env, _pos, _block]
-    print('-' * 15 + str(current_info) + " / "+str(_subject) +'-' * 15)
+    print('-' * 15 + str(current_info) + " / " + str(_subject) + '-' * 15)
     try:
         df_imu, df_eye, df_holo = bring_dataframe(imu_file_list, eye_file_list, hololens_file_list, current_info)
         timestamps = {'imu': df_imu['IMUtimestamp'], 'eye': df_eye['timestamp'], 'holo': df_holo['Timestamp']}
@@ -433,11 +434,32 @@ def get_final_dataset(_target, _env, _pos, _block, _subject):
         print(_subject, current_info, err)
 
 
+def save_dataframe_as_one():
+    data = pd.DataFrame(
+        columns=['subject', 'target', 'env', 'pos', 'block', 'x_axis', 'dataframe', 'low_conf', 'list_target_in',
+                 'interpolations'])
+    for target, env, pos, block, subject in itertools.product(targets, envs, poss, blocks, subjects):
+        try:
+            x_axis, dataframe, low_conf, list_target_in, interpolations, current_info = get_final_dataset(
+                target, env, pos, block, subject)
+            data = data.append(
+                {'subject': subject, 'target': target, 'env': env, 'pos': pos, 'block': block, 'x_axis': x_axis,
+                 'dataframe': dataframe, 'low_conf': low_conf, 'list_target_in': list_target_in,
+                 'interpolations': interpolations}, ignore_index=True)
+            print(target, env, pos, block, subject, 'appended')
+        except (TypeError, ValueError) as err:
+            print(err)
+            data = data.append({'subject': subject, 'target': target, 'env': env, 'pos': pos, 'block': block},
+                               ignore_index=True)
+    # %%
+    data.to_pickle("whole.pkl")
+
+
 def target_positional_analysis():
     for subject in subjects:
         # [imu_file_list, eye_file_list, hololens_file_list] = get_one_subject_files(subject, refined=
         sns.set()
-        fig, axs = plt.subplots(2, 1, figsize=[6, 12],sharex=True)
+        fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
         whole_eye_vertical = np.array([])
         whole_eye_horizontal = np.array([])
         whole_dff_vertical = np.array([])
@@ -445,7 +467,7 @@ def target_positional_analysis():
         whole_target_vertical = np.array([])
         whole_target_horizontal = np.array([])
         whole_dff_norm_vertical = np.array([])
-        whole_dff_norm_horizontal=np.array([])
+        whole_dff_norm_horizontal = np.array([])
 
         for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
             try:
@@ -461,8 +483,8 @@ def target_positional_analysis():
                 target_horizontals = np.array([])
                 eye_linregress_verticals = np.array([])
                 eye_linregress_horizontals = np.array([])
-                eye_filtered_verticals=np.array([])
-                eye_filtered_horizontals=np.array([])
+                eye_filtered_verticals = np.array([])
+                eye_filtered_horizontals = np.array([])
                 times = np.array([])
 
                 for time in timeline:
@@ -499,8 +521,8 @@ def target_positional_analysis():
 
                     eye_linregress_verticals = np.append(eye_linregress_verticals, eye_linregress_vertical)
                     eye_linregress_horizontals = np.append(eye_linregress_horizontals, eye_linregress_horizontal)
-                    eye_filtered_verticals = np.append(eye_filtered_verticals,filtered_eye_vertical)
-                    eye_filtered_horizontals = np.append(eye_filtered_horizontals,filtered_eye_horizontal)
+                    eye_filtered_verticals = np.append(eye_filtered_verticals, filtered_eye_vertical)
+                    eye_filtered_horizontals = np.append(eye_filtered_horizontals, filtered_eye_horizontal)
                     # axs[0][0].plot(t,filtered_target_vertical,color='black')
                     # print(r_vertical,p_vertical)
                     # axs[0][0].plot(t,eye_raw_vertical,color='blue')
@@ -525,13 +547,13 @@ def target_positional_analysis():
                     eye_filtered_horizontals, target_horizontals)
 
                 whole_dff_vertical = np.append(whole_dff_vertical, target_verticals - eye_linregress_verticals)
-                whole_dff_horizontal = np.append(whole_dff_horizontal,target_horizontals - eye_linregress_horizontals)
+                whole_dff_horizontal = np.append(whole_dff_horizontal, target_horizontals - eye_linregress_horizontals)
                 whole_target_vertical = np.append(whole_target_vertical, target_verticals)
-                whole_target_horizontal = np.append(whole_target_horizontal,target_horizontals)
+                whole_target_horizontal = np.append(whole_target_horizontal, target_horizontals)
                 whole_dff_norm_vertical = np.append(whole_dff_norm_vertical, eye_normalised_vertical)
-                whole_dff_norm_horizontal = np.append(whole_dff_norm_horizontal,eye_normalised_vertical)
-                whole_eye_vertical = np.append(whole_eye_vertical,eye_filtered_verticals)
-                whole_eye_horizontal = np.append(whole_eye_horizontal,eye_filtered_horizontals)
+                whole_dff_norm_horizontal = np.append(whole_dff_norm_horizontal, eye_normalised_vertical)
+                whole_eye_vertical = np.append(whole_eye_vertical, eye_filtered_verticals)
+                whole_eye_horizontal = np.append(whole_eye_horizontal, eye_filtered_horizontals)
 
                 # sns.regplot(eye_filtered_verticals,target_verticals,ax=axs[2][0],marker='+',scatter_kws={'color':'k','alpha':0.3})
                 # sns.regplot(eye_filtered_horizontals,target_horizontals,ax=axs[2][1],marker='+',scatter_kws={'color':'k','alpha':0.3})
@@ -539,17 +561,16 @@ def target_positional_analysis():
             except (TypeError, ValueError) as err:
                 print(err)
                 continue
-        sns.scatterplot(whole_target_horizontal,whole_target_vertical,ax=axs[0],markers='+',alpha=0.3)
-        confidence_ellipse(whole_target_horizontal,whole_target_vertical,n_std=3,edgecolor='firebrick',ax= axs[0])
-        sns.scatterplot(whole_dff_horizontal,whole_dff_vertical,ax=axs[1],markers='+',alpha=0.3)
-        confidence_ellipse(whole_dff_horizontal,whole_dff_vertical,n_std=3,edgecolor='fuchsia',ax=axs[1])
+        sns.scatterplot(whole_target_horizontal, whole_target_vertical, ax=axs[0], markers='+', alpha=0.3)
+        confidence_ellipse(whole_target_horizontal, whole_target_vertical, n_std=3, edgecolor='firebrick', ax=axs[0])
+        sns.scatterplot(whole_dff_horizontal, whole_dff_vertical, ax=axs[1], markers='+', alpha=0.3)
+        confidence_ellipse(whole_dff_horizontal, whole_dff_vertical, n_std=3, edgecolor='fuchsia', ax=axs[1])
         confidence_ellipse(whole_target_horizontal, whole_target_vertical, n_std=3, edgecolor='firebrick', ax=axs[1])
 
         axs[0].axis('equal')
         axs[1].axis('equal')
         axs[0].set_title('target')
         axs[1].set_title('compensated-linregress')
-
 
         # sns.distplot(whole_dff_vertical, fit=stats.norm, kde=True, label='compenstaed-linregress', ax=axs[0][0])
         # axs[0][0].set_title("linregress-vertical")
@@ -562,8 +583,8 @@ def target_positional_analysis():
         # axs[2][0].set_title('vertical')
         # axs[2][1].set_title('horizontal')
         plt.legend()
-        fig.suptitle(''+str(subject),horizontalalignment='left',verticalalignment='top',fontsize=15)
-        plt.savefig('target_plots_' + str(subject-200)+'.pdf')
+        fig.suptitle('' + str(subject), horizontalalignment='left', verticalalignment='top', fontsize=15)
+        plt.savefig('target_plots_' + str(subject - 200) + '.pdf')
         # fig.tight_layout()
         plt.show()
         print('drawing plot', current_info, subject)
@@ -594,10 +615,69 @@ def bring_dataframe(imu_file_list, eye_file_list, hololens_file_list, current_in
     #     print(current_info, err)
     return df_imu, df_eye, df_holo
 
+# @logging_time
+def slopes(data):
+    vertical_slope=np.array([])
+    horizontal_slope = np.array([])
+    for index, row in data.iterrows():
+        # print(row['x_axis'])
+        if type(row['x_axis']) is not dict:
+            print('empty row')
+            continue
+
+        # each trial
+        timeline = parse_timeline(row['low_conf']['start'], row['low_conf']['end'])
+        for time in timeline:
+            t1 = np.where(((row['x_axis']['test'] > time[0]) & (row['x_axis']['test'] < time[1])))
+            if len(t1[0]) < 50:
+                print('too short timeline')
+                continue
+            t = np.arange(math.ceil(time[0] * 100) / 100, math.floor(time[1] * 100) / 100, 0.005)
+            target_vertical = row['interpolations']['holoX'](t) + row['interpolations']['holoThe'](t)
+            target_horizontal = row['interpolations']['holoY'](t) - row['interpolations']['holoPhi'](t)
+            eye_vertical = (-1 * row['interpolations']['eyeY_raw'](t))
+            eye_horizontal = (-1 * row['interpolations']['eyeX_raw'](t))
+            filtered_eye_vertical = one_euro(eye_vertical)
+            filtered_eye_horizontal = one_euro(eye_horizontal)
+            filtered_target_vertical = one_euro(target_vertical)
+            filtered_target_horizontal = one_euro(target_horizontal)
+
+            slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical = stats.linregress(
+                filtered_eye_vertical, filtered_target_vertical)
+            slope_horizontal, intercept_horizontal, r_horizontal, p_horizontal, std_err_horizontal = stats.linregress(
+                filtered_eye_horizontal, filtered_target_horizontal)
+            if p_vertical > 0.05 or p_horizontal > 0.05:
+                continue
+            vertical_slope = np.append(vertical_slope,slope_vertical)
+            horizontal_slope = np.append(horizontal_slope,slope_horizontal)
+
+    return vertical_slope, horizontal_slope
+
+@logging_time
+def from_pickle(_filename):
+    data = pd.read_pickle(_filename)
+    subject_data = lambda x: data[data['subject'] == x]
+    subject = {x: subject_data(x) for x in subjects}
+
+    vertical_slope, horizontal_slope = slopes(subject[201])
+    print(vertical_slope,horizontal_slope)
+    # plt.hist(vertical_slope)
+    # sns.distplot(vertical_slope)
+    # plt.figure(1)
+    # plt.hist(horizontal_slope)
+    sns.distplot(horizontal_slope)
+    plt.show()
+
+
+    # print(sub_201)
+
 
 def main():
     pass
 
 
 if __name__ == "__main__":
-    target_positional_analysis()
+    from_pickle('whole.pkl')
+    # data = pd.read_pickle('whole.pkl')
+    # int1 = data.head(1) ['interpolations'][0]
+    # print(int1['imuX']([2,3,4]))

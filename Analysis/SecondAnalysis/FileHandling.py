@@ -1,6 +1,6 @@
 import os.path
 from pathlib import Path
-import pprint
+
 import pandas as pd
 
 pd.set_option('display.max_columns', 30)
@@ -10,7 +10,7 @@ dataset_folder_name = "2ndData"
 PROJECT_ROOT = Path.cwd()
 DATA_ROOT = PROJECT_ROOT.parent.parent / 'Datasets' / dataset_folder_name
 print('DATA ROOT:', DATA_ROOT)
-pp = pprint.PrettyPrinter(indent=4)
+
 
 
 # example: EYE_T0_EU_PW_B2_C7_S7_0206164759.csv

@@ -6,19 +6,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
+import time
+
+
+def logging_time(original_fn):
+    def wrapper_fn(*args, **kwargs):
+        start_time = time.time()
+        result = original_fn(*args, **kwargs)
+        end_time = time.time()
+        print("Working time[{}] : {} sec".format(original_fn.__name__, end_time - start_time))
+        return result
+
+    return wrapper_fn
 
 
 def parse_timeline(start, end):
     output = []
     if len(start) == 0:
-        return [[0.1,6.3]]
+        return [[0.1, 6.3]]
     for i in range(len(start)):
         if i == 0:
             output.append([0.1, start[i]])
         else:
             output.append([end[i - 1], start[i]])
-    if len(start)>0:
-        output.append([end[-1],6.3])
+    if len(start) > 0:
+        output.append([end[-1], 6.3])
     return output
 
 
@@ -34,11 +46,14 @@ def shifting(dataset, to_dataset):
     shift = (dataset[0] - to_dataset[0])
     dataset = dataset - shift
     return dataset
+
+
 def centralise(_dataset):
-    _dataset =_dataset - _dataset[0]
+    _dataset = _dataset - _dataset[0]
     return _dataset
 
-def one_euro(_data, freq=200,mincutoff=3,beta=0.98,dcutoff=1.0):
+
+def one_euro(_data, freq=200, mincutoff=3, beta=0.98, dcutoff=1.0):
     config = {
         'freq': freq,  # Hz
         'mincutoff': mincutoff,  # FIXME
@@ -51,6 +66,7 @@ def one_euro(_data, freq=200,mincutoff=3,beta=0.98,dcutoff=1.0):
         f.append(filter(_data[i]))
     # filtered_data = filter(_data)
     return pd.Series(f)
+
 
 def eye_one_euro_filtering(x, y):
     config1 = {
@@ -87,6 +103,7 @@ def asSpherical(xyz: list):
     phi = math.atan2(y, x) * 180 / math.pi
     return [r, theta, phi]
 
+
 def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     """
     https://matplotlib.org/devdocs/gallery/statistics/confidence_ellipse.html
@@ -115,7 +132,7 @@ def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
         raise ValueError("x and y must be the same size")
 
     cov = np.cov(x, y)
-    pearson = cov[0, 1]/np.sqrt(cov[0, 0] * cov[1, 1])
+    pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
     # Using a special case to obtain the eigenvalues of this
     # two-dimensionl dataset.
     ell_radius_x = np.sqrt(1 + pearson)
@@ -140,6 +157,7 @@ def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
 
     ellipse.set_transform(transf + ax.transData)
     return ax.add_patch(ellipse)
+
 
 def get_correlated_dataset(n, dependency, mu, scale):
     latent = np.random.randn(n, 2)
