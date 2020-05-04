@@ -10,9 +10,15 @@ import time
 from scipy import signal
 
 
-# def FIR_filter(sample_rate = 120):
-#     nyq_rate = sample_rate/2
-#     width = 5/nyq_rate
+def find_outlier(data,threshold=3.5):
+    if len(data.shape)==1:
+        data = data[:,None]
+    median = np.median(data,axis=0)
+    diff = np.sum((data-median)**2,axis=1)
+    diff= np.sqrt(diff)
+    med_abs_deviation = np.median(diff)
+    modified_z_score = 0.6745*diff/med_abs_deviation
+    return np.where((modified_z_score > threshold)==True)[0]
 
 def butterworth_filter(data, fc=10, fs=120):
     fs = 120  # sampling freq
@@ -24,21 +30,55 @@ def butterworth_filter(data, fc=10, fs=120):
 
 
 def rolling_filter(df, window=20):
-    return df.rolling(window, win_type='triang').mean()
+    return pd.DataFrame(df).rolling(window, win_type='triang').mean()
 
 
-def FilterData(saccade_threshold: float, fixation: list, potential: list, point: float):
+def saccade_filter(threshold, data):
+    potential = []
+    fixation = []
+    saccade = []
+    for index, dot in enumerate(data):
+        fixation, potential, saccade = saccade_recognizer(saccade_threshold=threshold, fixation=fixation,
+                                                          potential=potential, saccade=saccade, index=index,
+                                                          point=dot)
+    return fixation,saccade
+
+
+def saccade_recognizer(saccade_threshold: float, fixation: list, potential: list, saccade: list, index: int,
+                       point: float):
+    s = -1
     if len(fixation) < 1:
         fixation.append(point)
+
     if len(fixation) > 0 and len(potential) > 0:
+        if abs(point - fixation[-1]) < abs(point - potential[-1]):  # closer to current
+            if abs(point - fixation[-1]) < saccade_threshold:  #
+                fixation.append(point)
+                potential = []
+                # potential.clear()
+            else:
+                potential = []
+                # potential.clear()
+                potential.append(point)
+        else:  # closer to potential : new fixation
+            if abs(point - potential[-1]) < saccade_threshold:
+                potential.append(point)
+                for pot in potential: fixation.append(pot)
+                potential = []
+                saccade.append(index)
+            else:
+                potential = []
+                # potential.clear()
+                potential.append(point)
 
     else:
-        if abs(fixation[-1] - point )> saccade_threshold:
+        if abs(fixation[-1] - point) > saccade_threshold:
             potential.append(point)
         else:
             fixation.append(point)
 
-    return fixation, potential
+    return fixation, potential, saccade
+
 
 def logging_time(original_fn):
     def wrapper_fn(*args, **kwargs):

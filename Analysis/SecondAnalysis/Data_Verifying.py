@@ -7,7 +7,7 @@ from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import statistics
+
 
 subjects = range(201, 212)
 targets = range(8)
@@ -21,6 +21,8 @@ DATA_ROOT = PROJECT_ROOT.parent.parent / 'Datasets' / dataset_folder_name
 EYE_DATA_PATH = DATA_ROOT / 'refined_eye_data'
 
 print('DATA ROOT PATH:', DATA_ROOT)
+
+
 # %%
 def make_pkl():
     # info: target,env,pos,block
@@ -44,7 +46,8 @@ def make_pkl():
             except:
                 raise IOError("error in reading eye,holo file", eye_file)
 
-            eye_dataframe.update({'timestamp': eye_dataframe['timestamp'] - eye_dataframe.head(1)['timestamp'].values[0]})
+            eye_dataframe.update(
+                {'timestamp': eye_dataframe['timestamp'] - eye_dataframe.head(1)['timestamp'].values[0]})
             holo_dataframe.update(
                 {'Timestamp': holo_dataframe['Timestamp'] - holo_dataframe.head(1)['Timestamp'].values[0]})
             if eye_dataframe.shape[0] < 600:
@@ -81,6 +84,7 @@ def make_pkl():
 
             }, ignore_index=True)
 
+
 # %% save
 # whole_data.to_pickle("whole_data.pkl")
 # %% test
@@ -89,7 +93,6 @@ def make_pkl():
 
 
 # %% manual filtering
-
 
 
 def manual_filtering(subject, target, env, pos, block):
@@ -114,12 +117,30 @@ def manual_filtering(subject, target, env, pos, block):
 whole_data = pd.read_pickle('whole_data.pkl')
 for subject, target, env, pos, block in itertools.product(subjects, targets, envs, poss, blocks):
     eye, holo, mark = manual_filtering(str(subject), str(target), str(env), str(pos), str(block))
+    fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
     # holo.update({'Timestamp': holo_dataframe['Timestamp'] + 0.5})
-    filtered_x = butterworth_filter(eye['norm_x'])
-    rolling_x = rolling_filter(eye['norm_x'])
-    plt.plot(eye['norm_x'])
-    # plt.plot(filtered_x)
-    plt.plot(rolling_x)
+    # filtered_x = butterworth_filter(eye['norm_x'])
+    # rolling_x = rolling_filter(eye['norm_x'])
+    # fixation, saccade = saccade_filter(0.005, eye['norm_x'])
+    outliers = find_outlier(eye['norm_x'], threshold=5)
+    eye.drop(eye.index[outliers],inplace=True)
+    # plt.scatter(eye['timestamp'],eye['norm_x'],marker='x')
+    # plt.plot(eye['timestamp'],eye['norm_x'],alpha=0.5)
+    intp_holoY = interpolate.interp1d(holo['Timestamp'],holo['HeadRotationY'])
+
+    timestamps = np.arange(eye['timestamp'][0], 6.4, 1 / 120) if eye['timestamp'].tail(1).values[0] > 6.4 else np.arange(
+        eye['timestamp'][0], eye['timestamp'].tail(1).values[0], 1 / 120)
+
+    intp_eye_x = interpolate.interp1d(eye['timestamp'], eye['norm_x'])
+    eye_x = intp_eye_x(timestamps)
+    holo_y = intp_holoY(timestamps)
+    axs[0].plot(timestamps,eye_x)
+    axs[1].plot(timestamps,holo_y)
+    # x = intp_eye_x(timestamps)
+    # rolling_x = rolling_filter(x)
+    # but_x = butterworth_filter(x,fc=5)
+
+
     plt.show()
 
     pass
