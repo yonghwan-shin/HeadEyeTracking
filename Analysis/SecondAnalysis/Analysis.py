@@ -622,7 +622,7 @@ def slopes(data):
     for index, row in data.iterrows():
         # print(row['x_axis'])
         if type(row['x_axis']) is not dict:
-            print('empty row')
+            # print('empty row')
             continue
 
         # each trial
@@ -630,7 +630,7 @@ def slopes(data):
         for time in timeline:
             t1 = np.where(((row['x_axis']['test'] > time[0]) & (row['x_axis']['test'] < time[1])))
             if len(t1[0]) < 50:
-                print('too short timeline')
+                # print('too short timeline')
                 continue
             t = np.arange(math.ceil(time[0] * 100) / 100, math.floor(time[1] * 100) / 100, 0.005)
             target_vertical = row['interpolations']['holoX'](t) + row['interpolations']['holoThe'](t)
@@ -660,13 +660,42 @@ def from_pickle(_filename):
     subject = {x: subject_data(x) for x in subjects}
 
     vertical_slope, horizontal_slope = slopes(subject[201])
-    print(vertical_slope,horizontal_slope)
+    # print(vertical_slope,horizontal_slope)
     # plt.hist(vertical_slope)
     # sns.distplot(vertical_slope)
     # plt.figure(1)
     # plt.hist(horizontal_slope)
-    sns.distplot(horizontal_slope)
-    plt.show()
+    # sns.distplot(horizontal_slope)
+    print('horizontal slope',horizontal_slope.mean())
+    print('vertical_slope',vertical_slope.mean())
+    return data, horizontal_slope.mean(), vertical_slope.mean()
+    # for index, row in data.iterrows():
+    #     # print(row['x_axis'])
+    #     if type(row['x_axis']) is not dict:
+    #         # print('empty row')
+    #         continue
+    #
+    #     # each trial
+    #     timeline = parse_timeline(row['low_conf']['start'], row['low_conf']['end'])
+    #     for time in timeline:
+    #         t1 = np.where(((row['x_axis']['test'] > time[0]) & (row['x_axis']['test'] < time[1])))
+    #         if len(t1[0]) < 50:
+    #             # print('too short timeline')
+    #             continue
+    #         t = np.arange(math.ceil(time[0] * 100) / 100, math.floor(time[1] * 100) / 100, 0.005)
+    #         target_vertical = row['interpolations']['holoX'](t) + row['interpolations']['holoThe'](t)
+    #         target_horizontal = row['interpolations']['holoY'](t) - row['interpolations']['holoPhi'](t)
+    #         eye_vertical = (-1 * row['interpolations']['eyeY_raw'](t))
+    #         eye_horizontal = (-1 * row['interpolations']['eyeX_raw'](t))
+    #         filtered_eye_vertical = one_euro(eye_vertical)
+    #         filtered_eye_horizontal = one_euro(eye_horizontal)
+    #         filtered_target_vertical = one_euro(target_vertical)
+    #         filtered_target_horizontal = one_euro(target_horizontal)
+    #         normalized_eye_vertical = (filtered_eye_vertical - filtered_eye_vertical.mean())*vertical_slope.mean() + filtered_target_vertical.mean()
+    #         sns.lineplot(t,filtered_target_vertical)
+    #         sns.lineplot(t,normalized_eye_vertical)
+    #         plt.show()
+    # plt.show()
 
 
     # print(sub_201)

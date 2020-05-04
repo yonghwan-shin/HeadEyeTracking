@@ -1,13 +1,44 @@
 from OneEuroFilter import *
 import pandas as pd
-# from sympy import *
+
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 import time
+from scipy import signal
 
+
+# def FIR_filter(sample_rate = 120):
+#     nyq_rate = sample_rate/2
+#     width = 5/nyq_rate
+
+def butterworth_filter(data, fc=10, fs=120):
+    fs = 120  # sampling freq
+    # fc = 30  # cut-off freq
+    w = fc / (fs / 2)  # normalize the frequency
+    b, a = signal.butter(5, w, 'low', analog=False)
+    output = signal.filtfilt(b, a, data)
+    return output
+
+
+def rolling_filter(df, window=20):
+    return df.rolling(window, win_type='triang').mean()
+
+
+def FilterData(saccade_threshold: float, fixation: list, potential: list, point: float):
+    if len(fixation) < 1:
+        fixation.append(point)
+    if len(fixation) > 0 and len(potential) > 0:
+
+    else:
+        if abs(fixation[-1] - point )> saccade_threshold:
+            potential.append(point)
+        else:
+            fixation.append(point)
+
+    return fixation, potential
 
 def logging_time(original_fn):
     def wrapper_fn(*args, **kwargs):
