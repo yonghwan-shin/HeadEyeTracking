@@ -1,3 +1,4 @@
+# %%
 from pathlib import Path
 from Analysing_functions import *
 import itertools
@@ -11,33 +12,50 @@ import pandas as pd
 
 subjects = range(201, 212)
 targets = range(8)
-envs = ['U', 'W']
-poss = ['W', 'S']
+envs = ["U", "W"]
+poss = ["W", "S"]
 # blocks = range(1, 5)
 blocks = range(5)
 dataset_folder_name = "2ndData"
 PROJECT_ROOT = Path.cwd()
-DATA_ROOT = PROJECT_ROOT.parent.parent / 'Datasets' / dataset_folder_name
-EYE_DATA_PATH = DATA_ROOT / 'refined_eye_data'
+DATA_ROOT = PROJECT_ROOT.parent.parent / "Datasets" / dataset_folder_name
+EYE_DATA_PATH = DATA_ROOT / "refined_eye_data"
 
-print('DATA ROOT PATH:', DATA_ROOT)
+print("DATA ROOT PATH:", DATA_ROOT)
 
 
 # %%
 def make_pkl():
     # info: target,env,pos,block
-    filename = lambda info: 'T' + str(info[0]) + "_E" + str(info[1]) + '_P' + str(info[2]) + '_B' + str(info[3])
+    filename = (
+        lambda info: "T"
+        + str(info[0])
+        + "_E"
+        + str(info[1])
+        + "_P"
+        + str(info[2])
+        + "_B"
+        + str(info[3])
+    )
     # hololens_subject_folder = lambda subject: DATA_ROOT/'hololens_data' / ('compressed_sub' + str(subject))
-    hololens_subject_folder = DATA_ROOT / 'hololens_data'
-    whole_data = pd.DataFrame(columns=['subject', 'target', 'env', 'pos', 'block', 'eye', 'holo', 'mark'])
+    hololens_subject_folder = DATA_ROOT / "hololens_data"
+    whole_data = pd.DataFrame(
+        columns=["subject", "target", "env", "pos", "block", "eye", "holo", "mark"]
+    )
     for subject in subjects:
         for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
-            mark = ''
-            eye_file = EYE_DATA_PATH.rglob('*' + filename([target, env, pos, block]) + "*.csv")
-            holo_file_path = (hololens_subject_folder / ('compressed_sub' + str(subject)))
-            holo_file = holo_file_path.rglob("*" + filename([target, env, pos, block]) + "*.csv")
-            for file in eye_file:   eye_file = file
-            for file1 in holo_file: holo_file = file1
+            mark = ""
+            eye_file = EYE_DATA_PATH.rglob(
+                "*" + filename([target, env, pos, block]) + "*.csv"
+            )
+            holo_file_path = hololens_subject_folder / ("compressed_sub" + str(subject))
+            holo_file = holo_file_path.rglob(
+                "*" + filename([target, env, pos, block]) + "*.csv"
+            )
+            for file in eye_file:
+                eye_file = file
+            for file1 in holo_file:
+                holo_file = file1
             try:
                 if eye_file.exists() and eye_file.is_file():
                     eye_dataframe = pd.read_csv(eye_file, index_col=False)
@@ -47,42 +65,85 @@ def make_pkl():
                 raise IOError("error in reading eye,holo file", eye_file)
 
             eye_dataframe.update(
-                {'timestamp': eye_dataframe['timestamp'] - eye_dataframe.head(1)['timestamp'].values[0]})
+                {
+                    "timestamp": eye_dataframe["timestamp"]
+                    - eye_dataframe.head(1)["timestamp"].values[0]
+                }
+            )
             holo_dataframe.update(
-                {'Timestamp': holo_dataframe['Timestamp'] - holo_dataframe.head(1)['Timestamp'].values[0]})
+                {
+                    "Timestamp": holo_dataframe["Timestamp"]
+                    - holo_dataframe.head(1)["Timestamp"].values[0]
+                }
+            )
             if eye_dataframe.shape[0] < 600:
-                mark = 'short_eye,'
-                print('too short eye data')
+                mark = "short_eye,"
+                print("too short eye data")
             else:
-                refined_eye_dataframe = eye_dataframe[eye_dataframe['confidence'] > 0.6]
+                refined_eye_dataframe = eye_dataframe[eye_dataframe["confidence"] > 0.6]
                 refined_eye_dataframe = refined_eye_dataframe.drop(
-                    columns=['circle_3d', 'ellipse', 'location', 'diameter', 'sphere', 'projected_sphere',
-                             'model_confidence', 'model_id', 'model_birth_timestamp', 'topic', 'id', 'method'])
+                    columns=[
+                        "circle_3d",
+                        "ellipse",
+                        "location",
+                        "diameter",
+                        "sphere",
+                        "projected_sphere",
+                        "model_confidence",
+                        "model_id",
+                        "model_birth_timestamp",
+                        "topic",
+                        "id",
+                        "method",
+                    ]
+                )
                 if refined_eye_dataframe.shape[0] < 400:
-                    mark = mark + 'short_confidence,'
-                    print('too short confident data')
+                    mark = mark + "short_confidence,"
+                    print("too short confident data")
 
             if holo_dataframe.shape[0] < 300:
-                mark = mark + 'short_holo,'
-                print('too short holo data')
-            head_position_start = float(holo_dataframe.head(1)['HeadPositionZ'])
-            head_position_end = float(holo_dataframe.tail(1)['HeadPositionZ'])
-            if pos == 'W' and (head_position_end - head_position_start) < 4.5:
-                mark = mark + 'short_walk'
-                print('Short walk length:', (head_position_end - head_position_start))
-            whole_data = whole_data.append({
-                # 'info': [subject, target, env, pos, block],
-                'subject': str(subject),
-                'target': str(target),
-                'env': str(env),
-                'pos': str(pos),
-                'block': str(block),
+                mark = mark + "short_holo,"
+                print("too short holo data")
+            head_position_start = float(holo_dataframe.head(1)["HeadPositionZ"])
+            head_position_end = float(holo_dataframe.tail(1)["HeadPositionZ"])
+            if pos == "W" and (head_position_end - head_position_start) < 4.5:
+                mark = mark + "short_walk"
+                print("Short walk length:", (head_position_end - head_position_start))
+            whole_data = whole_data.append(
+                {
+                    # 'info': [subject, target, env, pos, block],
+                    "subject": str(subject),
+                    "target": str(target),
+                    "env": str(env),
+                    "pos": str(pos),
+                    "block": str(block),
+                    "eye": [refined_eye_dataframe]
+                    if refined_eye_dataframe is not None
+                    else [eye_dataframe],
+                    "holo": [holo_dataframe],
+                    "mark": [mark],
+                },
+                ignore_index=True,
+            )
 
-                'eye': [refined_eye_dataframe] if refined_eye_dataframe is not None else [eye_dataframe],
-                'holo': [holo_dataframe],
-                'mark': [mark]
 
-            }, ignore_index=True)
+# %% manual filtering
+def manual_filtering(subject, target, env, pos, block):
+    df = whole_data.loc[
+        (whole_data["subject"] == subject)
+        & (whole_data["target"] == target)
+        & (whole_data["env"] == env)
+        & (whole_data["pos"] == pos)
+        & (whole_data["block"] == block)
+    ]
+    # print(df)
+    # print(df)
+    # data=df['data']
+    # print(data)
+    eye = df["eye"].values[0][0]
+    holo = df["holo"].values[0][0]
+    mark = df["mark"].values[0][0]
+    return eye, holo, mark
 
 
 # %% save
@@ -91,56 +152,51 @@ def make_pkl():
 # errors = whole_data[whole_data['data']['mark'].str.contains('short')]
 # print('error count:', errors.shape[0])
 
-
-# %% manual filtering
-
-
-def manual_filtering(subject, target, env, pos, block):
-    df = whole_data.loc[(whole_data['subject'] == subject) &
-                        (whole_data['target'] == target) &
-                        (whole_data['env'] == env) &
-                        (whole_data['pos'] == pos) &
-                        (whole_data['block'] == block)
-                        ]
-    # print(df)
-    # print(df)
-    # data=df['data']
-    # print(data)
-    eye = df['eye'].values[0][0]
-    holo = df['holo'].values[0][0]
-    mark = df['mark'].values[0][0]
-    return eye, holo, mark
-
-
 # %%
 # eye,holo,mark =\
-whole_data = pd.read_pickle('whole_data.pkl')
-for subject, target, env, pos, block in itertools.product(subjects, targets, envs, poss, blocks):
-    eye, holo, mark = manual_filtering(str(subject), str(target), str(env), str(pos), str(block))
-    fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
+whole_data = pd.read_pickle("whole_data.pkl")
+for subject, target, env, pos, block in itertools.product(
+    subjects, targets, envs, poss, blocks
+):
+    eye, holo, mark = manual_filtering(
+        str(subject), str(target), str(env), str(pos), str(block)
+    )
+    fig, axs = plt.subplots(2, 1, figsize=[8, 8], sharex=True)
     # holo.update({'Timestamp': holo_dataframe['Timestamp'] + 0.5})
     # filtered_x = butterworth_filter(eye['norm_x'])
     # rolling_x = rolling_filter(eye['norm_x'])
     # fixation, saccade = saccade_filter(0.005, eye['norm_x'])
-    outliers = find_outlier(eye['norm_x'], threshold=5)
-    eye.drop(eye.index[outliers],inplace=True)
+    outliers = find_outlier(eye["norm_x"], threshold=5)
+    eye.drop(eye.index[outliers], inplace=True)
     # plt.scatter(eye['timestamp'],eye['norm_x'],marker='x')
     # plt.plot(eye['timestamp'],eye['norm_x'],alpha=0.5)
-    intp_holoY = interpolate.interp1d(holo['Timestamp'],holo['HeadRotationY'])
+    intp_holoY = interpolate.interp2d(holo["Timestamp"], holo["HeadRotationY"])
 
-    timestamps = np.arange(eye['timestamp'][0], 6.4, 1 / 120) if eye['timestamp'].tail(1).values[0] > 6.4 else np.arange(
-        eye['timestamp'][0], eye['timestamp'].tail(1).values[0], 1 / 120)
+    # timestamps = (
+    #     np.arange(eye["timestamp"][0], 6.4, 1 / 120)
+    #     if eye["timestamp"].tail(1).values[0] > 6.4
+    #     else np.arange(eye["timestamp"][0], eye["timestamp"].tail(1).values[0], 1 / 120)
+    # )
+    timestamps = (
+        np.arange(1, 6.4, 1 / 120)
+        if eye["timestamp"].tail(1).values[0] > 6.4
+        else np.arange(1, eye["timestamp"].tail(1).values[0], 1 / 120)
+    )
 
-    intp_eye_x = interpolate.interp1d(eye['timestamp'], eye['norm_x'])
+    intp_eye_x = interpolate.interp2d(eye["timestamp"], eye["norm_x"])
     eye_x = intp_eye_x(timestamps)
+    rolling_x = rolling_filter(eye_x)
     holo_y = intp_holoY(timestamps)
-    axs[0].plot(timestamps,eye_x)
-    axs[1].plot(timestamps,holo_y)
+    axs[0].plot(timestamps - 0.05, rolling_x) # delay of 50ms
+    axs[0].plot(timestamps, eye_x,'r')
+    axs[1].plot(timestamps, holo_y)
     # x = intp_eye_x(timestamps)
     # rolling_x = rolling_filter(x)
     # but_x = butterworth_filter(x,fc=5)
 
-
     plt.show()
 
     pass
+
+
+# %%
