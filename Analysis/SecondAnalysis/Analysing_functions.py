@@ -10,15 +10,51 @@ import time
 from scipy import signal
 
 
-def find_outlier(data,threshold=3.5):
-    if len(data.shape)==1:
-        data = data[:,None]
-    median = np.median(data,axis=0)
-    diff = np.sum((data-median)**2,axis=1)
-    diff= np.sqrt(diff)
+def find_density(data, window=10, threshold=0.7, freq=1 / 120):
+    # output = []
+    low_density = []
+    temp = []
+    temps=[]
+    min = data[0]
+    max = data[-1]
+    for i in np.arange(min, max, freq):
+        correct = np.where((i <= data) & (data <= i + window * freq))
+        if len(correct[0]) <window*threshold:
+            if not temp:
+                pass
+            else:
+                temp = np.unique(np.array(temp))
+                temps.append(temp)
+                temp=[]
+            if len(correct[0]) >= 1:
+                low_density.append(correct[0][0])
+                low_density.append(correct[0][-1])
+            else:
+                pass
+        else:
+            temp.append(correct[0][0])
+        pass
+    if not temp:
+        pass
+    else:
+        temps.append(temp)
+    # sections = np.unique(np.array(temps))
+    low_density = np.unique(np.array(low_density))
+    # output = np.delete(data,low_density.tolist())
+    return low_density,temps
+    pass
+
+
+def find_outlier(data, threshold=3.5):
+    if len(data.shape) == 1:
+        data = data[:, None]
+    median = np.median(data, axis=0)
+    diff = np.sum((data - median) ** 2, axis=1)
+    diff = np.sqrt(diff)
     med_abs_deviation = np.median(diff)
-    modified_z_score = 0.6745*diff/med_abs_deviation
-    return np.where((modified_z_score > threshold)==True)[0]
+    modified_z_score = 0.6745 * diff / med_abs_deviation
+    return np.where((modified_z_score > threshold) == True)[0]
+
 
 def butterworth_filter(data, fc=10, fs=120):
     fs = 120  # sampling freq
@@ -41,7 +77,7 @@ def saccade_filter(threshold, data):
         fixation, potential, saccade = saccade_recognizer(saccade_threshold=threshold, fixation=fixation,
                                                           potential=potential, saccade=saccade, index=index,
                                                           point=dot)
-    return fixation,saccade
+    return fixation, saccade
 
 
 def saccade_recognizer(saccade_threshold: float, fixation: list, potential: list, saccade: list, index: int,

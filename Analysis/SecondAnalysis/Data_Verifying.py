@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-
 subjects = range(201, 212)
 targets = range(8)
 envs = ["U", "W"]
@@ -29,13 +28,13 @@ def make_pkl():
     # info: target,env,pos,block
     filename = (
         lambda info: "T"
-        + str(info[0])
-        + "_E"
-        + str(info[1])
-        + "_P"
-        + str(info[2])
-        + "_B"
-        + str(info[3])
+                     + str(info[0])
+                     + "_E"
+                     + str(info[1])
+                     + "_P"
+                     + str(info[2])
+                     + "_B"
+                     + str(info[3])
     )
     # hololens_subject_folder = lambda subject: DATA_ROOT/'hololens_data' / ('compressed_sub' + str(subject))
     hololens_subject_folder = DATA_ROOT / "hololens_data"
@@ -67,13 +66,13 @@ def make_pkl():
             eye_dataframe.update(
                 {
                     "timestamp": eye_dataframe["timestamp"]
-                    - eye_dataframe.head(1)["timestamp"].values[0]
+                                 - eye_dataframe.head(1)["timestamp"].values[0]
                 }
             )
             holo_dataframe.update(
                 {
                     "Timestamp": holo_dataframe["Timestamp"]
-                    - holo_dataframe.head(1)["Timestamp"].values[0]
+                                 - holo_dataframe.head(1)["Timestamp"].values[0]
                 }
             )
             if eye_dataframe.shape[0] < 600:
@@ -109,6 +108,22 @@ def make_pkl():
             if pos == "W" and (head_position_end - head_position_start) < 4.5:
                 mark = mark + "short_walk"
                 print("Short walk length:", (head_position_end - head_position_start))
+            rs = []
+            thetas = []
+            phis = []
+            for index, row in holo_dataframe.iterrows():
+                x = row['TargetPositionX'] - row['HeadPositionX']
+                y = row['TargetPositionY'] - row['HeadPositionY']
+                z = row['TargetPositionZ'] - row['HeadPositionZ']
+                [r, theta, phi] = asSpherical([x, z, y])
+                rs.append(r)
+                thetas.append(90 - theta)
+                phis.append(90 - phi)
+
+            holo_dataframe['R'] = rs
+            holo_dataframe['Theta'] = thetas
+            holo_dataframe['Phi'] = phis
+
             whole_data = whole_data.append(
                 {
                     # 'info': [subject, target, env, pos, block],
@@ -125,6 +140,8 @@ def make_pkl():
                 },
                 ignore_index=True,
             )
+    whole_data.to_pickle("whole_data1.pkl")
+    return whole_data
 
 
 # %% manual filtering
@@ -135,7 +152,7 @@ def manual_filtering(subject, target, env, pos, block):
         & (whole_data["env"] == env)
         & (whole_data["pos"] == pos)
         & (whole_data["block"] == block)
-    ]
+        ]
     # print(df)
     # print(df)
     # data=df['data']
@@ -147,6 +164,7 @@ def manual_filtering(subject, target, env, pos, block):
 
 
 # %% save
+# whole_data = make_pkl()
 # whole_data.to_pickle("whole_data.pkl")
 # %% test
 # errors = whole_data[whole_data['data']['mark'].str.contains('short')]
@@ -154,49 +172,77 @@ def manual_filtering(subject, target, env, pos, block):
 
 # %%
 # eye,holo,mark =\
-whole_data = pd.read_pickle("whole_data.pkl")
+whole_data = pd.read_pickle("whole_data1.pkl")
 for subject, target, env, pos, block in itertools.product(
-    subjects, targets, envs, poss, blocks
+        subjects, targets, envs, poss, blocks
 ):
     eye, holo, mark = manual_filtering(
         str(subject), str(target), str(env), str(pos), str(block)
     )
     fig, axs = plt.subplots(2, 1, figsize=[8, 8], sharex=True)
-    # holo.update({'Timestamp': holo_dataframe['Timestamp'] + 0.5})
+    holo.update({'Timestamp': holo['Timestamp'] + 0.05})
     # filtered_x = butterworth_filter(eye['norm_x'])
     # rolling_x = rolling_filter(eye['norm_x'])
     # fixation, saccade = saccade_filter(0.005, eye['norm_x'])
     outliers = find_outlier(eye["norm_x"], threshold=5)
     eye.drop(eye.index[outliers], inplace=True)
-    # plt.scatter(eye['timestamp'],eye['norm_x'],marker='x')
-    # plt.plot(eye['timestamp'],eye['norm_x'],alpha=0.5)
-    intp_holoY = interpolate.interp2d(holo["Timestamp"], holo["HeadRotationY"])
+    low_densities, temps = find_density(eye['timestamp'].to_numpy())
 
+    intp_holoY = interpolate.interp1d(holo["Timestamp"], holo["HeadRotationY"])
+    # intp_holoY = interpolate.splrep(holo["Timestamp"], holo["HeadRotationY"])
+    intp_holoPhi = interpolate.interp1d(holo['Timestamp'], holo['Phi'])
     # timestamps = (
-    #     np.arange(eye["timestamp"][0], 6.4, 1 / 120)
+    #     np.arange(1, 5.5, 1 / 120)
     #     if eye["timestamp"].tail(1).values[0] > 6.4
-    #     else np.arange(eye["timestamp"][0], eye["timestamp"].tail(1).values[0], 1 / 120)
+    #     else np.arange(1, eye["timestamp"].tail(1).values[0], 1 / 120)
     # )
-    timestamps = (
-        np.arange(1, 6.4, 1 / 120)
-        if eye["timestamp"].tail(1).values[0] > 6.4
-        else np.arange(1, eye["timestamp"].tail(1).values[0], 1 / 120)
-    )
+    # timestamps= np.arange(1, 5.5, 1 / 120)
+    #
+    # if eye["timestamp"].tail(1).values[0] <5.5 or eye["timestamp"].head(1).values[0]>1:
+    #     print('error in eye timestamp')
+    #     continue;
 
-    intp_eye_x = interpolate.interp2d(eye["timestamp"], eye["norm_x"])
-    eye_x = intp_eye_x(timestamps)
-    rolling_x = rolling_filter(eye_x)
-    holo_y = intp_holoY(timestamps)
-    axs[0].plot(timestamps - 0.05, rolling_x) # delay of 50ms
-    axs[0].plot(timestamps, eye_x,'r')
-    axs[1].plot(timestamps, holo_y)
-    # x = intp_eye_x(timestamps)
-    # rolling_x = rolling_filter(x)
-    # but_x = butterworth_filter(x,fc=5)
+    intp_eye_x = interpolate.interp1d(eye["timestamp"], eye["norm_x"])
+    for section in temps:
+        eye_section = eye.iloc[section, :]
+        if eye_section['timestamp'].head(1).values[0] < 0.05:
+            start = 0.05
+        else:
+            start = eye_section['timestamp'].head(1).values[0]
+        timestamps = np.arange(start,eye_section['timestamp'].tail(1).values[0], 1 / 120)
+        eye_x = intp_eye_x(timestamps)
+        filtered_x = butterworth_filter(eye_x, fc=5)
+        target_x = intp_holoY(timestamps) - intp_holoPhi(timestamps)
 
+        axs[0].plot(timestamps, filtered_x)
+        axs[0].scatter(eye['timestamp'], eye['norm_x'], marker='x', alpha=0.5)
+        axs[1].plot(timestamps, target_x)
+        slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical = stats.linregress(
+            filtered_x, target_x)
+        axs[1].plot(timestamps, filtered_x * slope_vertical + intercept_vertical, 'r')
+        pass
+    # eye_x = intp_eye_x(timestamps)
+    # filtered_x = butterworth_filter(eye_x,fc=5)
+    # rolling_x = rolling_filter(eye_x)
+    # holo_y = intp_holoY(timestamps)
+    # holo_phi = intp_holoPhi(timestamps)
+    #
+    # axs[0].plot(timestamps, filtered_x)  # delay of 50ms
+    # axs[0].scatter(eye['timestamp'], eye['norm_x'], marker='x', alpha=0.5)
+    #
+    # axs[1].plot(timestamps, holo_y - holo_phi)
+    # norm_eye_x = normalize(filtered_x,(holo_y-holo_phi))
+    # # axs[1].plot(timestamps,norm_eye_x)
+    # # axs[1].plot(timestamps,norm_eye_x+holo_y-holo_phi,'r')
+    # axs[1].hlines([0], xmax=timestamps[-1], xmin=timestamps[0])
+    # slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical = stats.linregress(
+    #     filtered_x, holo_y-holo_phi)
+    # axs[1].plot(timestamps,filtered_x*slope_vertical+intercept_vertical,'r')
+
+    # axs[0].scatter(eye_x,holo_y-holo_phi)
+    # axs[0].plot(eye_x,eye_x*slope_vertical+intercept_vertical)
     plt.show()
 
     pass
-
 
 # %%
