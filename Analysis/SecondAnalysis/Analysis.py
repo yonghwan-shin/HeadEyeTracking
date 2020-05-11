@@ -19,8 +19,9 @@ targets = range(8)
 envs = ['U', 'W']
 # envs = ['U']
 # poss = ['S', 'W']
-poss = ['W']
-blocks = range(1, 5)
+poss = ['S']
+# blocks=[0]
+blocks = range(5)
 
 
 # eye columns
@@ -706,7 +707,8 @@ def main():
 
 
 if __name__ == "__main__":
-    from_pickle('whole.pkl')
+    create_eye_csv()
+    # from_pickle('whole.pkl')
     # data = pd.read_pickle('whole.pkl')
     # int1 = data.head(1) ['interpolations'][0]
     # print(int1['imuX']([2,3,4]))

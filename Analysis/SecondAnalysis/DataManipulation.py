@@ -50,6 +50,7 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
             python_timestamp = row[0]
             pupil_data = row[1]
             json_dict = demjson.decode(pupil_data)
+            json_dict['python_timestamp'] = python_timestamp
             eye_list.append(json_dict)
         output = pd.DataFrame(eye_list)
         # output = output[output['confidence'] > 0.6]
