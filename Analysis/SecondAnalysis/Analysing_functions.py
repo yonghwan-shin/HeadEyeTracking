@@ -14,18 +14,18 @@ def find_density(data, window=10, threshold=0.7, freq=1 / 120):
     # output = []
     low_density = []
     temp = []
-    temps=[]
+    temps = []
     min = data[0]
     max = data[-1]
     for i in np.arange(min, max, freq):
         correct = np.where((i <= data) & (data <= i + window * freq))
-        if len(correct[0]) <window*threshold:
+        if len(correct[0]) < window * threshold:
             if not temp:
                 pass
             else:
                 temp = np.unique(np.array(temp))
                 temps.append(temp)
-                temp=[]
+                temp = []
             if len(correct[0]) >= 1:
                 low_density.append(correct[0][0])
                 low_density.append(correct[0][-1])
@@ -41,7 +41,7 @@ def find_density(data, window=10, threshold=0.7, freq=1 / 120):
     # sections = np.unique(np.array(temps))
     low_density = np.unique(np.array(low_density))
     # output = np.delete(data,low_density.tolist())
-    return low_density,temps
+    return low_density, temps
     pass
 
 
@@ -130,14 +130,18 @@ def logging_time(original_fn):
 def parse_timeline(start, end):
     output = []
     if len(start) == 0:
-        return [[0.1, 6.3]]
+        return [[1, 6]]
     for i in range(len(start)):
-        if i == 0:
-            output.append([0.1, start[i]])
+        if len(output)==0:
+            if start[i]<1: continue
+            output.append([1, start[i]])
         else:
             output.append([end[i - 1], start[i]])
     if len(start) > 0:
         output.append([end[-1], 6.3])
+    # for index,val in enumerate(output):
+    #     print(index,val)
+
     return output
 
 
