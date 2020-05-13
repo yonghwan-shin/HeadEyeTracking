@@ -18,8 +18,8 @@ subjects = range(201, 212)
 targets = range(8)
 envs = ['U', 'W']
 # envs = ['U']
-# poss = ['S', 'W']
-poss = ['S']
+poss = ['S', 'W']
+# poss = ['S']
 # blocks=[0]
 blocks = range(5)
 
@@ -47,7 +47,7 @@ def create_eye_csv():
                 df_eye['norm_y'] = norm_y
 
                 print(df_eye.head(1)['norm_x'])
-                df_eye.to_csv(path_or_buf=(DATA_ROOT / 'refined_eye_data' / ('refined_' + eye_data.name)), index=False)
+                df_eye.to_csv(path_or_buf=(DATA_ROOT / 'refined_eye_data_original' / ('refined_' + eye_data.name)), index=False)
                 print('saved', eye_data.name, '  ', current_info, subject)
             except ValueError as err:
                 print(err, current_info)
@@ -452,6 +452,7 @@ def save_dataframe_as_one():
             print(err)
             data = data.append({'subject': subject, 'target': target, 'env': env, 'pos': pos, 'block': block},
                                ignore_index=True)
+    return data
     # %%
     data.to_pickle("whole.pkl")
 
@@ -707,8 +708,9 @@ def main():
 
 
 if __name__ == "__main__":
-    create_eye_csv()
+    # create_eye_csv()
     # from_pickle('whole.pkl')
     # data = pd.read_pickle('whole.pkl')
     # int1 = data.head(1) ['interpolations'][0]
     # print(int1['imuX']([2,3,4]))
+    create_eye_csv()

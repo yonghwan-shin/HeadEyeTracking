@@ -286,10 +286,10 @@ def analysis():
 
     pass
 def one_subject_analysis(subject_num):
-    step = 1/200
+    step = 1/120
     sns.set()
 
-
+    fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
     whole_eye_vertical = np.array([])
     whole_eye_horizontal = np.array([])
     whole_dff_vertical = np.array([])
@@ -301,25 +301,47 @@ def one_subject_analysis(subject_num):
     data = pd.read_pickle('subject_'+str(subject_num)+'.pkl')
     for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
         eye,holo,mark =manual_filtering(data,subject_num,target,env,pos,block)
+        holo.update({'Timestamp': holo['Timestamp'] + 0.05})
+        eye.update({'timestamp': (eye['timestamp'] - eye['timestamp'].head(1).values[0])})
         if mark is None:
             print('something wrong,,,', mark)
             continue
         else:
             low_start = []
             low_end = []
-            for index, row in eye.iterrows():
-                if index == 0:
-                    # continue
-                    if eye.loc[index, 'drop'] == 'drop':
-                        low_start.append(eye.loc[index, 'timestamp'])
+            sectors=[]
+            start=-1
+            end=-1
+            temp = pd.DataFrame(columns=eye.columns)
+            for index,row in eye.iterrows():
+                if eye.loc[index,'timestamp'] < 1:
+                    continue
+                if index==0:
+                    if eye.loc[index,'drop'] == 'drop':
+                        pass
+                    else:
+                        temp =temp.append(eye.iloc[index],ignore_index=True)
                 else:
-                    if eye.loc[index, 'drop'] == 'drop' and eye.loc[index - 1, 'drop'] != 'drop':
-                        low_start.append(eye.loc[index, 'timestamp'])
-                    if eye.loc[index, 'drop'] != 'drop' and eye.loc[index - 1, 'drop'] == 'drop':
-                        low_end.append(eye.loc[index, 'timestamp'])
+                    if eye.loc[index,'drop'] == 'drop':
+                        if temp.shape[0]==0:
+                            pass
+                        else:
+                            sectors.append(temp)
+                            temp = pd.DataFrame(columns=eye.columns)
+                    else:
+                        temp = temp.append(eye.iloc[index], ignore_index=True)
+                if eye.loc[index,'timestamp'] >6.3:
+                    if temp.shape[0] != 0:
+                        sectors.append(temp)
+                        break
+                # if index == eye.shape[0]-1:
+                #     if temp.shape[0] != 0:
+                #         sectors.append(temp)
 
-        holo.update({'Timestamp': holo['Timestamp'] + 0.05})
-        eye.update({'timestamp': (eye['timestamp'] - eye['timestamp'].head(1).values[0])})
+            # for sector in sectors:
+            #     print(sector.index)
+
+
         intp_holoX = interpolate.interp1d(holo['Timestamp'],holo['HeadRotationX'])
         intp_holoY = interpolate.interp1d(holo["Timestamp"], holo["HeadRotationY"])
         intp_holoPhi = interpolate.interp1d(holo['Timestamp'], holo['Phi'])
@@ -332,18 +354,21 @@ def one_subject_analysis(subject_num):
         eye_linregress_horizontals = np.array([])
         eye_filtered_verticals = np.array([])
         eye_filtered_horizontals = np.array([])
-        print('start',low_start)
-        print('end',low_end)
+        eye_normalised_vertical=np.array([])
+        eye_normalised_horizontal = np.array([])
         timeline = parse_timeline(np.asarray(low_start),np.asarray(low_end))
         test_axis = np.arange(0.9,6.1,step)
         times = np.array([])
-        fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
-        for time in timeline:
-            t1 = np.where((test_axis>time[0])&(test_axis<time[1]))
-            t = np.arange(math.ceil(time[0]*100)/100,math.floor(time[1]*100)/100,step)
-            if len(t1[0])<50: continue
+
+        for sector in sectors:
+
+            # t1 = np.where((test_axis>time[0])&(test_axis<time[1]))
+            # t = np.arange(math.ceil(time[0]*100)/100,math.floor(time[1]*100)/100,step)
+            t= np.arange(math.ceil(sector.timestamp[0]*100)/100, math.floor(sector.tail(1)['timestamp'].values[0]*100)/100,step)
+            # if len(t1[0])<50: continue
+            if len(t)<5: print('short');continue
             times = np.append(times,t)
-            print(time)
+            print(t[0],t[-1])
             target_vertical = intp_holoX(t) + intp_holoThe(t)
             target_horizontal = intp_holoY(t) - intp_holoPhi(t)
             eye_vertical = intp_eyeY(t)
@@ -370,11 +395,11 @@ def one_subject_analysis(subject_num):
             eye_linregress_horizontals = np.append(eye_linregress_horizontals, eye_linregress_horizontal)
             eye_filtered_verticals = np.append(eye_filtered_verticals, filtered_eye_vertical)
             eye_filtered_horizontals = np.append(eye_filtered_horizontals, filtered_eye_horizontal)
-            axs[0].plot(t,filtered_target_vertical,color='black')
-            axs[0].plot(t,eye_linregress_vertical,color='blue')
-            axs[1].plot(t,filtered_target_horizontal,color='black')
-            axs[1].plot(t,eye_linregress_horizontal,color='blue')
-        plt.show()
+            # axs[0].plot(t,filtered_target_vertical,color='black')
+            # axs[0].plot(t,eye_linregress_vertical,color='blue')
+            # axs[1].plot(t,filtered_target_horizontal,color='black')
+            # axs[1].plot(t,eye_linregress_horizontal,color='blue')
+        # plt.show()
         whole_dff_vertical = np.append(whole_dff_vertical, target_verticals - eye_linregress_verticals)
         whole_dff_horizontal = np.append(whole_dff_horizontal, target_horizontals - eye_linregress_horizontals)
         whole_target_vertical = np.append(whole_target_vertical, target_verticals)
@@ -383,19 +408,22 @@ def one_subject_analysis(subject_num):
         whole_dff_norm_horizontal = np.append(whole_dff_norm_horizontal, eye_normalised_vertical)
         whole_eye_vertical = np.append(whole_eye_vertical, eye_filtered_verticals)
         whole_eye_horizontal = np.append(whole_eye_horizontal, eye_filtered_horizontals)
-    fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
-    sns.scatterplot(whole_target_horizontal, whole_target_vertical, ax=axs[0], markers='+', alpha=0.3)
-    confidence_ellipse(whole_target_horizontal, whole_target_vertical, n_std=3, edgecolor='firebrick', ax=axs[0])
-    sns.scatterplot(whole_dff_horizontal, whole_dff_vertical, ax=axs[1], markers='+', alpha=0.3)
-    confidence_ellipse(whole_dff_horizontal, whole_dff_vertical, n_std=3, edgecolor='fuchsia', ax=axs[1])
-    confidence_ellipse(whole_target_horizontal, whole_target_vertical, n_std=3, edgecolor='firebrick', ax=axs[1])
-    axs[0].axis('equal')
-    axs[1].axis('equal')
-    axs[0].set_title('target')
-    axs[1].set_title('compensated-linregress')
+
+        sns.regplot(eye_filtered_verticals,target_verticals,ax=axs[0],marker='+',scatter_kws={'color':'k','alpha':0.3})
+        sns.regplot(eye_filtered_horizontals,target_horizontals,ax=axs[1],marker='+',scatter_kws={'color':'k','alpha':0.3})
+    # fig, axs = plt.subplots(2, 1, figsize=[6, 12], sharex=True)
+    # sns.scatterplot(whole_target_horizontal, whole_target_vertical, ax=axs[0], markers='+', alpha=0.3)
+    # confidence_ellipse(whole_target_horizontal, whole_target_vertical, n_std=3, edgecolor='firebrick', ax=axs[0])
+    # sns.scatterplot(whole_dff_horizontal, whole_dff_vertical, ax=axs[1], markers='+', alpha=0.3)
+    # confidence_ellipse(whole_dff_horizontal, whole_dff_vertical, n_std=3, edgecolor='fuchsia', ax=axs[1])
+    # confidence_ellipse(whole_target_horizontal, whole_target_vertical, n_std=3, edgecolor='firebrick', ax=axs[1])
+    # axs[0].axis('equal')
+    # axs[1].axis('equal')
+    # axs[0].set_title('target')
+    # axs[1].set_title('compensated-linregress')
     plt.legend()
     fig.suptitle('' + str(subject_num), horizontalalignment='left', verticalalignment='top', fontsize=15)
-    plt.savefig('target_plots_' + str(subject_num - 200) + '.pdf')
+    # plt.savefig('target_plots_' + str(subject_num - 200) + '.pdf')
     # fig.tight_layout()
     plt.show()
     print('drawing plot',subject_num)
