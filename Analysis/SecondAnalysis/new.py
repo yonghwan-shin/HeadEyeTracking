@@ -5,6 +5,7 @@ import itertools
 import seaborn as sns
 from scipy import interpolate
 from scipy import stats
+from scipy import signal
 import numpy as np
 import statistics
 from pathlib import Path
@@ -63,14 +64,28 @@ def data_analysis(eye, holo, imu):
     eye = eye[eye['confidence']>0.8]
     removed_outliers = eye['norm_y'].between(eye['norm_y'].quantile(0.1),eye['norm_y'].quantile(0.9))
     eye = eye.loc[removed_outliers]
-    # plt.scatter(eye.timestamp,eye.norm_y)
-    # plt.show()
-    # plt.scatter(eye.timestamp,intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp))
-    # plt.show()
-    sns.regplot(eye.norm_y,intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp),marker='+',scatter_kws={'color':'k','alpha':0.3})
-    # plt.show()
-    if eye['norm_y'].max()>1: print(current_info,'wrong value');return
+
+    if eye.shape[0]<100: print(current_info,'too short data');return
+    filtered_y = Analysing_functions.butterworth_filter(eye.norm_y,fc=5)
+    target_vertical = intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp)
+    filtered_target_vertical = Analysing_functions.butterworth_filter(target_vertical,fc=5)
+    # sns.regplot(filtered_y,intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp),marker='+',scatter_kws={'color':'k','alpha':0.3})
+    slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical = stats.linregress(
+        filtered_y, filtered_target_vertical)
+    if p_vertical>0.05: print(current_info,'wierd regression') ;return;
+    # plt.scatter(filtered_y,intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp))
+
+    # plt.scatter(eye.timestamp,filtered_y)
+    # indexes,_ = signal.find_peaks(filtered_y)
+    # plt.scatter(eye.timestamp.iloc[indexes], filtered_y[indexes])
+
+
+    plt.scatter(eye.timestamp,filtered_target_vertical)
+    linregress_results.append([slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical])
     print(current_info,'drawn')
+    plt.scatter(eye.timestamp, (filtered_y-filtered_y.mean())*-100 + filtered_target_vertical.mean())
+    # sns.regplot(filtered_y,filtered_target_vertical,marker='+',scatter_kws={'color':'k','alpha':0.3})
+    plt.show()
     pass
 
 
@@ -83,6 +98,8 @@ if __name__ == '__main__':
     # data_analysis(eye, holo, imu)
     subjects=[201]
     poss = ['W']
+    envs=['U']
+    linregress_results=[]
     for subject in subjects:
         [imu_file_list, eye_file_list, hololens_file_list] = FileHandling.get_one_subject_files(subject,refined=True)
         for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
@@ -95,3 +112,9 @@ if __name__ == '__main__':
             except ValueError as err:
                 print(err, current_info)
     plt.show()
+    slopes= []
+    for i in linregress_results:
+        slopes.append(i[0])
+    plt.hist(slopes);plt.show()
+    mean_slope = sum(slopes)/len(slopes)
+    print(mean_slope)
