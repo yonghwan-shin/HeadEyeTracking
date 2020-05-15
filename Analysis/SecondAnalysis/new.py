@@ -11,6 +11,7 @@ import statistics
 from pathlib import Path
 import pandas as pd
 import demjson
+import statsmodels.api as sm
 
 '''
 options
@@ -54,67 +55,72 @@ def data_analysis(eye, holo, imu):
     holo['Phi'] = phis
 
     eye = eye[(eye['timestamp'] > holo.Timestamp.iloc[0]) & (eye['timestamp'] < holo.Timestamp.iloc[-1])]
-    # print('eye timestamp:', eye.timestamp.iloc[0], '->', eye.timestamp.iloc[-1])
-    # print('holo timestamp:', holo.Timestamp.iloc[0], '->', holo.Timestamp.iloc[-1])
     intp_holoX = interpolate.interp1d(holo.Timestamp, holo.HeadRotationX)
     intp_holoY = interpolate.interp1d(holo.Timestamp, holo.HeadRotationY)
     intp_holoPhi = interpolate.interp1d(holo.Timestamp, holo.Phi)
     intp_holoThe = interpolate.interp1d(holo.Timestamp, holo.Theta)
-    eye = eye[eye['timestamp']>1]
-    eye = eye[eye['confidence']>0.8]
-    removed_outliers = eye['norm_y'].between(eye['norm_y'].quantile(0.1),eye['norm_y'].quantile(0.9))
-    eye = eye.loc[removed_outliers]
+    eye = eye[eye['timestamp'] > 1]
+    eye = eye[eye['confidence'] > 0.8]
+    # removed_outliers = eye['norm_y'].between(eye['norm_y'].quantile(0.1), eye['norm_y'].quantile(0.9))
+    # eye = eye.loc[removed_outliers]
+    # fig, axs = plt.subplots(2, 1, figsize=[8, 8], sharex=False)
+    if eye.shape[0] < 100: print(current_info, 'too short data');return
+    filtered_y = Analysing_functions.butterworth_filter(eye.norm_y, fc=5)
 
-    if eye.shape[0]<100: print(current_info,'too short data');return
-    filtered_y = Analysing_functions.butterworth_filter(eye.norm_y,fc=5)
-    target_vertical = intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp)
-    filtered_target_vertical = Analysing_functions.butterworth_filter(target_vertical,fc=5)
-    # sns.regplot(filtered_y,intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp),marker='+',scatter_kws={'color':'k','alpha':0.3})
-    slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical = stats.linregress(
-        filtered_y, filtered_target_vertical)
-    if p_vertical>0.05: print(current_info,'wierd regression') ;return;
-    # plt.scatter(filtered_y,intp_holoX(eye.timestamp)+intp_holoThe(eye.timestamp))
+    target_vertical = intp_holoX(eye.timestamp) + intp_holoThe(eye.timestamp)
+    filtered_target_vertical = Analysing_functions.butterworth_filter(target_vertical, fc=5)
+    peaks, _ = signal.find_peaks(filtered_target_vertical, distance=30)
 
-    # plt.scatter(eye.timestamp,filtered_y)
-    # indexes,_ = signal.find_peaks(filtered_y)
-    # plt.scatter(eye.timestamp.iloc[indexes], filtered_y[indexes])
+    # axs[0].scatter(eye.timestamp, filtered_target_vertical, marker='+')
+    peaks = np.append([0], peaks)
+    peaks = np.append(peaks, [len(eye) - 1])
+    # for peak in peaks:
+        # axs[0].axvline(eye.timestamp.iloc[peak])
+    for i in range(len(peaks) - 1):
+        slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical = stats.linregress(
+            filtered_y[peaks[i]:peaks[i + 1]], filtered_target_vertical[peaks[i]:peaks[i + 1]])
+        if slope_vertical > 0: print(i, 'weired regression');continue
 
+        # axs[0].scatter(eye.timestamp.iloc[peaks[i]:peaks[i + 1]],
+        #                (filtered_y[peaks[i]:peaks[i + 1]] * slope_vertical + intercept_vertical), marker='+')
+        # axs[1].plot(filtered_y[peaks[i]:peaks[i + 1]],
+        #             filtered_y[peaks[i]:peaks[i + 1]] * slope_vertical + intercept_vertical)
+        # axs[1].scatter(filtered_y[peaks[i]:peaks[i + 1]], filtered_target_vertical[peaks[i]:peaks[i + 1]], marker='+',
+        #                alpha=0.3)
 
-    plt.scatter(eye.timestamp,filtered_target_vertical)
-    linregress_results.append([slope_vertical, intercept_vertical, r_vertical, p_vertical, std_err_vertical])
-    print(current_info,'drawn')
-    plt.scatter(eye.timestamp, (filtered_y-filtered_y.mean())*-100 + filtered_target_vertical.mean())
-    # sns.regplot(filtered_y,filtered_target_vertical,marker='+',scatter_kws={'color':'k','alpha':0.3})
-    plt.show()
+        # sns.regplot(filtered_y,filtered_target_vertical,ax=axs[1],marker='+',scatter_kws={'color':'k','alpha':0.3})
+        linregress_results.append(slope_vertical)
+        print(i, slope_vertical, ':', r_vertical)
+
+    print(current_info, 'drawn')
+    # plt.show()
     pass
 
 
 if __name__ == '__main__':
-    # [imu_file_list, eye_file_list, hololens_file_list] = FileHandling.get_one_subject_files(203, refined=True)
-    # current_info = [0, 'W', 'W', 3]
-    # eye = FileHandling.file_as_pandas(FileHandling.get_file_by_info(eye_file_list, current_info), refined=True)
-    # holo = FileHandling.file_as_pandas(FileHandling.get_file_by_info(hololens_file_list, current_info))
-    # imu = FileHandling.file_as_pandas(FileHandling.get_file_by_info(imu_file_list, current_info))
-    # data_analysis(eye, holo, imu)
-    subjects=[201]
+    subjects = [201]
     poss = ['W']
-    envs=['U']
-    linregress_results=[]
+    envs = ['W']
+    linregress_results = []
     for subject in subjects:
-        [imu_file_list, eye_file_list, hololens_file_list] = FileHandling.get_one_subject_files(subject,refined=True)
+        [imu_file_list, eye_file_list, hololens_file_list] = FileHandling.get_one_subject_files(subject, refined=True)
         for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
             current_info = [target, env, pos, block]
             try:
-                eye = FileHandling.file_as_pandas(FileHandling.get_file_by_info(eye_file_list, current_info),refined=True)
-                holo = FileHandling.file_as_pandas(FileHandling.get_file_by_info(hololens_file_list,current_info))
-                imu = FileHandling.file_as_pandas(FileHandling.get_file_by_info(imu_file_list,current_info))
-                data_analysis(eye,holo,imu)
+                eye = FileHandling.file_as_pandas(FileHandling.get_file_by_info(eye_file_list, current_info),
+                                                  refined=True)
+                holo = FileHandling.file_as_pandas(FileHandling.get_file_by_info(hololens_file_list, current_info))
+                imu = FileHandling.file_as_pandas(FileHandling.get_file_by_info(imu_file_list, current_info))
+                if eye.shape[0]<100: print('empty eye data');continue
+                data_analysis(eye, holo, imu)
             except ValueError as err:
                 print(err, current_info)
     plt.show()
-    slopes= []
+    slopes = []
     for i in linregress_results:
-        slopes.append(i[0])
-    plt.hist(slopes);plt.show()
-    mean_slope = sum(slopes)/len(slopes)
+        slopes.append(i)
+    # plt.hist(slopes);
+    sns.distplot(slopes,fit=stats.norm,kde=True)
+    plt.show()
+    mean_slope = sum(slopes) / len(slopes)
     print(mean_slope)
