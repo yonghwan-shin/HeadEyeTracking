@@ -31,9 +31,48 @@ ROOT = Path.cwd()
 DATA_ROOT = ROOT.parent.parent / 'Datasets' / '2ndData'
 
 
-# %% test
-# file = DATA_ROOT /'201' /'EYE_T7_EW_PW_B3_C6_S201_0212172956.csv'
-# eye = pd.read_csv(file,index_col=False,header=1)
+def data_prep(eye,holo,imu):
+    eye.update({'timestamp': eye.timestamp - eye.timestamp.values[0] - 0.05})
+    holo.update({'Timestamp': holo.Timestamp - holo.Timestamp.values[0]})
+    rs = []
+    thetas = []
+    phis = []
+
+    for index, row in holo.iterrows():
+        x = row['TargetPositionX'] - row['HeadPositionX']
+        y = row['TargetPositionY'] - row['HeadPositionY']
+        z = row['TargetPositionZ'] - row['HeadPositionZ']
+        [r, theta, phi] = Analysing_functions.asSpherical([x, z, y])
+        rs.append(r)
+        thetas.append(90 - theta)
+        phis.append(90 - phi)
+
+    holo['R'] = rs
+    holo['Theta'] = thetas
+    holo['Phi'] = phis
+
+    eye = eye[(eye['timestamp'] > holo.Timestamp.iloc[0]) & (eye['timestamp'] < holo.Timestamp.iloc[-1])]
+    intp_holoX = interpolate.interp1d(holo.Timestamp, holo.HeadRotationX)
+    intp_holoY = interpolate.interp1d(holo.Timestamp, holo.HeadRotationY)
+    intp_holoPhi = interpolate.interp1d(holo.Timestamp, holo.Phi)
+    intp_holoThe = interpolate.interp1d(holo.Timestamp, holo.Theta)
+    eye = eye[eye['timestamp'] > 1]
+    eye = eye[eye['confidence'] > 0.8]
+    # removed_outliers = eye['norm_y'].between(eye['norm_y'].quantile(0.1), eye['norm_y'].quantile(0.9))
+    # eye = eye.loc[removed_outliers]
+    # fig, axs = plt.subplots(2, 1, figsize=[8, 8], sharex=False)
+    if eye.shape[0] < 100: print(current_info, 'too short data');return
+    filtered_y = Analysing_functions.butterworth_filter(eye.norm_y, fc=5)
+
+    target_vertical = intp_holoX(eye.timestamp) + intp_holoThe(eye.timestamp)
+    filtered_target_vertical = Analysing_functions.butterworth_filter(target_vertical, fc=5)
+    peaks, _ = signal.find_peaks(filtered_target_vertical, distance=30)
+
+    # axs[0].scatter(eye.timestamp, filtered_target_vertical, marker='+')
+    peaks = np.append([0], peaks)
+    peaks = np.append(peaks, [len(eye) - 1])
+
+    return eye,holo,imu, peaks
 def data_analysis(eye, holo, imu):
     eye.update({'timestamp': eye.timestamp - eye.timestamp.values[0] - 0.05})
     holo.update({'Timestamp': holo.Timestamp - holo.Timestamp.values[0]})
@@ -94,9 +133,23 @@ def data_analysis(eye, holo, imu):
 
     print(current_info, 'drawn')
     # plt.show()
+
     pass
 
-
+def one_trial(subject,target, env, pos, block):
+    [imu_file_list, eye_file_list, hololens_file_list] = FileHandling.get_one_subject_files(subject, refined=True)
+    current_info = [target, env, pos, block]
+    try:
+        eye = FileHandling.file_as_pandas(FileHandling.get_file_by_info(eye_file_list, current_info),
+                                          refined=True)
+        holo = FileHandling.file_as_pandas(FileHandling.get_file_by_info(hololens_file_list, current_info))
+        imu = FileHandling.file_as_pandas(FileHandling.get_file_by_info(imu_file_list, current_info))
+        if eye.shape[0] < 100: print('empty eye data');return None
+        return eye,holo,imu
+        # data_analysis(eye, holo, imu)
+    except ValueError as err:
+        return None
+        print(err, current_info)
 if __name__ == '__main__':
     subjects = [201]
     poss = ['W']
