@@ -123,15 +123,16 @@ def data_analysis(eye, holo, imu):
     eye['target_horizontal'] = target_horizontal
     eye['filtered_y'] = filtered_y
     eye['filtered_x'] = filtered_x
-    fig, axs = plt.subplots(2, 1, figsize=(15, 5),sharex=True)
+    fig1, axs1 = plt.subplots(2, 1, figsize=(10, 10), sharex=True)
+    sns.distplot(eye.target_vertical,fit=stats.norm,ax=axs1[0])
+    fig, axs = plt.subplots(2, 1, figsize=(15, 5), sharex=True)
     axs[1].axhline(0)
     axs[0].axhline(0)
     ss = []
-
-
+    est=[]
     window_size = 40
-    estimation_size = 3
-    axs[0].plot(eye.timestamp,eye.target_vertical)
+    estimation_size = 5
+    axs[0].plot(eye.timestamp, eye.target_vertical)
     axs[0].axvline(eye.timestamp.iloc[0])
     axs[0].axvline(eye.timestamp.iloc[window_size])
     for i in range(eye.shape[0] - window_size - estimation_size):
@@ -142,17 +143,19 @@ def data_analysis(eye, holo, imu):
 
         estimation_timeline = eye.timestamp[i + window_size: i + window_size + estimation_size]
         estimation_y = eye.filtered_y[i + window_size:i + window_size + estimation_size]
-        real_target=eye.target_vertical[i + window_size:i + window_size + estimation_size]
+        real_target = eye.target_vertical[i + window_size:i + window_size + estimation_size]
         estimation_target = s * estimation_y + itc
         # axs[0].scatter(timeline.iloc[-1], t.iloc[-1], marker='+', color='red')
         # axs[0].scatter(timeline.iloc[-1], y.iloc[-1] * s + i, marker='+', color='blue', alpha=0.3)  # -t.iloc[-1]
         axs[1].scatter(timeline.iloc[-1], s / 200, marker='+', color='black')
-        axs[0].scatter(estimation_timeline, estimation_target,marker='+', color = 'red',alpha=0.3)
-        axs[0].scatter(estimation_timeline,estimation_target-real_target,marker='x',color='black')
+        axs[0].scatter(estimation_timeline, estimation_target, marker='+', color='red', alpha=0.3)
+        axs[0].scatter(estimation_timeline, estimation_target - real_target, marker='x', color='black', alpha=0.3)
+        est.append(estimation_target.iloc[0]-real_target.iloc[0])
         ss.append(s)
         # meansloe = sum(ss) / (len(ss))
 
     axs[1].axhline(sum(ss) / (len(ss) * 200))
+    sns.distplot(est,fit=stats.norm,ax=axs1[1])
     plt.show()
 
     # for peak in peaks:
