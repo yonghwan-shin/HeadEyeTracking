@@ -2,9 +2,13 @@ import random
 import time
 
 targets = [0, 1, 2, 3, 4, 5, 6, 7]
+
 env = ['EU', 'EW']
 pos = ['PS', 'PW']
 rep = 5
+
+targets = [0, 1]
+rep =1
 
 def EP_update(sub_number):
     EPblock = []
@@ -36,7 +40,23 @@ def make_file_name(target, env, pos, block, c, sub_num):
         sub_num)
     return output
 
-
+def make_experiment_array_walkonly(sub_num):
+    EPblock = ['U','W'] if sub_num %2 ==0 else ['W','U']
+    total_array = []
+    for block in range(len(EPblock)):
+        for repetition in range(rep):
+            random.shuffle(targets)
+            for c in range(len(targets)):
+                sendstring = 'T' + str(targets[c]) + '_E' + str(EPblock[block]) + '_B' + str(repetition) + '_C' + str(c) + '_S' + str(sub_num)
+                total_array.append(sendstring)
+        if block == len(EPblock) -1 :
+            total_array.append("FINISH")
+        else:
+            total_array.append("BREAK")
+    total_array.reverse()
+    print('Total Trials:',len(total_array))
+    # print(total_array)
+    return total_array
 def make_experiment_array(sub_num):
     EPblock = EP_update(sub_num)
     total_array = []
@@ -77,3 +97,8 @@ def current_add(title):
 # print(exp)
 # print(exp[-1])
 # print(len(exp))
+
+if __name__ =="__main__":
+    tt = make_experiment_array_walkonly(1)
+    # print(tt)
+    # print(len(tt))

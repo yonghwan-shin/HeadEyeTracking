@@ -15,9 +15,7 @@ zmq_thread.DATA_ROOT = DATA_ROOT
 imu_thread.DATA_ROOT = DATA_ROOT
 
 sub = 211
-dataline = [0.0, 0.0, 0.0, 0.0, 0.0]
 
-#
 holodata = ['#START']
 restart = False
 
@@ -27,8 +25,9 @@ restart = False
 
 
 filename = []
-global timer
+# global timer
 timer = 0
+now = 0
 global holo_buffer
 holo_buffer = []
 
@@ -50,7 +49,8 @@ def checkDirectory(path):
 def connectHolo():  # init
     ports = serial.tools.list_ports.comports()
     for port in ports:
-        if port.device.startswith('/dev/cu.Bluetooth'):
+        # if port.device.startswith('/dev/cu.Bluetooth'):
+        if port.device.startswith('/dev/cu.DESKTOP'):
             return serial.Serial(port.device, 115200)
 
 
@@ -66,7 +66,7 @@ def Holo_data_receive(buffer):
     #
     # if signal.decode("utf-8") != False:
     #     if signal.decode("utf-8").startswith('#'):
-    #         holodata.append(signal.decode("utf-8"))
+    #         holodata.append(signal.decode("utfd-8"))
     #     print('received :', signal.decode("utf-8"))
 
 
@@ -82,7 +82,7 @@ def Holo_INIT():
         curr_file = current_add(filename.pop())
         zmq_thread.Set_filename(curr_file)
         imu_thread.Set_filename(curr_file)
-        print('remain trials:', len(filename))
+        print('remaining trials:', len(filename))
         Holo_encoder("#NEXT_" + curr_file)
         holodata.append("#INIT")
 
@@ -99,10 +99,13 @@ def Holo_TRIAL():
 def Holo_END():
     if (holodata[-1] == "#END"):
         global timer
+        global now
         imu_thread.End_trial()
         zmq_thread.End_trial()
         now = time.time()
-        print('trial takes', now - timer, 'seconds')
+        print('-'*20,'END','-'*20,end=' ')
+        
+        print('time:', "%.3f" % (now - timer), 'sec')
         if (filename[-1] == 'BREAK' and (holodata[-2] != "BREAK")):
             Holo_encoder("#BREAK")
             filename.pop()
@@ -120,7 +123,7 @@ def sub_singal():  # init
     zmq_thread.Set_sub_num(str(sub))
     print('subject number was set as', str(sub))
     global filename
-    filename = make_experiment_array(int(sub))
+    filename = make_experiment_array_walkonly(int(sub))
 
     if restart:
         for _ in range(restart_number):
@@ -147,7 +150,7 @@ def setup():
 
 def loop():
     global holo_buffer
-    # global Holo
+    # global Holo   
     while True:
         if Holo.in_waiting > 0:
             holo_buffer.append(Holo.read(Holo.in_waiting).decode('utf-8'))

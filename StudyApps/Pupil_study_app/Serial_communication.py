@@ -25,7 +25,7 @@ def connectArduino():
     print('reconnecting')
     for port in ports:
         # print(port.device)
-        if port.device.startswith('/dev/cu.usbmodem'):
+        if port.device.startswith('/dev/cu.Blue'):
             return serial.Serial(port.device, 9600);
 
 
