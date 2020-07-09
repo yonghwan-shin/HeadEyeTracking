@@ -78,7 +78,7 @@ outputList_s, total_s = get_dwell(['S'])
 merged_w = list(itertools.chain(*outputList_w))
 merged_s = list(itertools.chain(*outputList_s))
 
-# %%
+# %% counting every target-in
 
 
 dwells_w = np.array(merged_w)
@@ -109,7 +109,7 @@ plot_dwell(dwells_s, axis[1])
 plt.show()
 
 
-# %%
+# %% Success/Fail in trial
 
 def find_dwell(outputList, threshold):
     count = 0
@@ -135,7 +135,7 @@ for th in np.arange(100, 1510, step=100):
 
 plt.show()
 
-# %%
+# %% See what's the problem in standing condition...
 subject = 202
 target = 2
 env = 'W'
@@ -148,6 +148,7 @@ df_holo = file_as_pandas(hololens_data)
 check_holo_file(df_holo, current_info)
 target_name = 'target_' + str(target)
 plt.plot(df_holo.Timestamp, df_holo.TargetAngularDistance)
+# Draw vertical line in 'successful pointing'
 for target_in in (df_holo[df_holo.TargetEntered == target_name]).Timestamp:
     plt.axvline(target_in, alpha=0.2)
 plt.show()
