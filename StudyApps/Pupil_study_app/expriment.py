@@ -10,7 +10,7 @@ zmq_thread = ZMQ_listener(name='ZMQ_listener', args=[True])
 imu_thread = IMU_listener(name='IMU_listener', args=[True])
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
+DATA_ROOT = os.path.join(PROJECT_ROOT, "data2")
 zmq_thread.DATA_ROOT = DATA_ROOT
 imu_thread.DATA_ROOT = DATA_ROOT
 
@@ -49,8 +49,8 @@ def checkDirectory(path):
 def connectHolo():  # init
     ports = serial.tools.list_ports.comports()
     for port in ports:
-        # if port.device.startswith('/dev/cu.Bluetooth'):
-        if port.device.startswith('/dev/cu.DESKTOP'):
+        if port.device.startswith('/dev/cu.Bluetooth'):
+        # if port.device.startswith('/dev/cu.DESKTOP'):
             return serial.Serial(port.device, 115200)
 
 
