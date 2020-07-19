@@ -1,6 +1,7 @@
 import json
 import os
 import os.path
+import itertools
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -28,7 +29,6 @@ def read_hololens_json(target: int, environment: str, block: int, subject: int) 
             if filename in file.name:
                 with open(file) as f:
                     output: DataFrame = pd.DataFrame(json.load(f)['data'])
-                    output.timestamp = output.timestamp - output.timestamp[0]
                     return output
     except IOError as e:
         print("Error: while finding hololens file", e)
@@ -51,3 +51,23 @@ def make_trial_info(target, environment, block):
 def dict_to_vector(_dict: dict):
     output = np.array([_dict['x'], _dict['y'], _dict['z']])
     return output
+
+
+def change_angle(_angle):
+    if _angle > 180:
+        _angle = _angle - 360
+    return _angle
+
+
+def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
+    # Initialization of timestamp (set start-point to 0)
+    _data.timestamp = _data.timestamp - _data.timestamp[0]
+    # Deserialize Vector3 components
+    for col, item in itertools.product(['head_position', 'head_rotation', 'head_forward', 'target_position'],
+                                       ['x', 'y', 'z']):
+        _data[col + '_' + item] = _data[col].apply(pd.Series)[item]
+    # Change angle range to -180 ~ 180
+    for col in ['head_rotation_x', 'head_rotation_y', 'head_rotation_z']:
+        _data[col] = _data[col].apply(change_angle)
+
+    return _data
