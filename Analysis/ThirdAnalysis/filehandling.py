@@ -1,18 +1,135 @@
+import itertools
 import json
 import os
 import os.path
-import itertools
-import pandas as pd
-import numpy as np
+import time
 from pathlib import Path
 
+import demjson
+import numpy as np
+import pandas as pd
 from pandas import DataFrame
 
-ROOT = Path.cwd()
-DATA_ROOT = ROOT / 'data'
+from QuaternionHandling import quaternion_to_euler
 
 
-def read_hololens_json(target: int, environment: str, block: int, subject: int) -> pd.DataFrame:
+# ROOT = Path.cwd()
+# DATA_ROOT = ROOT / 'data'
+def logging_time(original_fn):
+    def wrapper_fn(*args, **kwargs):
+        start_time = time.time()
+        result = original_fn(*args, **kwargs)
+        end_time = time.time()
+        print(
+            "Working time[{}] : {} sec".format(
+                original_fn.__name__, end_time - start_time
+            )
+        )
+        return result
+
+    return wrapper_fn
+
+
+def read_eye_file(
+    target: int, environment: str, block: int, subject: int
+) -> pd.DataFrame:
+    ROOT = Path.cwd()
+    DATA_ROOT = ROOT / "data" / (str(subject))
+    filename = make_trial_info(target, environment, block)
+    try:
+        files = DATA_ROOT.rglob("EYE*" + str(subject) + "*.csv")
+        for file in files:
+            if filename in file.name:
+                output = pd.read_csv(DATA_ROOT / file.name, header=1)
+                refined = manipulate_eye(output)
+                refined = refined.astype({"theta": float, "phi": float})
+                refined[["norm_x", "norm_y"]] = pd.DataFrame(
+                    refined.norm_pos.tolist(), index=refined.index
+                )
+                return refined
+    except:
+        print("error in reading eye file")
+        pass
+
+
+@logging_time
+def manipulate_eye(_eye_dataframe: pd.DataFrame):
+    try:
+        eye_list = []
+        for row in _eye_dataframe.itertuples(index=False):
+            python_timestamp = row[0]
+            pupil_data = row[1]
+            json_dict = demjson.decode(pupil_data)
+            json_dict["python_timestamp"] = python_timestamp
+            eye_list.append(json_dict)
+        output = pd.DataFrame(eye_list)
+        output.timestamp = output.timestamp - output.timestamp[0]
+        return output
+    except:
+        raise ValueError("fail in EYE manipulation")
+        # print('fail in eye manipulation')
+
+
+def read_imu_file(
+    target: int, environment: str, block: int, subject: int
+) -> pd.DataFrame:
+    ROOT = Path.cwd()
+    DATA_ROOT = ROOT / "data" / (str(subject))
+    filename = make_trial_info(target, environment, block)
+    try:
+        files = DATA_ROOT.rglob("IMU*" + str(subject) + "*.csv")
+        for file in files:
+            if filename in file.name:
+                output = pd.read_csv(DATA_ROOT / file.name, header=1)
+                refined = manipulate_imu(output)
+                return refined
+    except:
+        pass
+
+
+def manipulate_imu(_imu_dataframe: pd.DataFrame):
+    """convert raw imu data (quaternion) to euler angles, and set timestamp unit into second.
+
+    Args:
+        _imu_dataframe (pd.DataFrame): raw data from csv file
+
+    Raises:
+        ValueError: notify there is an error
+
+    Returns:
+        [pd.Dataframe]: refined pandas dataframe
+    """
+    angle_list = []
+    try:
+        # Change quaternion to euler angles
+        for row in _imu_dataframe.itertuples(index=False):
+            euler_angle = quaternion_to_euler(row[1], row[2], row[3], row[4])
+            x = -euler_angle[0] if (-euler_angle[0] < 180) else -euler_angle[0] - 360
+            y = -euler_angle[1] if (-euler_angle[1] < 180) else -euler_angle[1] - 360
+            z = (
+                -euler_angle[2] - 180
+                if (-euler_angle[2] - 180 > -180)
+                else -euler_angle[2] + 180
+            )
+
+            euler_angle = (x, y, z)
+            output = (int(row[0][1:]),) + euler_angle
+
+            angle_list.append(output)
+        output = pd.DataFrame(
+            data=angle_list,
+            columns=["IMUtimestamp", "rotationX", "rotationY", "rotationZ"],
+        )
+        # Set timestamp unit (ms -> s)
+        output.IMUtimestamp = (output.IMUtimestamp - output.IMUtimestamp[0]) / 1000
+        return output
+    except:
+        raise ValueError("fail in IMU manipulation")
+
+
+def read_hololens_json(
+    target: int, environment: str, block: int, subject: int
+) -> pd.DataFrame:
     """
     Read a json file from hololens, convert into pandas dataframe after check there is no error.
     :rtype: pandas.Dataframe
@@ -22,16 +139,18 @@ def read_hololens_json(target: int, environment: str, block: int, subject: int) 
     :param subject: number of participant
     :return: pandas dataframe, None if there is an error
     """
+    ROOT = Path.cwd()
+    DATA_ROOT = ROOT / "data" / (str(subject) + "_holo")
     filename = make_trial_info(target, environment, block)
     try:
-        files = DATA_ROOT.rglob('#NEXT*S' + str(subject) + '*.json')
+        files = DATA_ROOT.rglob("#NEXT*S" + str(subject) + "*.json")
         for file in files:
             if filename in file.name:
                 with open(file) as f:
-                    output: DataFrame = pd.DataFrame(json.load(f)['data'])
+                    output: DataFrame = pd.DataFrame(json.load(f)["data"])
                     return output
-    except IOError as e:
-        print("Error: while finding hololens file", e)
+    except:
+        print("Error: while finding hololens file")
     print("Cannot find the file... return None", filename)
     return pd.DataFrame()
 
@@ -49,7 +168,7 @@ def make_trial_info(target, environment, block):
 
 
 def dict_to_vector(_dict: dict):
-    output = np.array([_dict['x'], _dict['y'], _dict['z']])
+    output = np.array([_dict["x"], _dict["y"], _dict["z"]])
     return output
 
 
@@ -63,11 +182,23 @@ def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
     # Initialization of timestamp (set start-point to 0)
     _data.timestamp = _data.timestamp - _data.timestamp[0]
     # Deserialize Vector3 components
-    for col, item in itertools.product(['head_position', 'head_rotation', 'head_forward', 'target_position'],
-                                       ['x', 'y', 'z']):
-        _data[col + '_' + item] = _data[col].apply(pd.Series)[item]
+    for col, item in itertools.product(
+        ["head_position", "head_rotation", "head_forward", "target_position"],
+        ["x", "y", "z"],
+    ):
+        _data[col + "_" + item] = _data[col].apply(pd.Series)[item]
     # Change angle range to -180 ~ 180
-    for col in ['head_rotation_x', 'head_rotation_y', 'head_rotation_z']:
+    for col in ["head_rotation_x", "head_rotation_y", "head_rotation_z"]:
         _data[col] = _data[col].apply(change_angle)
 
     return _data
+
+
+def bring_hololens_data(
+    target: int, environment: str, block: int, subject: int
+) -> pd.DataFrame:
+    try:
+        df = read_hololens_json(target, environment, block, subject)
+        return refining_hololens_dataframe(df)
+    except:
+        pass
