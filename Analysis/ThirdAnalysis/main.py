@@ -5,18 +5,19 @@ import plotly.express as px
 import plotly.graph_objects as go
 import scipy.signal
 from plotly.subplots import make_subplots
-
+from sklearn.linear_model import LinearRegression
 from filehandling import bring_hololens_data, read_eye_file, read_imu_file
 
 #%% Bring Data
-subject = 9995
+subject = 301
 env = "U"
-holo = bring_hololens_data(3, env, 1, subject)
-imu = read_imu_file(3, env, 1, subject)
-eye = read_eye_file(3, env, 1, subject)
+target = 2
+holo = bring_hololens_data(target, env, 2, subject)
+imu = read_imu_file(target, env, 2, subject)
+eye = read_eye_file(target, env, 2, subject)
 
 # %% draw 3d plot of walking trace
-fig = px.line_3d(
+fig = px.scatter_3d(
     holo,
     x="head_position_x",
     z="head_position_y",
@@ -26,7 +27,11 @@ fig = px.line_3d(
     range_y=[0, 8],
     width=600,
     height=600,
+    color="target_entered",
+    opacity=0.5,
 )
+fig.update_traces(marker=dict(size=5))
+
 fig.show()
 
 # %% simple comparison of hololens & IMU record
@@ -39,8 +44,8 @@ fig.show()
 Vertical:     imu-x/head-rotation-x/holo-the/eye-y/eye-the
 Horizontal:   imu-z/head-rotation-y/holo-phi/eye-x/eye-phi
 """
-# eye = eye[eye.confidence >0.6]
-fig = make_subplots(rows=1, cols=2)
+eye = eye[eye.confidence >0.6]
+fig = make_subplots(rows=2, cols=1)
 fig.add_trace(
     go.Scatter(x=imu.IMUtimestamp, y=imu.rotationX, name="IMU-vertical"), row=1, col=1
 )
@@ -52,8 +57,10 @@ fig.add_trace(
     go.Scatter(
         x=eye.timestamp, y=filtered, mode="markers", name="eye-filtered-vertical"
     ),
-    row=1,
-    col=2,
+    row=2,
+    col=1,
 )
+fig.add_trace( go.Scatter(x=eye.timestamp,y=eye.theta,name = 'eye-raw'),row=2,col=1)
 fig.show()
 # %%
+# TODO: Set origin (timestamp)
