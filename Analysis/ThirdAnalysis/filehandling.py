@@ -33,10 +33,15 @@ def logging_time(original_fn):
 def read_eye_file(
     target: int, environment: str, block: int, subject: int
 ) -> pd.DataFrame:
-    ROOT = Path.cwd()
+    ROOT = Path(__file__).resolve().parent
     DATA_ROOT = ROOT / "data" / (str(subject))
     filename = make_trial_info(target, environment, block)
     try:
+        refined_files = DATA_ROOT.rglob(("EYE*" + str(subject) + "*.pkl"))
+        for file in refined_files:
+            if filename in file.name:
+                output = pd.read_pickle(DATA_ROOT / file.name)
+                return output
         files = DATA_ROOT.rglob("EYE*" + str(subject) + "*.csv")
         for file in files:
             if filename in file.name:
@@ -46,6 +51,7 @@ def read_eye_file(
                 refined[["norm_x", "norm_y"]] = pd.DataFrame(
                     refined.norm_pos.tolist(), index=refined.index
                 )
+                refined.to_pickle(DATA_ROOT / (file.name.split(".")[0] + ".pkl"))
                 return refined
     except:
         print("error in reading eye file")
@@ -73,7 +79,7 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
 def read_imu_file(
     target: int, environment: str, block: int, subject: int
 ) -> pd.DataFrame:
-    ROOT = Path.cwd()
+    ROOT = Path(__file__).resolve().parent
     DATA_ROOT = ROOT / "data" / (str(subject))
     filename = make_trial_info(target, environment, block)
     try:
@@ -139,19 +145,20 @@ def read_hololens_json(
     :param subject: number of participant
     :return: pandas dataframe, None if there is an error
     """
-    ROOT = Path.cwd()
+    ROOT = Path(__file__).resolve().parent
     DATA_ROOT = ROOT / "data" / (str(subject) + "_holo")
     filename = make_trial_info(target, environment, block)
     try:
-        files = DATA_ROOT.rglob("#NEXT*S" + str(subject) + "*.json")
+        files = DATA_ROOT.rglob("*.json")
         for file in files:
             if filename in file.name:
+
                 with open(file) as f:
                     output: DataFrame = pd.DataFrame(json.load(f)["data"])
                     return output
     except:
         print("Error: while finding hololens file")
-    print("Cannot find the file... return None", filename)
+    print("Cannot find the file... return None", str(subject) + ":" + filename)
     return pd.DataFrame()
 
 
@@ -202,3 +209,19 @@ def bring_hololens_data(
         return refining_hololens_dataframe(df)
     except:
         pass
+
+
+if __name__ == "__main__":
+    subjects = range(411, 412)
+    envs = ["W"]
+    targets = range(8)
+    blocks = range(5)
+    for subject, env, target, block in itertools.product(
+        subjects, envs, targets, blocks
+    ):
+        ROOT = Path(__file__).resolve().parent
+        DATA_ROOT = ROOT / "data" / (str(subject))
+        files = DATA_ROOT.rglob("*.csv")
+        for file in files:
+            print(file, " ---> ", DATA_ROOT / (file.name.replace("411", "310")))
+            os.rename(file, DATA_ROOT / (file.name.replace("411", "310")))
