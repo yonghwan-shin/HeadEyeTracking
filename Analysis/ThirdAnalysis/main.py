@@ -7,7 +7,13 @@ import scipy.signal
 import itertools
 from plotly.subplots import make_subplots
 from sklearn.linear_model import LinearRegression
-from filehandling import bring_hololens_data, read_eye_file, read_imu_file
+from filehandling import (
+    bring_hololens_data,
+    read_eye_file,
+    read_imu_file,
+    filter_out_eye,
+)
+from scipy import interpolate
 
 #%% Bring Data
 def bring_data(target, env, block, subject):
@@ -81,24 +87,38 @@ def filter_visualise(eye):
 
 
 # %%
-# TODO: Set origin (timestamp)
-
-
 if __name__ == "__main__":
 
-    subjects = range(310, 312)
+    subjects = range(312, 313)
     envs = ["W", "U"]
     targets = range(8)
-    blocks = range(1, 5)
-    for subject, env, target, block in itertools.product(
-        subjects, envs, targets, blocks
-    ):
-        try:
-            print("-" * 10, target, env, block, subject, "-" * 10)
-            holo, eye, imu = bring_data(target, env, block, subject)
-            print(holo.shape, eye.shape, imu.shape)
-        except:
-            print("err in")
+    blocks = range(5)
+    # subjects = range(304, 305)
+    # envs = ["W"]
+    # targets = range(0, 1)
+    # blocks = range(3, 4)
+    for subject in subjects:
+        lowcount = 0
+        shortcount = 0
+        errcount = 0
+        for env, target, block in itertools.product(envs, targets, blocks):
+            try:
+                # print("-" * 10, target, env, block, subject, "-" * 10)
+                eye = read_eye_file(target, env, block, subject)
+                comment = filter_out_eye(eye)
+                if comment == "short":
+                    shortcount = shortcount + 1
+                elif comment == "low":
+                    lowcount = lowcount + 1
+                elif comment == "ok":
+                    pass
+                else:
+                    errcount = errcount + 1
+
+            except:
+                print("total err")
+                errcount = errcount + 1
+        print(f"{subject} -> err: {errcount}\tshort: {shortcount}\tlow: {lowcount}")
 
 
 # %%

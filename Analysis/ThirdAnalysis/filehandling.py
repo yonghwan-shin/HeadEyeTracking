@@ -52,9 +52,10 @@ def read_eye_file(
                     refined.norm_pos.tolist(), index=refined.index
                 )
                 refined.to_pickle(DATA_ROOT / (file.name.split(".")[0] + ".pkl"))
+
                 return refined
     except:
-        print("error in reading eye file")
+        print("error in reading eye file", subject, target, environment, block)
         pass
 
 
@@ -67,13 +68,31 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
             pupil_data = row[1]
             json_dict = demjson.decode(pupil_data)
             json_dict["python_timestamp"] = python_timestamp
+            json_dict["timestamp"] = float(json_dict["timestamp"])
+            json_dict["confidence"] = float(json_dict["confidence"])
+            json_dict["theta"] = float(json_dict["theta"])
+            json_dict["phi"] = float(json_dict["phi"])
             eye_list.append(json_dict)
         output = pd.DataFrame(eye_list)
+        # print(output.timestamp[:50])
         output.timestamp = output.timestamp - output.timestamp[0]
         return output
     except:
-        raise ValueError("fail in EYE manipulation")
-        # print('fail in eye manipulation')
+        print("failed in eye manipulation")
+        # raise ValueError("fail in EYE manipulation")
+
+
+def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
+    if _eye_dataframe.shape[0] < 600:
+        print(f"too short data length {_eye_dataframe.shape[0]}")
+        return "short"
+    else:
+        if _eye_dataframe[_eye_dataframe["confidence"] > threshold].shape[0] < 600:
+            print(
+                f"too low confidence {_eye_dataframe[_eye_dataframe['confidence'] > threshold].shape[0]}"
+            )
+            return "low"
+    return "ok"
 
 
 def read_imu_file(
