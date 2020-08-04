@@ -1,7 +1,7 @@
 import itertools
 import json
 import os
-import os.path
+
 import time
 from pathlib import Path
 
@@ -16,6 +16,11 @@ from QuaternionHandling import quaternion_to_euler
 # ROOT = Path.cwd()
 # DATA_ROOT = ROOT / 'data'
 def logging_time(original_fn):
+    """[summary]
+    Args:
+        original_fn ([function]): [function that you want to know how much time does it takes]
+    """
+
     def wrapper_fn(*args, **kwargs):
         start_time = time.time()
         result = original_fn(*args, **kwargs)
@@ -61,6 +66,17 @@ def read_eye_file(
 
 @logging_time
 def manipulate_eye(_eye_dataframe: pd.DataFrame):
+    """[summary]
+
+    Args:
+        _eye_dataframe (pd.DataFrame): pandas dataframe of raw eye-data 
+
+    Raises:
+        ValueError: If there is an error while handling eye data, raises error
+
+    Returns:
+        [pd.DataFrame]: 1) reset timestamp to 0, 2) make json list to dataframe
+    """
     try:
         eye_list = []
         for row in _eye_dataframe.itertuples(index=False):
@@ -83,6 +99,15 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
 
 
 def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
+    """[summary]
+
+    Args:
+        _eye_dataframe (pd.DataFrame): manipulated eye-dataframe
+        threshold (float, optional): confidence threshold, remove lines have below threshold. Defaults to 0.6.
+
+    Returns:
+        str: "ok" if it has no critical flaw, "short" for less than ~75%, "low" for too many low confidence lines
+    """
     if _eye_dataframe.shape[0] < 600:
         print(f"too short data length {_eye_dataframe.shape[0]}")
         return "short"
