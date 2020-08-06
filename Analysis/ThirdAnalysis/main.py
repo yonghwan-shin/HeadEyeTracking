@@ -89,7 +89,7 @@ def filter_visualise(eye):
 # %%
 if __name__ == "__main__":
 
-    subjects = range(312, 313)
+    subjects = range(301, 302)
     envs = ["W", "U"]
     targets = range(8)
     blocks = range(5)
@@ -106,19 +106,19 @@ if __name__ == "__main__":
                 # print("-" * 10, target, env, block, subject, "-" * 10)
                 eye = read_eye_file(target, env, block, subject)
                 comment = filter_out_eye(eye)
-                if comment == "short":
+
+            except Exception as e:
+                print(e.args)
+                if e.args[1] == "short":
                     shortcount = shortcount + 1
-                elif comment == "low":
+                elif e.args[1] == "low":
                     lowcount = lowcount + 1
-                elif comment == "ok":
-                    pass
                 else:
                     errcount = errcount + 1
-
-            except:
-                print("total err")
-                errcount = errcount + 1
         print(f"{subject} -> err: {errcount}\tshort: {shortcount}\tlow: {lowcount}")
 
+
+# %%
+holo, imu, eye = bring_data(1, "W", 1, 303)
 
 # %%

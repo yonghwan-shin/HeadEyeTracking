@@ -109,14 +109,14 @@ def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
         str: "ok" if it has no critical flaw, "short" for less than ~75%, "low" for too many low confidence lines
     """
     if _eye_dataframe.shape[0] < 600:
-        print(f"too short data length {_eye_dataframe.shape[0]}")
-        return "short"
+        raise Exception(f"too short data length {_eye_dataframe.shape[0]}", "short")
+
     else:
         if _eye_dataframe[_eye_dataframe["confidence"] > threshold].shape[0] < 600:
-            print(
-                f"too low confidence {_eye_dataframe[_eye_dataframe['confidence'] > threshold].shape[0]}"
+            raise Exception(
+                f"too low confidence {_eye_dataframe[_eye_dataframe['confidence'] > threshold].shape[0]}",
+                "low",
             )
-            return "low"
     return "ok"
 
 
