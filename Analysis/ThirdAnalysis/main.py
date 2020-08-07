@@ -89,7 +89,7 @@ def filter_visualise(eye):
 # %%
 if __name__ == "__main__":
 
-    subjects = range(301, 302)
+    subjects = range(301, 317)
     envs = ["W", "U"]
     targets = range(8)
     blocks = range(5)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                 comment = filter_out_eye(eye)
 
             except Exception as e:
-                print(e.args)
+                # print(e.args)
                 if e.args[1] == "short":
                     shortcount = shortcount + 1
                 elif e.args[1] == "low":
