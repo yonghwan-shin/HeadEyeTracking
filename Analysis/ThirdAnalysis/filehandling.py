@@ -98,7 +98,7 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
         # raise ValueError("fail in EYE manipulation")
 
 
-def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
+def check_eye_dataframe(_eye_dataframe: pd.DataFrame, threshold=0.6):
     """[summary]
 
     Args:
@@ -117,7 +117,25 @@ def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
                 f"too low confidence {_eye_dataframe[_eye_dataframe['confidence'] > threshold].shape[0]}",
                 "low",
             )
-    return "ok"
+
+def check_hololens_dataframe(_holo_dataframe: pd.DataFrame, block, threshold=4.0):
+    """Check the hololens dataframe is properly done
+    Args:
+        _holo_dataframe (pd.DataFrame):basic dataframe to check
+        block (int): need a number of block (0 means practice trial)
+        threshold (float): walklegnth threshold Defaults to 4.0.
+
+    Raises:
+        Exception: "short" if it didn't exceed threshold
+    """
+    walklength = _holo_dataframe.head_position_z.iloc[-1] - _holo_dataframe.head_position_z.iloc[0]
+    if walklength < threshold:
+        logstring = ""
+        if block == 0: logstring = "practice"
+        else: logstring = "short"
+        raise Exception(logstring, walklength)
+                
+
 
 
 def read_imu_file(
@@ -136,7 +154,16 @@ def read_imu_file(
     except:
         pass
 
-
+#%% Bring Data
+def bring_data(target, env, block, subject):
+    try:
+        holo = bring_hololens_data(target, env, block, subject)
+        imu = read_imu_file(target, env, block, subject)
+        eye = read_eye_file(target, env, block, subject)
+        return holo, imu, eye
+    except:
+        print("error in bringing data")
+        
 def manipulate_imu(_imu_dataframe: pd.DataFrame):
     """convert raw imu data (quaternion) to euler angles, and set timestamp unit into second.
 
