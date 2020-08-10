@@ -39,13 +39,16 @@ def synchronise_imu(imu, holo, show_plot=False):
     holo_interpolated = pd.Series(holo_intp(imu.IMUtimestamp))
     approx_range = np.arange(-20, 0)
     rsx = [crosscorr(pd.Series(signal.detrend(holo_interpolated)), pd.Series(signal.detrend(imu.rotationX)), lag) for lag in approx_range]
+    shift = approx_range[np.argmax(rsx)]
+    coef =  rsx[np.argmax(rsx)]
+    shift_time = imu.IMUtimestamp.iloc[-1] - imu.IMUtimestamp.iloc[shift]
     if show_plot:
         f, ax = plt.subplots(figsize=(14, 3))
         ax.plot(approx_range,rsx)
         ax.axvline(approx_range[np.argmax(rsx)], color='r', linestyle='--')
         plt.show()
-
-    return approx_range[np.argmax(rsx)], rsx[np.argmax(rsx)]
+    
+    return shift,coef, shift_time
 
 
 def check_eye_files():
