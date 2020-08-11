@@ -1,16 +1,19 @@
 # %%
-import numpy as np
-from plotly.subplots import make_subplots
-from sklearn.linear_model import LinearRegression
+import itertools
+import math
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import scipy.signal
-import itertools
-from scipy import interpolate,stats,signal
-import math
-from filehandling import *
+from plotly.subplots import make_subplots
+from scipy import interpolate, signal, stats
+
+from filehandling import (bring_data, bring_hololens_data, check_eye_dataframe,
+                          check_hololens_dataframe, read_eye_file)
+
 
 def crosscorr(datax, datay, lag=0, wrap=False):
     if wrap:
@@ -21,7 +24,7 @@ def crosscorr(datax, datay, lag=0, wrap=False):
         return datax.corr(datay.shift(lag))
 
 
-def synchronise_imu(imu, holo, show_plot=False):
+def synchronise_timestamp(imu, holo, show_plot=False):
     """synchronise Hololens <--> imu timestamp with correlating horizontal values
 
     Args:
@@ -30,7 +33,7 @@ def synchronise_imu(imu, holo, show_plot=False):
         show_plot (bool): shows plot of correlation values if True. Defaults to False.
 
     Returns:
-        float,float: shift, correlation coef
+        int,float,float: shift, correlation coef,shifted time(add to imu timestamp)
     """
     time_max = min(holo.timestamp.values[-1], imu.IMUtimestamp.values[-1])
     # holo = holo[holo.timestamp <= time_max]
@@ -38,17 +41,21 @@ def synchronise_imu(imu, holo, show_plot=False):
     holo_intp = interpolate.interp1d(holo.timestamp, holo.head_rotation_x)
     holo_interpolated = pd.Series(holo_intp(imu.IMUtimestamp))
     approx_range = np.arange(-20, 0)
-    rsx = [crosscorr(pd.Series(signal.detrend(holo_interpolated)), pd.Series(signal.detrend(imu.rotationX)), lag) for lag in approx_range]
+    rsx = [
+        crosscorr(pd.Series(signal.detrend(holo_interpolated)),
+                  pd.Series(signal.detrend(imu.rotationX)), lag)
+        for lag in approx_range
+    ]
     shift = approx_range[np.argmax(rsx)]
-    coef =  rsx[np.argmax(rsx)]
+    coef = rsx[np.argmax(rsx)]
     shift_time = imu.IMUtimestamp.iloc[-1] - imu.IMUtimestamp.iloc[shift]
     if show_plot:
-        f, ax = plt.subplots(figsize=(14, 3))
-        ax.plot(approx_range,rsx)
-        ax.axvline(approx_range[np.argmax(rsx)], color='r', linestyle='--')
+        _, ax = plt.subplots(figsize=(14, 3))
+        ax.plot(approx_range, rs)
+        ax.axvline(shift, color='r', linestyle='--')
         plt.show()
-    
-    return shift,coef, shift_time
+
+    return shift, coef, shift_time
 
 
 def check_eye_files():
@@ -78,7 +85,9 @@ def check_eye_files():
                     lowcount = lowcount + 1
                 else:
                     errcount = errcount + 1
-        print(f"{subject} -> err: {errcount}\tshort: {shortcount}\tlow: {lowcount}")
+        print(
+            f"{subject} -> err: {errcount}\tshort: {shortcount}\tlow: {lowcount}"
+        )
 
 
 def check_holo_files():
@@ -86,36 +95,26 @@ def check_holo_files():
     envs = ["W", "U"]
     targets = range(8)
     blocks = range(5)
-    # subjects = range(304, 305)
-    # envs = ["W"]
-    # targets = range(0, 1)
-    # blocks = range(3, 4)
     for subject in subjects:
         shortcount = 0
-        errorcount = 0
+        errcount = 0
         practicecount = 0
         for env, target, block in itertools.product(envs, targets, blocks):
             try:
-                # timestamp', 'head_position', 'head_rotation', 'head_forward',
-                # 'target_position', 'target_entered', 'angular_distance',
-                # 'head_position_x', 'head_position_y', 'head_position_z',
-                # 'head_rotation_x', 'head_rotation_y', 'head_rotation_z',
-                # 'head_forward_x', 'head_forward_y', 'head_forward_z',
-                # 'target_position_x', 'target_position_y', 'target_position_z'
-
                 holo = bring_hololens_data(target, env, block, subject)
-                # print("packet length:", holo.shape[0])
                 check_hololens_dataframe(holo, block=block, threshold=4.0)
 
             except Exception as e:
                 print(e.args)
                 if e.args[0] == 'practice':
-                    practicecount = practicecount + 1
+                    practicecount += 1
                 elif e.args[0] == 'short':
-                    shortcount = shortcount + 1
+                    shortcount += 1
                 else:
-                    errcount = errcount + 1
-        print(f"{subject}--> short: {shortcount}, practice: {practicecount}, error: {errorcount}")
+                    errcount += 1
+        print(
+            f"{subject}--> short: {shortcount}, practice: {practicecount}, error: {errcount}"
+        )
 
 
 def filter_visualise(eye, imu):
@@ -131,19 +130,20 @@ def filter_visualise(eye, imu):
     b, a = scipy.signal.butter(3, 0.05)
     filtered = scipy.signal.filtfilt(b, a, eye.theta)
     fig.add_trace(
-        go.Scatter(
-            x=eye.timestamp, y=filtered, mode="markers", name="eye-filtered-vertical"
-        ),
+        go.Scatter(x=eye.timestamp,
+                   y=filtered,
+                   mode="markers",
+                   name="eye-filtered-vertical"),
         row=2,
         col=1,
     )
-    fig.add_trace(
-        go.Scatter(x=eye.timestamp, y=eye.theta, name="eye-raw"), row=2, col=1
-    )
+    fig.add_trace(go.Scatter(x=eye.timestamp, y=eye.theta, name="eye-raw"),
+                  row=2,
+                  col=1)
     fig.show()
 
 
-# %% draw 3d plot of walking trace
+# draw 3d plot of walking trace
 def draw_3d_passage(holo):
     fig = px.scatter_3d(
         holo,
@@ -163,7 +163,7 @@ def draw_3d_passage(holo):
     fig.show()
 
 
-# %% simple comparison of hololens & IMU record
+# simple comparison of hololens & IMU record
 def compare_holo_IMU(holo, imu):
     fig = px.line(holo, x="timestamp", y="head_rotation_x")
     # fig.show()
@@ -171,15 +171,15 @@ def compare_holo_IMU(holo, imu):
     fig.show()
 
 
-# %%
 if __name__ == "__main__":
     t = pd.Series([math.sin(a) for a in range(1, 100)])
     t2 = pd.Series([math.sin(a) for a in range(5, 104)])
     rs = [crosscorr(t, t2, lag) for lag in range(-5, 5)]
     f, ax = plt.subplots(figsize=(14, 3))
     ax.plot(rs)
-    ax.axvline(np.argmax(rs), color='r', linestyle='--', label='peak synchrony')
+    ax.axvline(np.argmax(rs),
+               color='r',
+               linestyle='--',
+               label='peak synchrony')
     plt.legend()
     plt.show()
-
-# %%
