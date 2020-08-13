@@ -1,10 +1,9 @@
 import itertools
 import json
 import os
-
 import time
 from pathlib import Path
-
+import math
 import demjson
 import numpy as np
 import pandas as pd
@@ -20,24 +19,30 @@ def logging_time(original_fn):
     Args:
         original_fn ([function]): [function that you want to know how much time does it takes]
     """
-
     def wrapper_fn(*args, **kwargs):
         start_time = time.time()
         result = original_fn(*args, **kwargs)
         end_time = time.time()
-        print(
-            "Working time[{}] : {} sec".format(
-                original_fn.__name__, end_time - start_time
-            )
-        )
+        print("Working time[{}] : {} sec".format(original_fn.__name__,
+                                                 end_time - start_time))
         return result
 
     return wrapper_fn
 
 
-def read_eye_file(
-    target: int, environment: str, block: int, subject: int
-) -> pd.DataFrame:
+def asSpherical(xyz: list):
+    # takes list xyz (single coord)
+    x = xyz[0]
+    y = xyz[1]
+    z = xyz[2]
+    r = math.sqrt(x * x + y * y + z * z)
+    theta = math.acos(z / r) * 180 / math.pi  # to degrees
+    phi = math.atan2(y, x) * 180 / math.pi
+    return [r, theta, phi]
+
+
+def read_eye_file(target: int, environment: str, block: int,
+                  subject: int) -> pd.DataFrame:
     ROOT = Path(__file__).resolve().parent
     DATA_ROOT = ROOT / "data" / (str(subject))
     filename = make_trial_info(target, environment, block)
@@ -52,16 +57,23 @@ def read_eye_file(
             if filename in file.name:
                 output = pd.read_csv(DATA_ROOT / file.name, header=1)
                 refined = manipulate_eye(output)
-                refined = refined.astype({"theta": float, "phi": float})
-                refined[["norm_x", "norm_y"]] = pd.DataFrame(
-                    refined.norm_pos.tolist(), index=refined.index
-                )
-                refined.to_pickle(DATA_ROOT / (file.name.split(".")[0] + ".pkl"))
+                # refined = refined.astype({"theta": float, "phi": float})
+                refined[["norm_x",
+                         "norm_y"]] = pd.DataFrame(refined.norm_pos.tolist(),
+                                                   index=refined.index)
+                refined = refined.astype({
+                    "theta": float,
+                    "phi": float,
+                    "norm_x": float,
+                    "norm_y": float
+                })
+                refined.to_pickle(DATA_ROOT /
+                                  (file.name.split(".")[0] + ".pkl"))
 
                 return refined
-    except:
-        print("error in reading eye file", subject, target, environment, block)
-        pass
+    except Exception as e:
+        raise Exception(e.args, "error in reading eye file", subject, target,
+                        environment, block)
 
 
 @logging_time
@@ -93,12 +105,12 @@ def manipulate_eye(_eye_dataframe: pd.DataFrame):
         # print(output.timestamp[:50])
         output.timestamp = output.timestamp - output.timestamp[0]
         return output
-    except:
-        print("failed in eye manipulation")
+    except Exception as e:
+        raise Exception(e.args, "failed in eye manipulation")
         # raise ValueError("fail in EYE manipulation")
 
 
-def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
+def check_eye_dataframe(_eye_dataframe: pd.DataFrame, threshold=0.6):
     """[summary]
 
     Args:
@@ -109,20 +121,43 @@ def filter_out_eye(_eye_dataframe: pd.DataFrame, threshold=0.6):
         str: "ok" if it has no critical flaw, "short" for less than ~75%, "low" for too many low confidence lines
     """
     if _eye_dataframe.shape[0] < 600:
-        raise Exception(f"too short data length {_eye_dataframe.shape[0]}", "short")
+        raise Exception(f"too short data length {_eye_dataframe.shape[0]}",
+                        "short")
 
     else:
-        if _eye_dataframe[_eye_dataframe["confidence"] > threshold].shape[0] < 600:
+        if _eye_dataframe[
+                _eye_dataframe["confidence"] > threshold].shape[0] < 600:
             raise Exception(
                 f"too low confidence {_eye_dataframe[_eye_dataframe['confidence'] > threshold].shape[0]}",
                 "low",
             )
-    return "ok"
 
 
-def read_imu_file(
-    target: int, environment: str, block: int, subject: int
-) -> pd.DataFrame:
+def check_hololens_dataframe(_holo_dataframe: pd.DataFrame,
+                             block,
+                             threshold=4.0):
+    """Check the hololens dataframe is properly done
+    Args:
+        _holo_dataframe (pd.DataFrame):basic dataframe to check
+        block (int): need a number of block (0 means practice trial)
+        threshold (float): walklegnth threshold Defaults to 4.0.
+
+    Raises:
+        Exception: "short" if it didn't exceed threshold
+    """
+    walklength = _holo_dataframe.head_position_z.iloc[-1] - \
+        _holo_dataframe.head_position_z.iloc[0]
+    if walklength < threshold:
+        logstring = ""
+        if block == 0:
+            logstring = "practice"
+        else:
+            logstring = "short"
+        raise Exception(logstring, walklength)
+
+
+def read_imu_file(target: int, environment: str, block: int,
+                  subject: int) -> pd.DataFrame:
     ROOT = Path(__file__).resolve().parent
     DATA_ROOT = ROOT / "data" / (str(subject))
     filename = make_trial_info(target, environment, block)
@@ -135,6 +170,25 @@ def read_imu_file(
                 return refined
     except:
         pass
+
+
+# %% Bring Data
+
+def bring_data(target, env, block, subject):
+    try:
+        holo = bring_hololens_data(target, env, block, subject)
+
+        imu = read_imu_file(target, env, block, subject)
+        eye = read_eye_file(target, env, block, subject)
+        eye = eye.astype({
+            "theta": float,
+            "phi": float,
+            "norm_x": float,
+            "norm_y": float
+        })
+        return holo, imu, eye
+    except:
+        print("error in bringing data")
 
 
 def manipulate_imu(_imu_dataframe: pd.DataFrame):
@@ -154,16 +208,15 @@ def manipulate_imu(_imu_dataframe: pd.DataFrame):
         # Change quaternion to euler angles
         for row in _imu_dataframe.itertuples(index=False):
             euler_angle = quaternion_to_euler(row[1], row[2], row[3], row[4])
-            x = -euler_angle[0] if (-euler_angle[0] < 180) else -euler_angle[0] - 360
-            y = -euler_angle[1] if (-euler_angle[1] < 180) else -euler_angle[1] - 360
-            z = (
-                -euler_angle[2] - 180
-                if (-euler_angle[2] - 180 > -180)
-                else -euler_angle[2] + 180
-            )
+            x = -euler_angle[0] if (
+                -euler_angle[0] < 180) else -euler_angle[0] - 360
+            y = -euler_angle[1] if (
+                -euler_angle[1] < 180) else -euler_angle[1] - 360
+            z = (-euler_angle[2] - 180 if
+                 (-euler_angle[2] - 180 > -180) else -euler_angle[2] + 180)
 
             euler_angle = (x, y, z)
-            output = (int(row[0][1:]),) + euler_angle
+            output = (int(row[0][1:]), ) + euler_angle
 
             angle_list.append(output)
         output = pd.DataFrame(
@@ -171,15 +224,15 @@ def manipulate_imu(_imu_dataframe: pd.DataFrame):
             columns=["IMUtimestamp", "rotationX", "rotationY", "rotationZ"],
         )
         # Set timestamp unit (ms -> s)
-        output.IMUtimestamp = (output.IMUtimestamp - output.IMUtimestamp[0]) / 1000
+        output.IMUtimestamp = (output.IMUtimestamp -
+                               output.IMUtimestamp[0]) / 1000
         return output
-    except:
-        raise ValueError("fail in IMU manipulation")
+    except Exception as e:
+        raise Exception(e.args, "fail in IMU manipulation")
 
 
-def read_hololens_json(
-    target: int, environment: str, block: int, subject: int
-) -> pd.DataFrame:
+def read_hololens_json(target: int, environment: str, block: int,
+                       subject: int) -> pd.DataFrame:
     """
     Read a json file from hololens, convert into pandas dataframe after check there is no error.
     :rtype: pandas.Dataframe
@@ -200,8 +253,8 @@ def read_hololens_json(
                 with open(file) as f:
                     output: DataFrame = pd.DataFrame(json.load(f)["data"])
                     return output
-    except:
-        print("Error: while finding hololens file")
+    except Exception as e:
+        raise Exception(e.args, "Error: while finding hololens file")
     print("Cannot find the file... return None", str(subject) + ":" + filename)
     return pd.DataFrame()
 
@@ -241,18 +294,30 @@ def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
     # Change angle range to -180 ~ 180
     for col in ["head_rotation_x", "head_rotation_y", "head_rotation_z"]:
         _data[col] = _data[col].apply(change_angle)
+    thetas = []
+    phis = []
+    for index, row in _data.iterrows():
+        x = row["target_position_x"] - row["head_position_x"]
+        y = row["target_position_y"] - row["head_position_y"]
+        z = row["target_position_z"] - row["head_position_z"]
+        [r, theta, phi] = asSpherical([x, z, y])
+        thetas.append(90 - theta)
+        phis.append(90 - phi)
+    _data['Theta'] = thetas
+    _data["Phi"] = phis
+    _data['TargetVertical'] = _data.head_rotation_x + _data.Theta
+    _data['TargetHorizontal'] = _data.head_rotation_y - _data.Phi
 
     return _data
 
 
-def bring_hololens_data(
-    target: int, environment: str, block: int, subject: int
-) -> pd.DataFrame:
+def bring_hololens_data(target: int, environment: str, block: int,
+                        subject: int) -> pd.DataFrame:
     try:
         df = read_hololens_json(target, environment, block, subject)
         return refining_hololens_dataframe(df)
-    except:
-        pass
+    except Exception as e:
+        raise Exception(e.args)
 
 
 if __name__ == "__main__":
@@ -261,11 +326,11 @@ if __name__ == "__main__":
     targets = range(8)
     blocks = range(5)
     for subject, env, target, block in itertools.product(
-        subjects, envs, targets, blocks
-    ):
+            subjects, envs, targets, blocks):
         ROOT = Path(__file__).resolve().parent
         DATA_ROOT = ROOT / "data" / (str(subject))
         files = DATA_ROOT.rglob("*.csv")
         for file in files:
-            print(file, " ---> ", DATA_ROOT / (file.name.replace("411", "310")))
+            print(file, " ---> ",
+                  DATA_ROOT / (file.name.replace("411", "310")))
             os.rename(file, DATA_ROOT / (file.name.replace("411", "310")))
