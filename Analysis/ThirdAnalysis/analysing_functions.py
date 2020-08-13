@@ -1,4 +1,3 @@
-# %%
 import itertools
 import math
 
@@ -16,6 +15,17 @@ from filehandling import (bring_data, bring_hololens_data, check_eye_dataframe,
 
 
 def crosscorr(datax, datay, lag=0, wrap=False):
+    """
+
+    Args:
+        datax: base array to compare
+        datay: second array to compare
+        lag: how many rows to shift
+        wrap: wrap up the outside array if True. Defaults to False
+
+    Returns:
+        List: list of correlation results
+    """
     if wrap:
         shiftedy = datay.shift(lag)
         shiftedy.iloc[:lag] = datay.iloc[-lag:].values
@@ -47,7 +57,7 @@ def synchronise_timestamp(imu, holo, show_plot=False):
         for lag in approx_range
     ]
     shift = approx_range[np.argmax(rsx)]
-    coef = rsx[np.argmax(rsx)]
+    coef = rsx[int(np.argmax(rsx))]
     shift_time = imu.IMUtimestamp.iloc[-1] - imu.IMUtimestamp.iloc[shift]
     if show_plot:
         _, ax = plt.subplots(figsize=(14, 3))

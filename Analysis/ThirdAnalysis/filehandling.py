@@ -294,6 +294,19 @@ def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
     # Change angle range to -180 ~ 180
     for col in ["head_rotation_x", "head_rotation_y", "head_rotation_z"]:
         _data[col] = _data[col].apply(change_angle)
+    thetas = []
+    phis = []
+    for index, row in _data.iterrows():
+        x = row["target_position_x"] - row["head_position_x"]
+        y = row["target_position_y"] - row["head_position_y"]
+        z = row["target_position_z"] - row["head_position_z"]
+        [r, theta, phi] = asSpherical([x, z, y])
+        thetas.append(90 - theta)
+        phis.append(90 - phi)
+    _data['Theta'] = thetas
+    _data["Phi"] = phis
+    _data['TargetVertical'] = _data.head_rotation_x + _data.Theta
+    _data['TargetHorizontal'] = _data.head_rotation_y - _data.Phi
 
     return _data
 
