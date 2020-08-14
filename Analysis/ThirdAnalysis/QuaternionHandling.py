@@ -2,7 +2,6 @@ import numpy as np
 # from scipy.spatial.transform import Rotation as R
 import math
 
-
 def euler_to_quaternion(roll, pitch, yaw):
     qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(roll / 2) * np.sin(pitch / 2) * np.sin(yaw / 2)
     qy = np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2) + np.sin(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2)
