@@ -10,8 +10,7 @@ import scipy.signal
 from plotly.subplots import make_subplots
 from scipy import interpolate, signal, stats
 
-from filehandling import (bring_data, bring_hololens_data, check_eye_dataframe,
-                          check_hololens_dataframe, read_eye_file)
+from filehandling import *
 
 
 def crosscorr(datax, datay, lag=0, wrap=False):
@@ -32,6 +31,11 @@ def crosscorr(datax, datay, lag=0, wrap=False):
         return datax.corr(shiftedy)
     else:
         return datax.corr(datay.shift(lag))
+
+
+def normalize(_from, _to):
+    slope, intercept, r, p, std = stats.linregress(_from, _to)
+    return slope, intercept
 
 
 def synchronise_timestamp(imu, holo, show_plot=False):
@@ -61,7 +65,7 @@ def synchronise_timestamp(imu, holo, show_plot=False):
     shift_time = imu.IMUtimestamp.iloc[-1] - imu.IMUtimestamp.iloc[shift]
     if show_plot:
         _, ax = plt.subplots(figsize=(14, 3))
-        ax.plot(approx_range, rs)
+        ax.plot(approx_range, rsx)
         ax.axvline(shift, color='r', linestyle='--')
         plt.show()
 
@@ -181,15 +185,134 @@ def compare_holo_IMU(holo, imu):
     fig.show()
 
 
+def euler_to_vector(_x, _y):
+    x = math.cos(_y) * math.sin(_x)
+    z = math.cos(_y) * math.cos(_x)
+    y = math.sin(_y)
+    return [x, y, z]
+
+
+def holo_to_vector(holo: pd.DataFrame):
+    vector = []
+    for index, row in holo.iterrows():
+        holo_vector = np.array(euler_to_vector(row['head_rotation_y'] * math.pi / 180, row['head_rotation_x'] * math.pi / 180))
+        vector.append(holo_vector)
+    holo['vector'] = vector
+    return holo
+
+
+def imu_to_vector(imu: pd.DataFrame):
+    vector_x = []
+    vector_y = []
+    vector_z = []
+    vector = []
+    for index, row in imu.iterrows():
+        imu_vector = np.array(euler_to_vector(row['rotationZ'] * math.pi / 180, row['rotationX'] * math.pi / 180))
+        # imu_vector = imu_vector / np.linalg.norm(imu_vector)
+        vector.append(imu_vector)
+        vector_x.append(imu_vector[0])
+        vector_y.append(imu_vector[1])
+        vector_z.append(imu_vector[2])
+    imu['vector_x'] = vector_x
+    imu['vector_y'] = vector_y
+    imu['vector_z'] = vector_z
+    imu['vector'] = vector
+    return imu
+
+
+class LowPassFilter(object):
+    def __init__(self, alpha):
+        self.__setAlpha(alpha)
+        self.__y = self.__s = None
+
+    def __setAlpha(self, alpha):
+        alpha = float(alpha)
+        if alpha<=0 or alpha>1.0:
+            raise ValueError("alpha (%s) should be in (0.0, 1.0]"%alpha)
+        self.__alpha = alpha
+
+    def __call__(self, value, timestamp=None, alpha=None):
+        if alpha is not None:
+            self.__setAlpha(alpha)
+        if self.__y is None:
+            s = value
+        else:
+            s = self.__alpha*value + (1.0-self.__alpha)*self.__s
+        self.__y = value
+        self.__s = s
+        return s
+
+    def lastValue(self):
+        return self.__y
+
+
+class OneEuroFilter(object):
+
+    def __init__(self, freq, mincutoff=1.0, beta=0.0, dcutoff=1.0):
+        if freq <= 0:
+            raise ValueError("freq should be >0")
+        if mincutoff <= 0:
+            raise ValueError("mincutoff should be >0")
+        if dcutoff <= 0:
+            raise ValueError("dcutoff should be >0")
+        self.__freq = float(freq)
+        self.__mincutoff = float(mincutoff)
+        self.__beta = float(beta)
+        self.__dcutoff = float(dcutoff)
+        self.__x = LowPassFilter(self.__alpha(self.__mincutoff))
+        self.__dx = LowPassFilter(self.__alpha(self.__dcutoff))
+        self.__lasttime = None
+
+    def __alpha(self, cutoff):
+        te = 1.0 / self.__freq
+        tau = 1.0 / (2 * math.pi * cutoff)
+        return 1.0 / (1.0 + tau / te)
+
+    def __call__(self, x, timestamp=None):
+        # ---- update the sampling frequency based on timestamps
+        if self.__lasttime and timestamp:
+            self.__freq = 1.0 / (timestamp - self.__lasttime)
+        self.__lasttime = timestamp
+        # ---- estimate the current variation per second
+        prev_x = self.__x.lastValue()
+        dx = 0.0 if prev_x is None else (x - prev_x) * self.__freq  # FIXME: 0.0 or value?
+        edx = self.__dx(dx, timestamp, alpha=self.__alpha(self.__dcutoff))
+        # ---- use it to update the cutoff frequency
+        cutoff = self.__mincutoff + self.__beta * math.fabs(edx)
+        # ---- filter the given value
+        return self.__x(x, timestamp, alpha=self.__alpha(cutoff))
+
+def one_euro(_data,freq=120,mincutoff=1,beta=1.0,dcutoff=1.0):
+    config=dict(freq=freq,mincutoff=mincutoff,beta=beta,dcutoff=dcutoff)
+    filter=OneEuroFilter(**config)
+    f=[]
+    for i in range(len(_data)):
+        f.append(filter(_data[i]))
+    return pd.Series(f)
+
 if __name__ == "__main__":
-    t = pd.Series([math.sin(a) for a in range(1, 100)])
-    t2 = pd.Series([math.sin(a) for a in range(5, 104)])
-    rs = [crosscorr(t, t2, lag) for lag in range(-5, 5)]
-    f, ax = plt.subplots(figsize=(14, 3))
-    ax.plot(rs)
-    ax.axvline(np.argmax(rs),
-               color='r',
-               linestyle='--',
-               label='peak synchrony')
-    plt.legend()
+    import random
+    timestamp = range(100)
+    signal = [math.sin(x) for x in timestamp]
+    noise =[random.random()/5 for x in timestamp]
+        # signal + (random.random()-0.5)/5.0
+    original = [signal[i]+noise[i] for i in timestamp]
+    filtered = one_euro(original,beta=0.99,mincutoff=0.87,dcutoff=1.0)
+    plt.plot(timestamp,original)
+    plt.plot(timestamp,filtered)
     plt.show()
+    # duration = 10.0
+    # config = {
+    #     'freq': 120,
+    #     'mincutoff': 1.0,
+    #     'beta': 0.5,
+    #     'dcutoff': 1.0
+    # }
+    # f = OneEuroFilter(**config)
+    # timestamp = 0.0
+    # while timestamp < duration:
+    #     signal = math.sin(timestamp)
+    #     noisy = signal + (random.random() - 0.5) / 5.0
+    #     filtered = f(noisy, timestamp)
+    #     print(f"{timestamp}, {signal}, {noisy}, {filtered}")
+    #     timestamp += 1.0 / config['freq']

@@ -8,8 +8,8 @@ import demjson
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-
-from QuaternionHandling import quaternion_to_euler
+from scipy import interpolate
+from QuaternionHandling import *
 
 
 # ROOT = Path.cwd()
@@ -19,6 +19,7 @@ def logging_time(original_fn):
     Args:
         original_fn ([function]): [function that you want to know how much time does it takes]
     """
+
     def wrapper_fn(*args, **kwargs):
         start_time = time.time()
         result = original_fn(*args, **kwargs)
@@ -126,7 +127,7 @@ def check_eye_dataframe(_eye_dataframe: pd.DataFrame, threshold=0.6):
 
     else:
         if _eye_dataframe[
-                _eye_dataframe["confidence"] > threshold].shape[0] < 600:
+            _eye_dataframe["confidence"] > threshold].shape[0] < 600:
             raise Exception(
                 f"too low confidence {_eye_dataframe[_eye_dataframe['confidence'] > threshold].shape[0]}",
                 "low",
@@ -146,7 +147,7 @@ def check_hololens_dataframe(_holo_dataframe: pd.DataFrame,
         Exception: "short" if it didn't exceed threshold
     """
     walklength = _holo_dataframe.head_position_z.iloc[-1] - \
-        _holo_dataframe.head_position_z.iloc[0]
+                 _holo_dataframe.head_position_z.iloc[0]
     if walklength < threshold:
         logstring = ""
         if block == 0:
@@ -191,6 +192,36 @@ def bring_data(target, env, block, subject):
         print("error in bringing data")
 
 
+def interpolated_dataframes(holo, imu, eye):
+    timestamp = np.arange(0, 6.5, 1 / 120)
+    interpolated_holo = pd.DataFrame()
+    interpolated_imu = pd.DataFrame()
+    interpolated_eye = pd.DataFrame()
+    holo_columns = ['angular_distance',
+                    'head_position_x', 'head_position_y', 'head_position_z',
+                    'head_rotation_x', 'head_rotation_y', 'head_rotation_z',
+                    'head_forward_x', 'head_forward_y', 'head_forward_z',
+                    'target_position_x', 'target_position_y', 'target_position_z','TargetVertical','TargetHorizontal']
+    for column in holo_columns:
+        interpolate_function = interpolate.interp1d(holo.timestamp, holo[column], fill_value='extrapolate')
+        interpolated_column = interpolate_function(timestamp)
+        interpolated_holo[column] = interpolated_column
+    interpolated_holo['timestamp'] = timestamp
+    imu_columns = ['rotationX', 'rotationY', 'rotationZ']
+    for column in imu_columns:
+        interpolate_function = interpolate.interp1d(imu.IMUtimestamp,imu[column],fill_value='extrapolate')
+        interpolated_column = interpolate_function(timestamp)
+        interpolated_imu[column] = interpolated_column
+    interpolated_imu['timestamp'] = timestamp
+    eye_columns = ['confidence', 'theta', 'phi', 'norm_x', 'norm_y']
+    for column in eye_columns:
+        interpolate_function = interpolate.interp1d(eye.timestamp,eye[column],fill_value='extrapolate')
+        interpolated_column = interpolate_function(timestamp)
+        interpolated_eye[column] = interpolated_column
+    interpolated_eye['timestamp'] = timestamp
+    return interpolated_holo,interpolated_imu,interpolated_eye
+
+
 def manipulate_imu(_imu_dataframe: pd.DataFrame):
     """convert raw imu data (quaternion) to euler angles, and set timestamp unit into second.
 
@@ -209,14 +240,14 @@ def manipulate_imu(_imu_dataframe: pd.DataFrame):
         for row in _imu_dataframe.itertuples(index=False):
             euler_angle = quaternion_to_euler(row[1], row[2], row[3], row[4])
             x = -euler_angle[0] if (
-                -euler_angle[0] < 180) else -euler_angle[0] - 360
+                    -euler_angle[0] < 180) else -euler_angle[0] - 360
             y = -euler_angle[1] if (
-                -euler_angle[1] < 180) else -euler_angle[1] - 360
+                    -euler_angle[1] < 180) else -euler_angle[1] - 360
             z = (-euler_angle[2] - 180 if
                  (-euler_angle[2] - 180 > -180) else -euler_angle[2] + 180)
 
             euler_angle = (x, y, z)
-            output = (int(row[0][1:]), ) + euler_angle
+            output = (int(row[0][1:]),) + euler_angle
 
             angle_list.append(output)
         output = pd.DataFrame(
@@ -249,7 +280,6 @@ def read_hololens_json(target: int, environment: str, block: int,
         files = DATA_ROOT.rglob("*.json")
         for file in files:
             if filename in file.name:
-
                 with open(file) as f:
                     output: DataFrame = pd.DataFrame(json.load(f)["data"])
                     return output
@@ -287,8 +317,8 @@ def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
     _data.timestamp = _data.timestamp - _data.timestamp[0]
     # Deserialize Vector3 components
     for col, item in itertools.product(
-        ["head_position", "head_rotation", "head_forward", "target_position"],
-        ["x", "y", "z"],
+            ["head_position", "head_rotation", "head_forward", "target_position"],
+            ["x", "y", "z"],
     ):
         _data[col + "_" + item] = _data[col].apply(pd.Series)[item]
     # Change angle range to -180 ~ 180

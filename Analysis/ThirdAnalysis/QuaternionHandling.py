@@ -1,5 +1,5 @@
 import numpy as np
-# from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation as R
 import math
 
 def euler_to_quaternion(roll, pitch, yaw):
@@ -27,6 +27,7 @@ def quaternion_to_euler(x, y, z, w):
     Z = math.degrees(math.atan2(t3, t4))
 
     return X, Y, Z
+
 
 
 # euler_Original = (np.random.random(3)).tolist()

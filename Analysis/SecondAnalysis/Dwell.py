@@ -3,7 +3,7 @@ import itertools
 
 from matplotlib import pyplot as plt
 import numpy as np
-
+import pandas as pd
 # custom functions
 from FileHandling import get_one_subject_files, get_file_by_info, file_as_pandas
 from DataManipulation import check_holo_file
@@ -16,7 +16,32 @@ envs = ["U", "W"]
 poss = ["W", "S"]
 blocks = range(1, 5)
 
+def see_holo(postures:list,environments:list):
+    startpositionX=[]
+    startAngular = []
+    for subject in subjects:
+        [imu_file_list, eye_file_list, hololens_file_list] = get_one_subject_files(
+            subject, refined=True
+        )
+        for target, env, pos, block in itertools.product(
+            targets, environments, postures, blocks
+        ):
+            current_info = [target,env,pos,block]
+            try:
+                hololens_data = get_file_by_info(hololens_file_list, current_info)
+                df_holo = file_as_pandas(hololens_data)
 
+                check_holo_file(df_holo, current_info)  # Check the trial data is fine
+
+                target_name = "target_" + str(target)
+                first  = df_holo.head(1)
+                startX = first['HeadPositionX'].values[0]
+                startAngle = first['TargetAngularDistance'].values[0]
+                startpositionX.append(startX)
+                startAngular.append(startAngle)
+            except Exception as e:
+                print(e.args)
+    return pd.Series(startpositionX),pd.Series(startAngular)
 def get_dwell(postures: list):
     dwell_time_list = []
     total_dwell_list = []
@@ -83,7 +108,7 @@ def get_dwell(postures: list):
             except ValueError as err:
                 print(subject, current_info, err)
     return dwell_time_list, total_dwell_list
-
+#%%
 
 outputList_w, total_w = get_dwell(["W"])
 outputList_s, total_s = get_dwell(["S"])
@@ -187,3 +212,22 @@ plt.plot(df_holo.Timestamp, df_holo.TargetAngularDistance)
 for target_in in (df_holo[df_holo.TargetEntered == target_name]).Timestamp:
     plt.axvline(target_in, alpha=0.2)
 plt.show()
+#%%
+subjects = range(
+    201, 211
+)  # Subject No1. To change subject groups for whole subjects, use -> range(201,211)
+targets = range(8)
+envs = ["U", "W"]
+poss = ["W", "S"]
+blocks = range(1, 5)
+x_sw,a_sw = see_holo('S','W')
+x_su,a_su = see_holo('S','U')
+x_ww,a_ww = see_holo('W','W')
+x_wu,a_wu = see_holo('W','U')
+# x_w,a_w = see_holo('W')
+
+#%%
+from scipy.stats import ks_2samp
+for comb in itertools.permutations([x_sw,a_sw,x_su,a_su,x_ww,a_ww,x_wu,a_wu],r=2):
+    print(ks_2samp(comb[0],comb[1]))
+
