@@ -351,16 +351,4 @@ def bring_hololens_data(target: int, environment: str, block: int,
 
 
 if __name__ == "__main__":
-    subjects = range(411, 412)
-    envs = ["W"]
-    targets = range(8)
-    blocks = range(5)
-    for subject, env, target, block in itertools.product(
-            subjects, envs, targets, blocks):
-        ROOT = Path(__file__).resolve().parent
-        DATA_ROOT = ROOT / "data" / (str(subject))
-        files = DATA_ROOT.rglob("*.csv")
-        for file in files:
-            print(file, " ---> ",
-                  DATA_ROOT / (file.name.replace("411", "310")))
-            os.rename(file, DATA_ROOT / (file.name.replace("411", "310")))
+   pass

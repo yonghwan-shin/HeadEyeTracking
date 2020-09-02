@@ -214,7 +214,7 @@ for target_in in (df_holo[df_holo.TargetEntered == target_name]).Timestamp:
 plt.show()
 #%%
 subjects = range(
-    201, 211
+    201, 212
 )  # Subject No1. To change subject groups for whole subjects, use -> range(201,211)
 targets = range(8)
 envs = ["U", "W"]
