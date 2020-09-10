@@ -1,7 +1,7 @@
 import java.util.Collections;
 
 // update all these:
-int subNum                 = 208;                    // update as needed        
+int subNum                 = 301;                    // update as needed        
 boolean usePupil           = true;                // turn both to true to turn on sensing!
 boolean useIMU             = true;
 float thirtyDiagonalSquareWidthInPixels  =   821;//821;  // whatever the final value is

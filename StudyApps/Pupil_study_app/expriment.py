@@ -19,7 +19,12 @@ sub = 211
 holodata = ['#START']
 restart = False
 
-# restart_number = 49
+'''
+When error happens in either hololens or python code,
+restart the experiment where the error occurred. 
+by - just uncomment the 'restart' , 'holodata' line below
+'''
+restart_number = 411
 # restart = True
 # holodata = ['#START','#INIT']
 
@@ -50,7 +55,7 @@ def connectHolo():  # init
     ports = serial.tools.list_ports.comports()
     for port in ports:
         if port.device.startswith('/dev/cu.Bluetooth'):
-        # if port.device.startswith('/dev/cu.DESKTOP'):
+            # if port.device.startswith('/dev/cu.DESKTOP'):
             return serial.Serial(port.device, 115200)
 
 
@@ -103,8 +108,8 @@ def Holo_END():
         imu_thread.End_trial()
         zmq_thread.End_trial()
         now = time.time()
-        print('-'*20,'END','-'*20,end=' ')
-        
+        print('-' * 20, 'END', '-' * 20, end=' ')
+
         print('time:', "%.3f" % (now - timer), 'sec')
         if (filename[-1] == 'BREAK' and (holodata[-2] != "BREAK")):
             Holo_encoder("#BREAK")
@@ -154,10 +159,15 @@ def loop():
     while True:
         if Holo.in_waiting > 0:
             holo_buffer.append(Holo.read(Holo.in_waiting).decode('utf-8'))
+
             for component in holo_buffer:
-                if component.startswith('#'):
-                    holodata.append(component)
-                print(f'received: {component}')
+                for index, line in enumerate(component.split('\n')):
+                    if line.startswith('#'):
+                        holodata.append(line)
+                    if line == '':
+                        pass
+                    else:
+                        print(f'received: {index} -> {line}')
             holo_buffer = []
         # Holo_START(): INIT -> curr_file send
         Holo_START()
@@ -166,7 +176,6 @@ def loop():
         Holo_TRIAL()
         # END -> NEXT or BREAK or FINISH, NEXT: INIT 상태로 만들기.
         Holo_END()
-
 
 
 def main():

@@ -155,10 +155,10 @@ class IMU_listener(threading.Thread):
         self.sub_num = _sub_num
 
 
-def main():
+def main1():
     imu_receiver = IMU_listener(name='imu listener', args=[True])
     imu_receiver.start()
 
 
 if __name__ == "__main__":
-    main()
+    main1()

@@ -7,8 +7,9 @@ env = ['EU', 'EW']
 pos = ['PS', 'PW']
 rep = 5
 
-targets = [0, 1]
-rep =1
+# DEBUG - short trials
+# targets = [0, 1]
+# rep =2
 
 def EP_update(sub_number):
     EPblock = []
