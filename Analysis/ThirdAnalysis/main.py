@@ -40,8 +40,8 @@ def summary_one_trial(target, env, block, subject):
     shift, corr, shift_time = synchronise_timestamp(imu, holo, show_plot=False)
     imu.IMUtimestamp = imu.IMUtimestamp - shift_time
     eye.timestamp = eye.timestamp - shift_time
-    eye.norm_x = eye.norm_x - eye.norm_x.mean()
-    eye.norm_y = eye.norm_y - eye.norm_y.mean()
+    # eye.norm_x = eye.norm_x - eye.norm_x.mean()
+    # eye.norm_y = eye.norm_y - eye.norm_y.mean()
 
     # imu = imu_to_vector(imu)
     new_holo, new_imu, new_eye = interpolated_dataframes(holo, imu, eye)
@@ -129,7 +129,7 @@ def summary_one_trial(target, env, block, subject):
         go.Scatter(x=new_eye.timestamp, y=(new_eye.filtered_norm_y * multiple_vertical), name='filtered-eye-y'), row=1,
         col=1)
     # HOLO
-    # fig_vertical.add_trace(go.Scatter(x=new_eye.timestamp, y=new_holo.head_rotation_x, name='head-y'), row=2, col=1)
+    fig_vertical.add_trace(go.Scatter(x=new_eye.timestamp, y=new_holo.head_rotation_x, name='head-y'), row=2, col=1)
     fig_vertical.add_trace(
         go.Scatter(x=new_eye.timestamp, y=new_holo.filtered_TargetVertical, name='filtered-target-y'), row=2, col=1)
     # fig_vertical.add_trace(go.Scatter(x=new_eye.timestamp, y=new_imu.rotationX, name='imu-y'), row=2, col=1)
@@ -200,11 +200,11 @@ def summary_one_trial(target, env, block, subject):
 
 # %% check the distribution fo x-pos and angle distance
 def check_distribution():
-    from plotly.subplots import make_subplots
-    from analysing_functions import *
-    # IF you are using Pycharm
-    import plotly.io as pio
-    from scipy import fftpack, signal
+    # from plotly.subplots import make_subplots
+    # from analysing_functions import *
+    # # IF you are using Pycharm
+    # import plotly.io as pio
+    # from scipy import fftpack, signal
 
     pio.renderers.default = 'browser'
     subjects = range(301, 317)
@@ -277,7 +277,7 @@ def angle_velocity(_head_forward, _head_forward2, _time):
     return vg.angle(vector1, vector2) / _time
 
 
-dwell_output = []
+
 # subjects = range(307, 308)
 subjects = range(301, 317)
 envs = ['U', 'W']
@@ -286,6 +286,7 @@ blocks = range(1, 5)
 # threshold = 0.2
 thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
 
+dwell_output = []
 for subject, env, target, block, threshold in itertools.product(subjects, envs, targets, blocks, thresholds):
     print(target, env, block, subject, threshold)
     holo = bring_hololens_data(target, env, block, subject)
@@ -383,37 +384,104 @@ for subject, env, target, block, threshold in itertools.product(subjects, envs, 
 summary2 = pd.DataFrame(dwell_output, )
 
 # %% basic summary
-# summary2.loc[summary2['environment']== 'W']
-# summary_proceed = pd.DataFrame()
+
 summary_sub = dict([])
 for subject, env in itertools.product(subjects, envs):
     summary_sub[(subject, env)] = summary2.loc[(summary2['subject'] == subject) & (summary2['environment'] == env)]
+
 
 # %%
 def list_to_mean(data):
     if type(data) is not list:
         return None
-    return sum(data)/len(data)
-for subject, env in itertools.product(subjects, envs):
-    data = summary_sub[(subject, env)]
-    _mean_start_time = data[data['threshold'] == 0.1].start_time.mean()
-    _mean_num_over = data[data['threshold'] == 0.1].num_over.mean()
-    _mean_total_dur_over = data[data['threshold'] == 0.1].total_dur_over.mean()
-    _mean_dur_over = data[data['threshold'] == 0.1].mean_dur_over.mean()
-    _mean_angle_dist = data[data['threshold'] == 0.1].angle_dist_mean.mean()
-    _mean_longest_over = data[data['threshold'] == 0.1].longest_over.mean()
-    # no over is  None
-    dwell_success_count = dict([])
-    dwell_time = dict([])
-    mean_speeds=dict([])
-    prior_counts = dict([])
-    last_100s = dict([])
-    for threshold in thresholds:
-        dwell_success_count[threshold] = \
-            data[(data['threshold'] == threshold) & (data['dwell_success'] == True)].shape[0]
-        dwell_time[threshold] = data[data['threshold'] == threshold].dwell_time.mean()
-        mean_speeds[threshold] =data[data['threshold'] == threshold].mean_speeds.apply(list_to_mean).mean()
-        prior_counts[threshold] = data[data['threshold'] == threshold].prior_count.mean()
-        last_100s[threshold] = data[data['threshold'] == threshold].last_100s.apply(list_to_mean).mean()
+    return sum(data) / len(data)
 
+def make_summary_proceed():
+    summary_proceed = []
+    for subject, env in itertools.product(subjects, envs):
+        data = summary_sub[(subject, env)]
+        _mean_start_time = data[data['threshold'] == 0.1].start_time.mean()
+        _mean_num_over = data[data['threshold'] == 0.1].num_over.mean()
+        _mean_total_dur_over = data[data['threshold'] == 0.1].total_dur_over.mean()
+        _mean_dur_over = data[data['threshold'] == 0.1].mean_dur_over.mean()
+        _mean_angle_dist = data[data['threshold'] == 0.1].angle_dist_mean.mean()
+        _mean_longest_over = data[data['threshold'] == 0.1].longest_over.mean()
+        # no over is  None
+        dwell_success_count = dict([])
+        dwell_time = dict([])
+        mean_speeds = dict([])
+        prior_counts = dict([])
+        last_100s = dict([])
+        for threshold in thresholds:
+            dwell_success_count['dwell_success_count' + str(threshold)] = \
+                data[(data['threshold'] == threshold) & (data['dwell_success'] == True)].shape[0]
+            dwell_time['dwell_time' + str(threshold)] = data[data['threshold'] == threshold].dwell_time.mean()
+            mean_speeds['mean_speeds' + str(threshold)] = data[data['threshold'] == threshold].mean_speeds.apply(
+                list_to_mean).mean()
+            prior_counts['prior_counts' + str(threshold)] = data[data['threshold'] == threshold].prior_count.mean()
+            last_100s['last_100s' + str(threshold)] = data[data['threshold'] == threshold].last_100s.apply(
+                list_to_mean).mean()
+        output = dict(
+            subject=subject,
+            environment=env,
+            mean_start_time=_mean_start_time,
+            mean_num_over=_mean_num_over,
+            mean_total_dur_over=_mean_total_dur_over,
+            mean_dur_over=_mean_dur_over,
+            mean_angle_dist=_mean_angle_dist,
+            mean_longest_over=_mean_longest_over,
+            dwell_success_count=dwell_success_count,
+            dwell_time=dwell_time,
+            mean_speeds=mean_speeds,
+            prior_counts=prior_counts,
+            last_100s=last_100s
+        )
+        summary_proceed.append(output)
+    df_summary_proceed = pd.DataFrame(summary_proceed)
+    for col in ['dwell_success_count', 'dwell_time', 'mean_speeds', 'prior_counts', 'last_100s']:
+        df_summary_proceed = pd.concat([df_summary_proceed.drop([col], axis=1),
+                                        df_summary_proceed[col].apply(pd.Series)], axis=1)
 
+    df_summary_proceed.to_excel("summary_proceed.xlsx")
+
+#%%
+from plotly.subplots import make_subplots
+from analysing_functions import *
+# IF you are using Pycharm
+import plotly.io as pio
+from scipy import fftpack, signal
+
+pio.renderers.default = 'browser'
+subjects = range(301, 317)
+envs = ["W", "U"]
+targets = range(8)
+blocks = range(1, 5)
+
+target = 3
+env='U'
+block = 3
+subject=301
+
+holo, imu, eye = bring_data(target, env, block, subject)
+shift, corr, shift_time = synchronise_timestamp(imu, holo, show_plot=False)
+imu.IMUtimestamp = imu.IMUtimestamp - shift_time
+eye.timestamp = eye.timestamp - shift_time
+# eye.norm_x = eye.norm_x - eye.norm_x.mean()
+# eye.norm_y = eye.norm_y - eye.norm_y.mean()
+
+# imu = imu_to_vector(imu)
+new_holo, new_imu, new_eye = interpolated_dataframes(holo, imu, eye)
+new_imu = imu_to_vector(new_imu)
+new_holo = holo_to_vector(new_holo)
+# new_holo = new_holo[new_holo.timestamp >= 1.5]
+# new_imu = new_imu[new_imu.timestamp >= 1.5]
+# new_eye = new_eye[new_eye.timestamp >= 1.5]
+
+fs = 120
+fc = 4
+w = fc / (fs / 2)
+mincutoff = 3.0
+beta = 0.01
+
+new_eye['filtered_norm_x'] = one_euro(new_eye.norm_x, beta=beta, mincutoff=mincutoff)
+new_eye['filtered_norm_y'] = one_euro(new_eye.norm_y, beta=beta, mincutoff=mincutoff)
