@@ -5,10 +5,7 @@ def main():
     Pupil_thread.start()
     while(True):
         pass
-    # Hololens_thread.start()
+
 
 if __name__ == '__main__':
     main()
-    # import bluetooth
-    # a = bluetooth.discover_devices()
-    # print(a)
