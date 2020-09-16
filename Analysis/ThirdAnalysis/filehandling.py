@@ -200,7 +200,7 @@ def interpolated_dataframes(holo, imu, eye):
     holo_columns = ['angular_distance',
                     'head_position_x', 'head_position_y', 'head_position_z',
                     'head_rotation_x', 'head_rotation_y', 'head_rotation_z',
-                    'head_forward_x', 'head_forward_y', 'head_forward_z',
+                    'head_forward_x', 'head_forward_y', 'head_forward_z','Theta','Phi',
                     'target_position_x', 'target_position_y', 'target_position_z','TargetVertical','TargetHorizontal']
     for column in holo_columns:
         interpolate_function = interpolate.interp1d(holo.timestamp, holo[column], fill_value='extrapolate')

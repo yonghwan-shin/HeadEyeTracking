@@ -31,9 +31,14 @@ def crosscorr(datax, datay, lag=0, wrap=False):
         return datax.corr(shiftedy)
     else:
         return datax.corr(datay.shift(lag))
+def normalize(_from,_to):
+     a = _from - _from.mean()
+     b = _to - _to.mean()
+     multiple = (b.max() - b.min()) / (a.max() - a.min())
+     shift = _to.mean()- _from.mean()
+     return multiple, shift
 
-
-def normalize(_from, _to):
+def linear_regression(_from, _to):
     slope, intercept, r, p, std = stats.linregress(_from, _to)
     return slope, intercept
 
@@ -286,6 +291,7 @@ def one_euro(_data,freq=120,mincutoff=1,beta=1.0,dcutoff=1.0):
     config=dict(freq=freq,mincutoff=mincutoff,beta=beta,dcutoff=dcutoff)
     filter=OneEuroFilter(**config)
     f=[]
+    _data=list(_data)
     for i in range(len(_data)):
         f.append(filter(_data[i]))
     return pd.Series(f)
