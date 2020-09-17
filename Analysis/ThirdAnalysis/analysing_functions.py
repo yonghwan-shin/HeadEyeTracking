@@ -42,7 +42,49 @@ def linear_regression(_from, _to):
     slope, intercept, r, p, std = stats.linregress(_from, _to)
     return slope, intercept
 
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
 
+
+def butter_highpass_filter(data, cutoff, fs, order=3,real_time=False):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    if real_time == False:
+        y = signal.filtfilt(b, a, data)
+    else:
+        y = signal.lfilter(b,a,data)
+    return y
+
+def butter_bandpass(lowcut, highcut, fs, order=3):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = signal.butter(order, [low, high], btype='bandpass',analog=False)
+    return b, a
+
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=3,real_time=False):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    if real_time ==False:
+        y = signal.filtfilt(b, a, data)
+    else:
+        y= signal.lfilter(b,a,data)
+    # y = signal.filtfilt(b, a, data) if real_time is False else signal.lfilter(b,a,data)
+    return y
+def butter_lowpass(cutoff,nyq_freq,order=4):
+    normal_cutoff = float(cutoff)/nyq_freq
+    b,a = signal.butter(order,normal_cutoff,btype='lowpass',analog=False)
+    return b,a
+def butter_lowpass_filter(data,cutoff_freq,fs,order=3,real_time=False):
+    nyq_freq = fs/2
+    b,a = butter_lowpass(cutoff_freq,nyq_freq,order=order)
+    if real_time == False:
+        y=signal.filtfilt(b,a,data)
+    else:
+        y=signal.lfilter(b,a,data)
+    return y
 def synchronise_timestamp(imu, holo, show_plot=False):
     """synchronise Hololens <--> imu timestamp with correlating horizontal values
 
