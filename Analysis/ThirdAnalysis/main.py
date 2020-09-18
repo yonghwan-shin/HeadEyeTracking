@@ -485,3 +485,4 @@ beta = 0.01
 
 new_eye['filtered_norm_x'] = one_euro(new_eye.norm_x, beta=beta, mincutoff=mincutoff)
 new_eye['filtered_norm_y'] = one_euro(new_eye.norm_y, beta=beta, mincutoff=mincutoff)
+# %%
