@@ -50,9 +50,9 @@ def summary_one_trial(target, env, block, subject):
     # new_holo = new_holo[new_holo.timestamp >= 1.5]
     # new_imu = new_imu[new_imu.timestamp >= 1.5]
     # new_eye = new_eye[new_eye.timestamp >= 1.5]
-    rot, rmsd = R.align_vectors(new_holo[['head_forward_x', 'head_forward_y', 'head_forward_z']],
-                                new_imu[['vector_x', 'vector_y', 'vector_z']])
-    applied_imu = rot.apply(new_imu[['vector_x', 'vector_y', 'vector_z']])
+    # rot, rmsd = R.align_vectors(new_holo[['head_forward_x', 'head_forward_y', 'head_forward_z']],
+    #                             new_imu[['vector_x', 'vector_y', 'vector_z']])
+    # applied_imu = rot.apply(new_imu[['vector_x', 'vector_y', 'vector_z']])
 
     fs = 120
     fc = 4
@@ -277,7 +277,6 @@ def angle_velocity(_head_forward, _head_forward2, _time):
     return vg.angle(vector1, vector2) / _time
 
 
-
 # subjects = range(307, 308)
 subjects = range(301, 317)
 envs = ['U', 'W']
@@ -396,6 +395,7 @@ def list_to_mean(data):
         return None
     return sum(data) / len(data)
 
+
 def make_summary_proceed():
     summary_proceed = []
     for subject, env in itertools.product(subjects, envs):
@@ -444,38 +444,38 @@ def make_summary_proceed():
 
     df_summary_proceed.to_excel("summary_proceed.xlsx")
 
-#%%
+
+# %%
 from plotly.subplots import make_subplots
 from analysing_functions import *
 # IF you are using Pycharm
 import plotly.io as pio
 from scipy import fftpack, signal
 
+# pio.renderers.default = 'vscode'
 pio.renderers.default = 'browser'
 subjects = range(301, 317)
 envs = ["W", "U"]
 targets = range(8)
 blocks = range(1, 5)
 
-target = 3
-env='U'
-block = 3
-subject=301
+target = 2
+env = 'U'
+block = 4
+subject = 301
 
 holo, imu, eye = bring_data(target, env, block, subject)
 shift, corr, shift_time = synchronise_timestamp(imu, holo, show_plot=False)
-imu.IMUtimestamp = imu.IMUtimestamp - shift_time
-eye.timestamp = eye.timestamp - shift_time
-# eye.norm_x = eye.norm_x - eye.norm_x.mean()
-# eye.norm_y = eye.norm_y - eye.norm_y.mean()
 
-# imu = imu_to_vector(imu)
+eye = eye[eye.confidence > 0.6]
+eye.timestamp = eye.timestamp - shift_time
 new_holo, new_imu, new_eye = interpolated_dataframes(holo, imu, eye)
 new_imu = imu_to_vector(new_imu)
 new_holo = holo_to_vector(new_holo)
-# new_holo = new_holo[new_holo.timestamp >= 1.5]
-# new_imu = new_imu[new_imu.timestamp >= 1.5]
-# new_eye = new_eye[new_eye.timestamp >= 1.5]
+# new_holo = new_holo[new_holo.timestamp >= 1.5];new_holo.reset_index(inplace=True)
+# new_imu = new_imu[new_imu.timestamp >= 1.5];new_imu.reset_index(inplace=True)
+# new_eye = new_eye[new_eye.timestamp >= 1.5];new_eye.reset_index(inplace=True)
+# imu.IMUtimestamp = imu.IMUtimestamp - shift_time
 
 fs = 120
 fc = 4
@@ -485,4 +485,526 @@ beta = 0.01
 
 new_eye['filtered_norm_x'] = one_euro(new_eye.norm_x, beta=beta, mincutoff=mincutoff)
 new_eye['filtered_norm_y'] = one_euro(new_eye.norm_y, beta=beta, mincutoff=mincutoff)
+<<<<<<< HEAD
 # %%
+=======
+new_holo['filtered_head_rotation_y'] = one_euro(new_holo.head_rotation_y, beta=beta, mincutoff=mincutoff)
+new_holo['filtered_head_rotation_x'] = one_euro(new_holo.head_rotation_x, beta=beta, mincutoff=mincutoff)
+head_cutoff = 0.3
+new_holo['hp_head_rotation_x'] = butter_highpass_filter(new_holo.filtered_head_rotation_x, cutoff=head_cutoff, fs=120)
+new_holo['hp_head_rotation_y'] = butter_highpass_filter(new_holo.filtered_head_rotation_y, cutoff=head_cutoff, fs=120)
+
+eye_cutoff = 0.3
+new_eye.hp_filtered_eye_vertical = butter_highpass_filter(new_eye.filtered_norm_y, eye_cutoff, fs, order=5)
+new_eye.hp_filtered_eye_horizontal = butter_highpass_filter(new_eye.filtered_norm_x, eye_cutoff, fs, order=5)
+offset = 180
+
+multiple_vertical, _ = normalize(new_eye.hp_filtered_eye_vertical[offset:], new_holo['hp_head_rotation_x'][offset:])
+multiple_horizontal, _ = normalize(new_eye.hp_filtered_eye_horizontal[offset:], new_holo['hp_head_rotation_y'][offset:])
+
+new_target_vertical = new_holo.filtered_head_rotation_x - (-1) * new_holo.Theta
+new_target_horizontal = new_holo.filtered_head_rotation_y - new_holo.Phi
+hp_eye_vertical = (new_eye.hp_filtered_eye_vertical - new_eye.hp_filtered_eye_vertical.mean()) * multiple_vertical
+hp_eye_horizontal = (new_eye.hp_filtered_eye_horizontal - new_eye.hp_filtered_eye_horizontal.mean()) * multiple_horizontal
+figure = make_subplots(rows=2, cols=2)
+figure.update_layout(title=dict(text=str(multiple_vertical) + " : " + str(multiple_horizontal), font={'size': 30}))
+figure.update_yaxes(range=[-2, 2], row=1, col=1)
+figure.update_yaxes(range=[-2, 2], row=1, col=2)
+data_vertical = [
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=new_holo.head_rotation_x,
+    #     name='head',
+    #     opacity=0.3
+    # ),
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=new_holo.filtered_head_rotation_x,
+    #     name='one-euro',
+    #     opacity=0.5
+    # ),
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=new_holo.hp_head_rotation_x,
+    #     name='high pass'
+    # ),
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=(-1) * new_holo.Theta,
+    #     name='Theta'
+    # ),
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=new_holo.TargetVertical,
+    #     name='Target',
+    #     opacity=0.3
+    # ),
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=new_target_vertical,
+    #     name='new_target'
+    # ),
+    go.Scatter(
+        x=new_eye.timestamp,
+        y=hp_eye_vertical,
+        name='hp_eye'
+    ),
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.hp_head_rotation_x,
+        name='hp_head'
+    ),
+    # go.Scatter(
+    #     x=new_eye.timestamp,
+    #     y=(new_eye.filtered_norm_y - new_eye.filtered_norm_y.mean()) * multiple_vertical,
+    #     name='eye'
+    # ),
+    go.Scatter(
+        x=eye.timestamp,
+        y=(new_holo.hp_head_rotation_x + hp_eye_vertical),
+        name='compensation'
+    )
+]
+data_horizontal = [
+    # go.Scatter(
+    #     x=new_holo.timestamp,
+    #     y=new_target_horizontal,
+    #     name='new_target'
+    # ),
+    go.Scatter(
+        x=new_eye.timestamp,
+        y=-hp_eye_horizontal,
+        name='hp_eye'
+    ),
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.hp_head_rotation_y,
+        name='hp_head'
+    ),
+    # go.Scatter(
+    #     x=new_eye.timestamp,
+    #     y=(new_eye.filtered_norm_x - new_eye.filtered_norm_x.mean())*multiple_horizontal,
+    #     name='eye'
+    # ),
+    go.Scatter(
+        x=eye.timestamp,
+        y=(new_holo.hp_head_rotation_y + hp_eye_horizontal),
+        name='compensation'
+    )
+]
+eval_vertical = [
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.filtered_head_rotation_x,
+        name='head'
+    ),
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=(-1) * new_holo.Theta,
+        name='Target'
+    ),
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.filtered_head_rotation_x + hp_eye_vertical,
+        name='compensation'
+    )
+]
+eval_horizontal = [
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.filtered_head_rotation_y,
+        name='head'
+    ),
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.Phi,
+        name='phi'
+    ),
+    go.Scatter(
+        x=new_holo.timestamp,
+        y=new_holo.filtered_head_rotation_y + hp_eye_horizontal,
+        name='compensation'
+    )
+]
+# )
+figure.add_traces(data_vertical, rows=1, cols=1)
+figure.add_traces(data_horizontal, rows=1, cols=2)
+figure.add_traces(eval_vertical, rows=2, cols=1)
+figure.add_traces(eval_horizontal, rows=2, cols=2)
+figure.show()
+# %%bandwidth test
+
+from plotly.subplots import make_subplots
+from analysing_functions import *
+# IF you are using Pycharm
+import plotly.io as pio
+from scipy import fftpack, signal
+
+pio.renderers.default = 'browser'
+target = 2
+env = 'U'
+block = 4
+subject = 301
+
+holo, imu, eye = bring_data(target, env, block, subject)
+shift, corr, shift_time = synchronise_timestamp(imu, holo, show_plot=False)
+
+eye = eye[eye.confidence > 0.6]
+eye.timestamp = eye.timestamp - shift_time
+new_holo, new_imu, new_eye = interpolated_dataframes(holo, imu, eye)
+new_imu = imu_to_vector(new_imu)
+new_holo = holo_to_vector(new_holo)
+new_eye.norm_x= new_eye.norm_x - new_eye.norm_x.mean()
+
+real_time_head = butter_bandpass_filter(new_holo.head_rotation_y, 0.1, 59, 120, real_time=True)
+real_time_high_head = butter_highpass_filter(new_holo.head_rotation_y,cutoff=0.3,fs=120,real_time=True)
+real_time_eye = butter_bandpass_filter(new_eye.norm_x, 1.0, 15, 120, real_time=True)
+
+low_pass_eye = butter_lowpass_filter(new_eye.norm_x,20,fs=120,real_time=True)
+fig=go.Figure(
+    data=[
+        go.Scatter(
+            x=new_holo.timestamp,
+            y = new_holo.head_rotation_y,
+            name='head'
+        ),
+        go.Scatter(
+            x= new_holo.timestamp,
+            y= real_time_head,
+            name='bandpass-head'
+        ),
+        go.Scatter(
+            x=new_holo.timestamp,
+            y= new_holo.head_rotation_y - real_time_head,
+            name='diff'
+        ),
+        go.Scatter(
+            x=new_holo.timestamp,
+            y= real_time_high_head,
+            name='high'
+        )
+    ]
+)
+fig.show()
+#%%
+fig = go.Figure(
+    data=[
+        go.Scatter(
+            x=new_holo.timestamp,
+            y= new_holo.head_rotation_y,
+            name='head'
+        ),
+        go.Scatter(
+            x= new_holo.timestamp,
+            y= new_holo.Phi,
+            name='Phi'
+        ),
+        go.Scatter(
+            x= new_eye.timestamp,
+            y= new_holo.head_rotation_y + real_time_eye*250,
+            name='corrected'
+        ),
+        go.Scatter(
+            x = new_holo.timestamp,
+            y= new_holo.head_rotation_y - real_time_head,
+            name='hp'
+        )
+        # go.Scatter(
+        #     x=new_eye.timestamp,
+        #     y=-real_time_eye*250,
+        #     name='bandpass'
+        # ),
+        # go.Scatter(
+        #     x=new_holo.timestamp,
+        #     y= real_time_head,
+        #     name='head'
+        # ),
+        # go.Scatter(
+        #     x= new_eye.timestamp,
+        #     y= real_time_head + real_time_eye*250,
+        #     name='compensation'
+        # )
+    ]
+)
+fig.show()
+# %%
+
+# fig = make_subplots(rows=4, cols=1)
+# fig.update_layout(title=dict(text='basic', font={'size': 30}))
+#
+# # EYE
+
+# fig.add_trace(go.Scatter(x=new_eye.timestamp, y=new_eye.norm_x, name='eye-x', opacity=0.3), row=1, col=1)
+# fig.add_trace(go.Scatter(x=new_eye.timestamp, y=new_eye.filtered_norm_x, name='filtered-eye-x'), row=1, col=1)
+#
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.TargetHorizontal, name='target_horizontal'), row=2, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.head_rotation_y, name='head_horizontal', opacity=0.3), row=2, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.filtered_head_rotation_y, name='filtered_head_horizontal'), row=2, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.Phi, name='Phi'), row=2, col=1)
+#
+# fig.add_trace(go.Scatter(x=new_eye.timestamp, y=new_eye.norm_y, name='eye-y', opacity=0.3), row=3, col=1)
+# fig.add_trace(go.Scatter(x=new_eye.timestamp, y=new_eye.filtered_norm_y, name='filtered-eye-y'), row=3, col=1)
+#
+# # fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.TargetVertical, name='target_vertical'), row=4, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.head_rotation_x, name='head_vertical', opacity=0.3), row=4, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.filtered_head_rotation_x, name='filtered_head_vertical'), row=4, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=-new_holo.Theta, name='theta'), row=4, col=1)
+# # fig.add_trace(go.Scatter(x=new_holo.timestamp, y=F, name='highpass'), row=4, col=1)
+# # fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.filtered_head_rotation_x - F, name='highpass'), row=4, col=1)
+# fig.add_trace(go.Scatter(x=new_holo.timestamp, y=new_holo.head_rotation_x.rolling(120).mean(), name='rolling'), row=4, col=1)
+#
+#
+# fig.show()
+
+
+from statsmodels.tsa.seasonal import _extrapolate_trend, seasonal_decompose
+import plotly.graph_objects as go
+from analysing_functions import normalize
+
+# sos = signal.butter(1,1,'hp',fs=120,output='sos')
+# hp_filtered_head_vertical = signal.sosfilt(sos, new_holo.filtered_head_rotation_x)
+# hp_filtered_head_horizontal = signal.sosfilt(sos, new_holo.filtered_head_rotation_y)
+
+order = 3
+fs = 120
+cutoff = 1.0
+hp_filtered_head_vertical = butter_highpass_filter(new_holo.filtered_head_rotation_x, cutoff, fs, order)
+hp_filtered_head_horizontal = butter_highpass_filter(new_holo.filtered_head_rotation_y, cutoff, fs, order)
+
+eye_cutoff = 1.0
+hp_filtered_eye_vertical = butter_highpass_filter(new_eye.filtered_norm_y, eye_cutoff, fs, order)
+hp_filtered_eye_horizontal = butter_highpass_filter(new_eye.filtered_norm_x, eye_cutoff, fs, order)
+
+offset = 180
+multiple_vertical, shift_vertical = normalize(new_eye.filtered_norm_y[offset:], hp_filtered_head_vertical[offset:])
+multiple_horizontal, shift_horizontal = normalize(new_eye.filtered_norm_x[offset:], hp_filtered_head_horizontal[offset:])
+multiple_horizontal_hp, _ = normalize(hp_filtered_eye_horizontal[offset:], hp_filtered_head_horizontal[offset:])
+multiple_vertical_hp, _ = normalize(hp_filtered_eye_vertical[offset:], hp_filtered_head_vertical[offset:])
+corr_df = pd.DataFrame(
+    data={
+        'hp_filtered_head_vertical': hp_filtered_head_vertical[offset:],
+        'hp_filtered_eye_vertical': hp_filtered_eye_vertical[offset:] * multiple_vertical_hp,
+        'filtered_head_rotation_y': new_holo.filtered_head_rotation_y[offset:],
+        'filtered_norm_y': (new_eye.filtered_norm_y[offset:] - new_eye.filtered_norm_y[offset:].mean()) * multiple_vertical,
+        'target': new_holo.TargetVertical[offset:],
+        "phi": new_holo.Phi[offset:]
+    }
+)
+corr_matrix = corr_df.corr()
+print(corr_matrix)
+import seaborn as sns
+from pandas.plotting import scatter_matrix
+
+sns.heatmap(corr_matrix, annot=True, square=True)
+plt.show()
+scatter_matrix(corr_df);
+plt.show()
+corr_df.plot();
+plt.show()
+
+# %%
+corr_df = pd.DataFrame(
+    data={
+        'hp_filtered_head_horizontal': hp_filtered_head_horizontal[offset:],
+        'hp_filtered_eye_horizontal': hp_filtered_eye_horizontal[offset:] * multiple_horizontal_hp,
+        'filtered_head_rotation_x': new_holo.filtered_head_rotation_x[offset:],
+        'filtered_norm_x': (new_eye.filtered_norm_x[offset:] - new_eye.filtered_norm_x[offset:].mean()) * multiple_horizontal,
+        'target': new_holo.TargetHorizontal[offset:],
+        "Theta": -new_holo.Theta[offset:]
+    }
+)
+# def fft_analysis(data):
+# %%
+data = new_holo.Phi
+# data = new_holo.head_rotation_y
+data = np.array(data)
+import scipy.fftpack
+
+sig_fft = fftpack.fft(data)
+power = np.abs(sig_fft)
+sample_freq = fftpack.fftfreq(data.size, d=1 / 120)
+plt.figure(figsize=(6, 5))
+plt.plot(sample_freq, power)
+plt.xlabel("Frequency (Hz)")
+plt.ylabel('power')
+pos_mask = np.where(sample_freq > 0)
+freqs = sample_freq[pos_mask]
+peak_freq = freqs[power[pos_mask].argmax()]
+np.allclose(peak_freq, 1. / 120)
+axes = plt.axes([0.55, 0.3, 0.3, 0.5])
+plt.plot(freqs[:8], power[:8])
+plt.setp(axes, yticks=[])
+plt.show()
+high_freq_fft = sig_fft.copy()
+high_freq_fft[np.abs(sample_freq) > peak_freq] = 0
+filtered_sig = fftpack.ifft(high_freq_fft)
+
+plt.figure(figsize=(6, 5))
+plt.plot(new_eye.timestamp, data, label='Original signal')
+plt.plot(new_eye.timestamp, filtered_sig, linewidth=3, label='Filtered signal')
+plt.xlabel('Time [s]')
+plt.ylabel('Amplitude')
+
+plt.legend(loc='best')
+
+plt.show()
+# %%
+corr_matrix = corr_df.corr()
+print(corr_matrix)
+import seaborn as sns
+from pandas.plotting import scatter_matrix
+
+sns.heatmap(corr_matrix, annot=True, square=True)
+plt.show()
+scatter_matrix(corr_df);
+plt.show()
+corr_df.plot();
+plt.show()
+# %%
+# horizontal
+# fig = go.Figure(
+#     data=[
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=new_holo.filtered_head_rotation_y,
+#             name='head'
+#         ),
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=hp_filtered_head_horizontal,
+#             name='high pass'
+#         ),
+#         go.Scatter(
+#
+#             x=new_eye.timestamp,
+#             y=(new_eye.filtered_norm_x - new_eye.filtered_norm_x.mean()) * multiple_horizontal + hp_filtered_head_horizontal.mean(),
+#             name='eye'
+#         ),
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=new_holo.filtered_head_rotation_y + (
+#                         new_eye.filtered_norm_x - new_eye.filtered_norm_x.mean()) * multiple_horizontal + hp_filtered_head_horizontal.mean(),
+#             name='compensated'
+#         ),
+#         go.Scatter(
+#             x = new_eye.timestamp,
+#             y= (hp_filtered_eye_horizontal - hp_filtered_eye_horizontal.mean())*multiple_horizontal_hp + hp_filtered_head_horizontal.mean(),
+#             name = 'high-passed eye'
+#         ),
+#         go.Scatter(
+#           x = new_eye.timestamp,
+#           y =   new_holo.filtered_head_rotation_y + (hp_filtered_eye_horizontal - hp_filtered_eye_horizontal.mean())*multiple_horizontal_hp + hp_filtered_head_horizontal.mean(),
+#             name='high-passed compensation'
+#         ),
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=new_holo.Phi,
+#             name='Phi'
+#         )
+#     ]
+# )
+# fig.show()
+
+# vertical
+# fig = go.Figure(
+#     data=[
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=new_holo.filtered_head_rotation_x,
+#             name='head'
+#         ),
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=hp_filtered_head_vertical,
+#             name='high pass'
+#         ),
+#         go.Scatter(
+#
+#             x=new_eye.timestamp,
+#             y=(new_eye.filtered_norm_y - new_eye.filtered_norm_y.mean()) * multiple_vertical + hp_filtered_head_vertical.mean(),
+#             name='eye'
+#         ),
+#         go.Scatter(
+#             x=new_eye.timestamp,y= hp_filtered_eye_vertical *multiple_vertical_hp,
+#             name='eye-hp'
+#         ),
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y=new_holo.TargetVertical,
+#             name='target'
+#         )
+#     ]
+# )
+# fig.show()
+# %%
+# fig = go.Figure(
+#     data=[
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=hp_filtered_eye_horizontal,
+#             name='high passed eye - horizontal'
+#         ),
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=new_eye.filtered_norm_x - new_eye.filtered_norm_x.mean(),
+#             name='one euro eye - horizontal'
+#         ),
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=new_eye.filtered_norm_x - new_eye.filtered_norm_x.mean() - hp_filtered_eye_horizontal,
+#             name='diff'
+#         )
+#     ]
+# )
+# fig.show()
+# fig = go.Figure(
+#     data=[
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=hp_filtered_eye_vertical,
+#             name='high passed eye - vertical'
+#         ),
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=new_eye.filtered_norm_y - new_eye.filtered_norm_y.mean(),
+#             name='one euro eye - vertical'
+#         ),
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=new_eye.filtered_norm_y - new_eye.filtered_norm_y.mean() - hp_filtered_eye_vertical,
+#             name='diff'
+#         )
+#     ]
+# )
+# fig.show()
+
+# %%
+
+
+# fig = go.Figure(
+#     data=[
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=(new_eye.filtered_norm_y - new_eye.filtered_norm_y.mean()) *multiple_vertical,
+#             name='one-euro'
+#         ),
+#         go.Scatter(
+#             x=new_eye.timestamp,
+#             y=hp_filtered_eye_vertical*multiple_vertical_hp,
+#             name='hp_eye'
+#         ),
+#         go.Scatter(
+#             x=new_holo.timestamp,
+#             y = new_holo.TargetVertical,
+#             name = 'target'
+#         ),
+#         go.Scatter(
+#             x = new_holo.timestamp,
+#             y = hp_filtered_head_vertical,
+#             name = 'hp_head'
+#         )
+#     ]
+# )
+# fig.show()
+# fig = px.scatter(x=new_holo.TargetVertical, y=hp_filtered_head_vertical, trendline="ols");fig.show()
+>>>>>>> 965586a22141d1651f663c4696729c8f33d779e2
