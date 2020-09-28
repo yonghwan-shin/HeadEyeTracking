@@ -36,6 +36,10 @@
       "frameworks": {
         "netcoreapp3.1": {
           "dependencies": {
+            "MathNet.Filtering": {
+              "target": "Package",
+              "version": "[0.7.0, )"
+            },
             "ScottPlot": {
               "target": "Package",
               "version": "[4.0.39, )"
