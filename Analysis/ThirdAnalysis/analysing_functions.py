@@ -21,7 +21,7 @@ def check_distribution():
     # import plotly.io as pio
     # from scipy import fftpack, signal
 
-    pio.renderers.default = "browser"
+    # pio.renderers.default = "browser"
     subjects = range(301, 317)
     envs = ["W", "U"]
     targets = range(8)
@@ -661,10 +661,16 @@ def crosscorr(datax, datay, lag=0, wrap=False):
 
 
 def normalize(_from, _to):
-    a = _from - sum(_from)/len(_from)
-    b = _to - sum(_to)/len(_to)
+    # _from = np.array(_from)
+    # _to = np.array(_to)
+    # mean_difference = _to.mean() - _from.mean()
+    # multiple_power2 = np.power((_to - _to.mean()), 2).mean() / np.power((_from - _from.mean()), 2).mean()
+    # multiple=np.sqrt(multiple_power2)
+    # return multiple, mean_difference
+    a = _from - sum(_from) / len(_from)
+    b = _to - sum(_to) / len(_to)
     multiple = (max(b) - min(b)) / (max(a) - min(a))
-    shift = sum(_to)/len(_to) - sum(_from)/len(_from)
+    shift = sum(_to) / len(_to) - sum(_from) / len(_from)
     return multiple, shift
 
 
@@ -755,6 +761,35 @@ def synchronise_timestamp(imu, holo, show_plot=False):
         plt.show()
 
     return shift, coef, shift_time
+
+
+def LinearRegression(x, y):
+    if len(x) != len(y):
+        raise Exception("different length of x, y")
+    sumOfX = 0
+    sumOfY = 0
+    sumOfXSq = 0
+    sumOfYSq = 0
+    sumCodeviates = 0
+    for i in range(len(x)):
+        sumCodeviates += x[i] * y[i]
+        sumOfX += x[i]
+        sumOfY += y[i]
+        sumOfXSq += x[i] * x[i]
+        sumOfYSq += y[i] * y[i]
+    count = len(x)
+    ssX = sumOfXSq - ((sumOfX * sumOfX) / count)
+    ssY = sumOfYSq - ((sumOfY * sumOfY) / count)
+    rNumerator = (count * sumCodeviates) - (sumOfX * sumOfY)
+    rDenom = (count * sumOfXSq - (sumOfX * sumOfX)) * (count * sumOfYSq - (sumOfY * sumOfY))
+    sCo = sumCodeviates - ((sumOfX * sumOfY) / count)
+    meanX = sumOfX / count
+    meanY = sumOfY / count
+    dblR = rNumerator / math.sqrt(rDenom)
+    rSquared = dblR * dblR
+    yIntercept = meanY - ((sCo / ssX) * meanX)
+    slope = sCo / ssX
+    return rSquared, yIntercept, slope
 
 
 def check_eye_files():
@@ -905,7 +940,62 @@ def imu_to_vector(imu: pd.DataFrame):
     imu['vector'] = vector
     return imu
 
+def smoothing_factor(t_e, cutoff):
+    r = 2 * math.pi * cutoff * t_e
+    return r / (r + 1)
 
+
+def exponential_smoothing(a, x, x_prev):
+    return a * x + (1 - a) * x_prev
+
+
+class OneEuroFilter:
+    def __init__(self, t0, x0, dx0=0.0, min_cutoff=1.0, beta=0.0,
+                 d_cutoff=1.0):
+        """Initialize the one euro filter."""
+        # The parameters.
+        self.min_cutoff = float(min_cutoff)
+        self.beta = float(beta)
+        self.d_cutoff = float(d_cutoff)
+        # Previous values.
+        self.x_prev = float(x0)
+        self.dx_prev = float(dx0)
+        self.t_prev = float(t0)
+
+    def __call__(self, t, x):
+        """Compute the filtered signal."""
+        t_e = t - self.t_prev
+
+        # The filtered derivative of the signal.
+        a_d = smoothing_factor(t_e, self.d_cutoff)
+        dx = (x - self.x_prev) / t_e
+        dx_hat = exponential_smoothing(a_d, dx, self.dx_prev)
+
+        # The filtered signal.
+        cutoff = self.min_cutoff + self.beta * abs(dx_hat)
+        a = smoothing_factor(t_e, cutoff)
+        x_hat = exponential_smoothing(a, x, self.x_prev)
+
+        # Memorize the previous values.
+        self.x_prev = x_hat
+        self.dx_prev = dx_hat
+        self.t_prev = t
+
+        return x_hat
+# _data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0
+def one_euro(timestamp,_data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
+    one_euro_filter = OneEuroFilter(
+        t0=timestamp[0],
+        x0=_data[0],
+        min_cutoff=mincutoff,
+        beta=beta
+    )
+    f = [_data[0]]
+    _data = list(_data)
+    for i in range(1,len(_data)):
+        f.append(one_euro_filter(timestamp[i],_data[i]))
+    return np.array(f)
+"""
 class LowPassFilter(object):
     def __init__(self, alpha):
         self.__setAlpha(alpha)
@@ -978,16 +1068,19 @@ def one_euro(_data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
         f.append(filter(_data[i]))
     return pd.Series(f)
 
-
+"""
 from scipy.signal import firwin, remez, kaiser_atten, kaiser_beta
-def apply_online_bandpass(b,a, data,order=2):
-    result=[]
+
+
+def apply_online_bandpass(b, a, data, order=2):
+    result = []
     # z = signal.lfilter_zi(b, a)
-    z=[0]*2*order
-    for i,x in enumerate(np.array(data)):
-        res,z = signal.lfilter(b,a,[x],zi=z)
+    z = [0] * 2 * order
+    for i, x in enumerate(np.array(data)):
+        res, z = signal.lfilter(b, a, [x], zi=z)
         result.append(res[0])
     return pd.Series(result)
+
 
 # Several flavors of bandpass FIR filters.
 
@@ -997,6 +1090,7 @@ def bandpass_firwin(ntaps, lowcut, highcut, fs, window='hamming'):
                   window=window, scale=False)
     return taps
 
+
 def bandpass_kaiser(ntaps, lowcut, highcut, fs, width):
     nyq = 0.5 * fs
     atten = kaiser_atten(ntaps, width / nyq)
@@ -1005,12 +1099,105 @@ def bandpass_kaiser(ntaps, lowcut, highcut, fs, width):
                   window=('kaiser', beta), scale=False)
     return taps
 
+
 def bandpass_remez(ntaps, lowcut, highcut, fs, width):
     delta = 0.5 * width
     edges = [0, lowcut - delta, lowcut + delta,
-             highcut - delta, highcut + delta, 0.5*fs]
+             highcut - delta, highcut + delta, 0.5 * fs]
     taps = remez(ntaps, edges, [0, 1, 0], Hz=fs)
     return taps
+
+
+class algorithm:
+    raw = []
+    filtered = []
+
+    order = 2
+    lowcut = 0.001
+    highcut = 0.99
+
+    zi = []
+
+    def __init__(self, order=2, lowcut=0.001, highcut=0.99):
+        self.raw = []
+        self.filtered = []
+        self.order = order,
+        self.lowcut = lowcut
+        self.highcut = highcut
+        self.zi = [0] * 2 * order
+        self.b, self.a = signal.iirfilter(order, [self.lowcut, self.highcut],
+                                          btype='bandpass', analog=False, ftype='butter')
+
+    def add_data(self, _data):
+        self.raw.append(_data)
+        self.filter(_data)
+
+    def filter(self, _data):
+        res, z = signal.lfilter(self.b, self.a, [_data], zi=self.zi)
+        self.zi = z
+        self.filtered.append(res[0])
+
+    def get_last(self):
+        return self.filtered[-1]
+
+    def reset(self):
+        self.raw = []
+        self.filtered = []
+        self.zi = [0] * 2 * self.order
+
+
+class overall_algorithm:
+    data = {
+        ('head', 'H'): algorithm(order=2, lowcut=0.001, highcut=0.10),
+        ('head', 'V'): algorithm(order=2, lowcut=0.001, highcut=0.10),
+        ('eye', 'H'): algorithm(order=2, lowcut=0.001, highcut=0.10),
+        ('eye', 'V'): algorithm(order=2, lowcut=0.001, highcut=0.10),
+    }
+    offset = 120
+    frame_count = 0
+    H_multiples = []
+    V_multiples = []
+    H_shifts = []
+    V_shifts = []
+
+    # b_H_head, a_H_head = signal.iirfilter(2, [0.001, 0.99], btype='bandpass', analog=False, ftype='butter')
+    # b_H_eye, a_H_eye = signal.iirfilter(2, [0.001, 0.40], btype='bandpass', analog=False, ftype='butter')
+    # b_V_head, a_V_head = signal.iirfilter(2, [0.001, 0.99], btype='bandpass', analog=False, ftype='butter')
+    # b_V_eye, a_V_eye = signal.iirfilter(2, [0.001, 0.40], btype='bandpass', analog=False, ftype='butter')
+
+    def __init__(self, name, H_offset=120, V_offset=120):
+        self.name = name
+        self.H_offset = H_offset
+        self.V_offset = V_offset
+
+    def add_data(self, H_head, V_head, H_eye, V_eye):
+        self.frame_count += 1
+        self.data[('head', 'H')].add_data(H_head)
+        self.data[('head', 'V')].add_data(V_head)
+        self.data[('eye', 'H')].add_data(H_eye)
+        self.data[('eye', 'V')].add_data(V_eye)
+        # if self.offset < len(self.data[('eye', 'H')].filtered):
+        self.calculate_multiple()
+
+    def calculate_multiple(self):
+        if self.offset > len(self.data[('eye', 'H')].filtered):
+            H_offset = 0
+            V_offset = 0
+            if len(self.data[('eye', 'H')].filtered) == 1:
+                return
+        else:
+            H_offset = self.H_offset
+            V_offset = self.V_offset
+
+        H_multiple, H_shift = normalize(self.data[('eye', 'H')].filtered[-H_offset:],
+                                        self.data[('head', 'H')].filtered[-H_offset:])
+        V_multiple, V_shift = normalize(self.data[('eye', 'V')].filtered[-V_offset:],
+                                        self.data[('head', 'V')].filtered[-V_offset:])
+        self.H_multiples.append(H_multiple);
+        self.H_shifts.append(H_shift)
+        self.V_multiples.append(V_multiple);
+        self.V_shifts.append(V_shift)
+
 
 if __name__ == "__main__":
     import random
