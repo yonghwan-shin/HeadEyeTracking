@@ -8,10 +8,31 @@
     ".NETCoreApp,Version=v3.1": {
       "csharp_simulation/1.0.0": {
         "dependencies": {
+          "MathNet.Filtering": "0.7.0",
           "ScottPlot": "4.0.39"
         },
         "runtime": {
           "csharp_simulation.dll": {}
+        }
+      },
+      "MathNet.Filtering/0.7.0": {
+        "dependencies": {
+          "MathNet.Numerics": "4.9.1",
+          "System.ValueTuple": "4.5.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/MathNet.Filtering.dll": {
+            "assemblyVersion": "0.7.0.0",
+            "fileVersion": "0.7.0.0"
+          }
+        }
+      },
+      "MathNet.Numerics/4.9.1": {
+        "runtime": {
+          "lib/netstandard2.0/MathNet.Numerics.dll": {
+            "assemblyVersion": "4.9.1.0",
+            "fileVersion": "4.9.1.0"
+          }
         }
       },
       "Microsoft.NETCore.Platforms/3.1.0": {},
@@ -70,7 +91,8 @@
             "fileVersion": "4.700.19.56404"
           }
         }
-      }
+      },
+      "System.ValueTuple/4.5.0": {}
     }
   },
   "libraries": {
@@ -78,6 +100,20 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "MathNet.Filtering/0.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Ghm/RaCS4+29PO1XGn83shZSwDJzAGxys60xh0QZH8Dz3dqxiTIwal8kksU8vcp3GtNVRDtSgM7O3FLuhep9vw==",
+      "path": "mathnet.filtering/0.7.0",
+      "hashPath": "mathnet.filtering.0.7.0.nupkg.sha512"
+    },
+    "MathNet.Numerics/4.9.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tLg/nvtdYd830Ee8nWsrsIiBTxeKmUEtsrQIPX4Sn60l7eMmZFIvSaMdG6o08FGsByi0TArJ6tx8LVT4vpWqyQ==",
+      "path": "mathnet.numerics/4.9.1",
+      "hashPath": "mathnet.numerics.4.9.1.nupkg.sha512"
     },
     "Microsoft.NETCore.Platforms/3.1.0": {
       "type": "package",
@@ -106,6 +142,13 @@
       "sha512": "sha512-v+XbyYHaZjDfn0ENmJEV1VYLgGgCTx1gnfOBcppowbpOAriglYgGCvFCPr2EEZyBvXlpxbEsTwkOlInl107ahA==",
       "path": "system.drawing.common/4.7.0",
       "hashPath": "system.drawing.common.4.7.0.nupkg.sha512"
+    },
+    "System.ValueTuple/4.5.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-okurQJO6NRE/apDIP23ajJ0hpiNmJ+f0BwOlB/cSqTLQlw5upkf+5+96+iG2Jw40G1fCVCyPz/FhIABUjMR+RQ==",
+      "path": "system.valuetuple/4.5.0",
+      "hashPath": "system.valuetuple.4.5.0.nupkg.sha512"
     }
   }
 }

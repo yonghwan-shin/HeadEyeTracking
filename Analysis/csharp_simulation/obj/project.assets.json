@@ -2,6 +2,28 @@
   "version": 3,
   "targets": {
     ".NETCoreApp,Version=v3.1": {
+      "MathNet.Filtering/0.7.0": {
+        "type": "package",
+        "dependencies": {
+          "MathNet.Numerics": "4.9.1",
+          "System.ValueTuple": "4.5.0"
+        },
+        "compile": {
+          "lib/netstandard2.0/MathNet.Filtering.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/MathNet.Filtering.dll": {}
+        }
+      },
+      "MathNet.Numerics/4.9.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/MathNet.Numerics.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/MathNet.Numerics.dll": {}
+        }
+      },
       "Microsoft.NETCore.Platforms/3.1.0": {
         "type": "package",
         "compile": {
@@ -63,10 +85,51 @@
             "rid": "win"
           }
         }
+      },
+      "System.ValueTuple/4.5.0": {
+        "type": "package",
+        "compile": {
+          "ref/netcoreapp2.0/_._": {}
+        },
+        "runtime": {
+          "lib/netcoreapp2.0/_._": {}
+        }
       }
     }
   },
   "libraries": {
+    "MathNet.Filtering/0.7.0": {
+      "sha512": "Ghm/RaCS4+29PO1XGn83shZSwDJzAGxys60xh0QZH8Dz3dqxiTIwal8kksU8vcp3GtNVRDtSgM7O3FLuhep9vw==",
+      "type": "package",
+      "path": "mathnet.filtering/0.7.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "icon.png",
+        "lib/net40/MathNet.Filtering.dll",
+        "lib/net461/MathNet.Filtering.dll",
+        "lib/netstandard1.3/MathNet.Filtering.dll",
+        "lib/netstandard2.0/MathNet.Filtering.dll",
+        "mathnet.filtering.0.7.0.nupkg.sha512",
+        "mathnet.filtering.nuspec"
+      ]
+    },
+    "MathNet.Numerics/4.9.1": {
+      "sha512": "tLg/nvtdYd830Ee8nWsrsIiBTxeKmUEtsrQIPX4Sn60l7eMmZFIvSaMdG6o08FGsByi0TArJ6tx8LVT4vpWqyQ==",
+      "type": "package",
+      "path": "mathnet.numerics/4.9.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "icon.png",
+        "lib/net40/MathNet.Numerics.dll",
+        "lib/net461/MathNet.Numerics.dll",
+        "lib/netstandard1.3/MathNet.Numerics.dll",
+        "lib/netstandard2.0/MathNet.Numerics.dll",
+        "mathnet.numerics.4.9.1.nupkg.sha512",
+        "mathnet.numerics.nuspec"
+      ]
+    },
     "Microsoft.NETCore.Platforms/3.1.0": {
       "sha512": "z7aeg8oHln2CuNulfhiLYxCVMPEwBl3rzicjvIX+4sUuCwvXw5oXQEtbiU2c0z4qYL5L3Kmx0mMA/+t/SbY67w==",
       "type": "package",
@@ -159,10 +222,52 @@
         "useSharedDesignerContext.txt",
         "version.txt"
       ]
+    },
+    "System.ValueTuple/4.5.0": {
+      "sha512": "okurQJO6NRE/apDIP23ajJ0hpiNmJ+f0BwOlB/cSqTLQlw5upkf+5+96+iG2Jw40G1fCVCyPz/FhIABUjMR+RQ==",
+      "type": "package",
+      "path": "system.valuetuple/4.5.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net461/System.ValueTuple.dll",
+        "lib/net47/System.ValueTuple.dll",
+        "lib/netcoreapp2.0/_._",
+        "lib/netstandard1.0/System.ValueTuple.dll",
+        "lib/netstandard2.0/_._",
+        "lib/portable-net40+sl4+win8+wp8/System.ValueTuple.dll",
+        "lib/portable-net40+sl4+win8+wp8/System.ValueTuple.xml",
+        "lib/uap10.0.16299/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "lib/xamarintvos10/_._",
+        "lib/xamarinwatchos10/_._",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net461/System.ValueTuple.dll",
+        "ref/net47/System.ValueTuple.dll",
+        "ref/netcoreapp2.0/_._",
+        "ref/netstandard2.0/_._",
+        "ref/portable-net40+sl4+win8+wp8/System.ValueTuple.dll",
+        "ref/uap10.0.16299/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "ref/xamarintvos10/_._",
+        "ref/xamarinwatchos10/_._",
+        "system.valuetuple.4.5.0.nupkg.sha512",
+        "system.valuetuple.nuspec",
+        "useSharedDesignerContext.txt",
+        "version.txt"
+      ]
     }
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v3.1": [
+      "MathNet.Filtering >= 0.7.0",
       "ScottPlot >= 4.0.39"
     ]
   },
@@ -201,6 +306,10 @@
     "frameworks": {
       "netcoreapp3.1": {
         "dependencies": {
+          "MathNet.Filtering": {
+            "target": "Package",
+            "version": "[0.7.0, )"
+          },
           "ScottPlot": {
             "target": "Package",
             "version": "[4.0.39, )"
