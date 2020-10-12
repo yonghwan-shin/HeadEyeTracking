@@ -660,18 +660,20 @@ def crosscorr(datax, datay, lag=0, wrap=False):
         return datax.corr(datay.shift(lag))
 
 
-def normalize(_from, _to):
-    # _from = np.array(_from)
-    # _to = np.array(_to)
-    # mean_difference = _to.mean() - _from.mean()
-    # multiple_power2 = np.power((_to - _to.mean()), 2).mean() / np.power((_from - _from.mean()), 2).mean()
-    # multiple=np.sqrt(multiple_power2)
-    # return multiple, mean_difference
+def normalize(_from, _to,RMS=False):
+    if RMS==True:
+        _from = np.array(_from)
+        _to = np.array(_to)
+        mean_difference = _to.mean() - _from.mean()
+        multiple_power2 = np.power((_to - _to.mean()), 2).mean() / np.power((_from - _from.mean()), 2).mean()
+        multiple=np.sqrt(multiple_power2)
+        return multiple, mean_difference
     a = _from - sum(_from) / len(_from)
     b = _to - sum(_to) / len(_to)
     multiple = (max(b) - min(b)) / (max(a) - min(a))
     shift = sum(_to) / len(_to) - sum(_from) / len(_from)
     return multiple, shift
+
 
 
 def linear_regression(_from, _to):
@@ -940,62 +942,63 @@ def imu_to_vector(imu: pd.DataFrame):
     imu['vector'] = vector
     return imu
 
-def smoothing_factor(t_e, cutoff):
-    r = 2 * math.pi * cutoff * t_e
-    return r / (r + 1)
 
+# def smoothing_factor(t_e, cutoff):
+#     r = 2 * math.pi * cutoff * t_e
+#     return r / (r + 1)
+#
+#
+# def exponential_smoothing(a, x, x_prev):
+#     return a * x + (1 - a) * x_prev
+#
+#
+# class OneEuroFilter:
+#     def __init__(self, t0, x0, dx0=0.0, min_cutoff=1.0, beta=0.0,
+#                  d_cutoff=1.0):
+#         """Initialize the one euro filter."""
+#         # The parameters.
+#         self.min_cutoff = float(min_cutoff)
+#         self.beta = float(beta)
+#         self.d_cutoff = float(d_cutoff)
+#         # Previous values.
+#         self.x_prev = float(x0)
+#         self.dx_prev = float(dx0)
+#         self.t_prev = float(t0)
+#
+#     def __call__(self, t, x):
+#         """Compute the filtered signal."""
+#         t_e = t - self.t_prev
+#
+#         # The filtered derivative of the signal.
+#         a_d = smoothing_factor(t_e, self.d_cutoff)
+#         dx = (x - self.x_prev) / t_e
+#         dx_hat = exponential_smoothing(a_d, dx, self.dx_prev)
+#
+#         # The filtered signal.
+#         cutoff = self.min_cutoff + self.beta * abs(dx_hat)
+#         a = smoothing_factor(t_e, cutoff)
+#         x_hat = exponential_smoothing(a, x, self.x_prev)
+#
+#         # Memorize the previous values.
+#         self.x_prev = x_hat
+#         self.dx_prev = dx_hat
+#         self.t_prev = t
+#
+#         return x_hat
+# # _data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0
+# def one_euro(timestamp,_data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
+#     one_euro_filter = OneEuroFilter(
+#         t0=timestamp[0],
+#         x0=_data[0],
+#         min_cutoff=mincutoff,
+#         beta=beta
+#     )
+#     f = [_data[0]]
+#     _data = list(_data)
+#     for i in range(1,len(_data)):
+#         f.append(one_euro_filter(timestamp[i],_data[i]))
+#     return np.array(f)
 
-def exponential_smoothing(a, x, x_prev):
-    return a * x + (1 - a) * x_prev
-
-
-class OneEuroFilter:
-    def __init__(self, t0, x0, dx0=0.0, min_cutoff=1.0, beta=0.0,
-                 d_cutoff=1.0):
-        """Initialize the one euro filter."""
-        # The parameters.
-        self.min_cutoff = float(min_cutoff)
-        self.beta = float(beta)
-        self.d_cutoff = float(d_cutoff)
-        # Previous values.
-        self.x_prev = float(x0)
-        self.dx_prev = float(dx0)
-        self.t_prev = float(t0)
-
-    def __call__(self, t, x):
-        """Compute the filtered signal."""
-        t_e = t - self.t_prev
-
-        # The filtered derivative of the signal.
-        a_d = smoothing_factor(t_e, self.d_cutoff)
-        dx = (x - self.x_prev) / t_e
-        dx_hat = exponential_smoothing(a_d, dx, self.dx_prev)
-
-        # The filtered signal.
-        cutoff = self.min_cutoff + self.beta * abs(dx_hat)
-        a = smoothing_factor(t_e, cutoff)
-        x_hat = exponential_smoothing(a, x, self.x_prev)
-
-        # Memorize the previous values.
-        self.x_prev = x_hat
-        self.dx_prev = dx_hat
-        self.t_prev = t
-
-        return x_hat
-# _data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0
-def one_euro(timestamp,_data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
-    one_euro_filter = OneEuroFilter(
-        t0=timestamp[0],
-        x0=_data[0],
-        min_cutoff=mincutoff,
-        beta=beta
-    )
-    f = [_data[0]]
-    _data = list(_data)
-    for i in range(1,len(_data)):
-        f.append(one_euro_filter(timestamp[i],_data[i]))
-    return np.array(f)
-"""
 class LowPassFilter(object):
     def __init__(self, alpha):
         self.__setAlpha(alpha)
@@ -1059,16 +1062,39 @@ class OneEuroFilter(object):
         return self.__x(x, timestamp, alpha=self.__alpha(cutoff))
 
 
-def one_euro(_data, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
+def one_euro(_data, timestamp=None, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
     config = dict(freq=freq, mincutoff=mincutoff, beta=beta, dcutoff=dcutoff)
     filter = OneEuroFilter(**config)
     f = []
     _data = list(_data)
+
     for i in range(len(_data)):
-        f.append(filter(_data[i]))
+        if timestamp is None:
+            f.append(filter(x=_data[i]))
+        else:
+            f.append(filter(_data[i], timestamp=timestamp[i]))
     return pd.Series(f)
 
-"""
+def one_euro_highpass(_data,timestamp=None,freq=120,lowcut=0.1,highcut=3,beta=1.0,dcutoff=1.0):
+    config_low = dict(freq=freq, mincutoff=lowcut, beta=beta, dcutoff=dcutoff)
+    config_high = dict(freq=freq, mincutoff=highcut, beta=beta, dcutoff=dcutoff)
+    filter_low = OneEuroFilter(**config_low)
+    filter_high = OneEuroFilter(**config_high)
+    f1=[]
+    f2=[]
+    _data = list(_data)
+
+    for i in range(len(_data)):
+        if timestamp is None:
+            f1.append(filter_low(x=_data[i]))
+        else:
+            f1.append(filter_low(_data[i], timestamp=timestamp[i]))
+    for i in range(len(_data)):
+        if timestamp is None:
+            f2.append(filter_high(x=f1[i]))
+        else:
+            f2.append(filter_high(f1[i], timestamp=timestamp[i]))
+    return pd.Series(f2)
 from scipy.signal import firwin, remez, kaiser_atten, kaiser_beta
 
 
