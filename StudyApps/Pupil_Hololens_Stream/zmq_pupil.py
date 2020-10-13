@@ -67,6 +67,7 @@ def ZMQ_connect():
 
 class ZMQ_listener(threading.Thread):
     def __del__(self):
+
         if threading.Thread.is_alive(self):
             self.join()
         print("ZMQ thread dead")
@@ -95,6 +96,7 @@ class ZMQ_listener(threading.Thread):
         self.send_time = 0
         self.delays = []
         self.test_count = 0
+        self.DATA=[]
 
     def run(self):
         # actual part
@@ -120,7 +122,14 @@ class ZMQ_listener(threading.Thread):
                 while "\n" in self.buffer:
                     data, self.buffer = self.buffer.split("\n", 1)
                     print('received :', data)
-
+                    if data=="START":
+                        self.recording=True
+                    if data=="END":
+                        # SAVE TEST
+                        self.recording=False
+                        print('finishing')
+                        file = pd.DataFrame(self.DATA)
+                        file.to_csv("log.csv", index=False)
                     if data == "#" + str(self.sent) + "#" * 10:
                         self.delays.append((float(time.time()) - float(self.send_time)) * 1000)
                         print(
@@ -157,7 +166,15 @@ class ZMQ_listener(threading.Thread):
                         + str(int(filtered_y * 10 ** 6))
                         + "\n"
                 )
+
                 self.send_to_hololens(send_message)
+                if self.recording ==True:
+                    self.DATA.append(dict(
+                        timestamp = now,
+                        x=filtered_x,
+                        y=filtered_y,
+                        message = send_message
+                    ))
                 # send_message = (
                 #         "@"
                 #         + confidence
@@ -187,6 +204,7 @@ class ZMQ_listener(threading.Thread):
                 # savefile_ZMQ(self, self.string2send)
 
             except KeyboardInterrupt:
+
                 break
         sleep(0.1)
         self.join()
