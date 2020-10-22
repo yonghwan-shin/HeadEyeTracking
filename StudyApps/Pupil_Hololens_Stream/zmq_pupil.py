@@ -27,7 +27,7 @@ def find_holo_serial_port(portname):
     for port in ports:
         if port.device.startswith(portname):
             print('find the port! : ', port.device)
-            return serial.Serial(port.device, 115200)
+            return serial.Serial(port.device, 115200, write_timeout=0)
 
 
 def ZMQ_connect():
@@ -96,7 +96,11 @@ class ZMQ_listener(threading.Thread):
         self.send_time = 0
         self.delays = []
         self.test_count = 0
-        self.DATA=[]
+        self.DATA = []
+        self.sending = []
+        self.frame_count = 0
+        self.start_time = 0
+        self.pupil_time = 0
 
     def run(self):
         # actual part
@@ -104,14 +108,18 @@ class ZMQ_listener(threading.Thread):
         subscriber = ZMQ_connect()
 
         sleep(1)
+        self.start_time = time.time()
         import msgpack
 
         while self.args[0]:
             try:
+
                 topic, payload = subscriber.recv_multipart()
                 # undefined error ( might be msgpack version) , originally -> message = msgpack.unpackb(payload, encoding='utf-8')
                 message = msgpack.unpackb(payload)
-
+                self.frame_count += 1
+                if self.frame_count == 1:
+                    self.pupil_time = message['timestamp']
                 if self.Holo == None:
                     print("re-finding hololens port")
                     self.Holo = find_holo_serial_port("/dev/cu.Bluetooth")
@@ -122,14 +130,16 @@ class ZMQ_listener(threading.Thread):
                 while "\n" in self.buffer:
                     data, self.buffer = self.buffer.split("\n", 1)
                     print('received :', data)
-                    if data=="START":
-                        self.recording=True
-                    if data=="END":
+                    if data == "START":
+                        self.recording = True
+                    if data == "END":
                         # SAVE TEST
-                        self.recording=False
+                        self.recording = False
                         print('finishing')
                         file = pd.DataFrame(self.DATA)
                         file.to_csv("log.csv", index=False)
+                        sleep(1)
+
                     if data == "#" + str(self.sent) + "#" * 10:
                         self.delays.append((float(time.time()) - float(self.send_time)) * 1000)
                         print(
@@ -141,56 +151,68 @@ class ZMQ_listener(threading.Thread):
                         )
                     # self.sent += 1000
 
-                if self.count % 120 == 1:
-                    self.send_time = time.time()
-                    self.sent = self.count
-                    sendstring = "#" + str(self.sent) + "#" * 10 + "\n"
-                    print('send', sendstring)
-                    self.send_to_hololens(sendstring)
+                # if self.count % 120 == 1:
+                #     self.send_time = time.time()
+                #     self.sent = self.count
+                #     sendstring = "#" + str(self.sent) + "#" * 10 + "\n"
+                #     print('send', sendstring)
+                #     # self.send_to_hololens(sendstring)
+
                 # norm_pos data form : [0.3894290751263883, 0.11579204756622086]
 
                 # Sending Part
-                now = time.time()
 
-                filtered_x = message['norm_pos'][0]
-                filtered_y = message['norm_pos'][1]
-                confidence = "O" if message["confidence"] > 0.6 else "X"
+
                 # message length: prefix 1 + confidence 1 + delimiter 1 + postfix 1 + data 6*2 = 16
-                send_message = (
-                        "$"
-                        + confidence
-                        # + str(int(eye_x.iloc[self.test_count] * 10 ** 6))
-                        + str(int(filtered_x * 10 ** 6))
-                        + ","
-                        # + str(int(eye_y.iloc[self.test_count] * 10 ** 6))
-                        + str(int(filtered_y * 10 ** 6))
-                        + "\n"
-                )
+                prefix = 1
+                confidence = int(message["confidence"] * 5)
+                x = int(message["norm_pos"][0] * 10**4)
+                y = int(message["norm_pos"][1] * 10**4)
+                # x = int(self.frame_count)
+                # y = int(self.frame_count)
+                # print(self.frame_count)
+                # if self.frame_count > 10000: self.frame_count =1
+                send_binary = np.binary_repr(prefix, width=1) \
+                              + np.binary_repr(confidence, width=3) \
+                              + np.binary_repr(x, width=14) \
+                              + np.binary_repr(y, width=14)
+                send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
 
-                self.send_to_hololens(send_message)
-                if self.recording ==True:
-                    self.DATA.append(dict(
-                        timestamp = now,
-                        x=filtered_x,
-                        y=filtered_y,
-                        message = send_message
-                    ))
                 # send_message = (
-                #         "@"
+                #         "$"
                 #         + confidence
-                #         + str(int(head_x.iloc[self.test_count] * 10 ** 6))
-                #         # + str(int(filtered_x * 10 ** 6))
+                #         # + str(int(eye_x.iloc[self.test_count] * 10 ** 6))
+                #         + str(int(filtered_x * 10 ** 6))
                 #         + ","
-                #         + str(int(head_y.iloc[self.test_count] * 10 ** 6))
-                #         # + str(int(filtered_y * 10 ** 6))
+                #         # + str(int(eye_y.iloc[self.test_count] * 10 ** 6))
+                #         + str(int(filtered_y * 10 ** 6))
                 #         + "\n"
                 # )
-                # self.send_to_hololens(send_message)
-                #TEST
+
+                # self.send_to_hololens("OOOOOO")
+                # self.send_uint32(send_uint32)
+                self.Holo.write(send_uint32)
+                # print("sending",format(time.time()-prev,".5f"))
+
+                if self.frame_count % 120 == 1:
+                    print(message['timestamp'] - self.pupil_time - (time.time() - self.start_time),
+                          (time.time() - self.start_time),
+                          self.frame_count,
+                          message['timestamp'] - self.pupil_time)
+                    self.start_time = time.time()
+                    self.pupil_time = message['timestamp']
+
+                if self.recording == True:
+                    self.DATA.append(dict(
+                        # timestamp=now,
+                        # x=filtered_x,
+                        # y=filtered_y,
+                        # message = send_message
+                    ))
+
+                # TEST
                 self.test_count += 1
                 if self.test_count == len(eye_x): self.test_count = 0
-
-
 
                 # Check process by counting every loop
                 self.count += 1
@@ -214,6 +236,9 @@ class ZMQ_listener(threading.Thread):
 
     def send_to_hololens(self, msg: str):
         self.Holo.write(msg.encode("UTF-8"))
+
+    def send_uint32(self, msg: bytes):
+        self.Holo.write(msg)
 
     def save_data(self):
         full_name = "EYE_" + self.filename + ".csv"

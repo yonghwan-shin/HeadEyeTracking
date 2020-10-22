@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/yonghwanshin/Documents/Github/HeadEyeTracking/StudyApps/csharp_sender/csharp_sender.csproj": {}
+  },
+  "projects": {
+    "/Users/yonghwanshin/Documents/Github/HeadEyeTracking/StudyApps/csharp_sender/csharp_sender.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/yonghwanshin/Documents/Github/HeadEyeTracking/StudyApps/csharp_sender/csharp_sender.csproj",
+        "projectName": "csharp_sender",
+        "projectPath": "/Users/yonghwanshin/Documents/Github/HeadEyeTracking/StudyApps/csharp_sender/csharp_sender.csproj",
+        "packagesPath": "/Users/yonghwanshin/.nuget/packages/",
+        "outputPath": "/Users/yonghwanshin/Documents/Github/HeadEyeTracking/StudyApps/csharp_sender/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/yonghwanshin/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.1": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.1": {
+          "dependencies": {
+            "NetMQ": {
+              "target": "Package",
+              "version": "[4.0.1.6, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.403/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
