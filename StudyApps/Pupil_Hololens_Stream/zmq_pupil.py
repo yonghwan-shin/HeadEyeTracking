@@ -7,22 +7,23 @@ import serial.tools.list_ports
 import os
 import numpy as np
 import csv
-from OneEuroFilter import OneEuroFilter
 import pandas as pd
 
+# Initial Pupil-remote variables
 ctx = zmq.Context()
 pupil_remote = ctx.socket(zmq.REQ)
 ip = "localhost"
-# ip = '192.168.0.49'
 port = 50020
+
 ZMQ_stop = False
-head_x = pd.read_csv('head_x.csv')
-head_y = pd.read_csv('head_y.csv')
-eye_x = pd.read_csv('eye_x.csv')
-eye_y = pd.read_csv('eye_y.csv')
 
 
-def find_holo_serial_port(portname):
+def find_holo_serial_port(portname: str):
+    """
+    Find the desired serial port and connect within available serial ports
+    :str portname: Desired port's name
+    :return: pyserial object with baudrate 115200
+    """
     ports = serial.tools.list_ports.comports()
     for port in ports:
         if port.device.startswith(portname):
@@ -31,6 +32,10 @@ def find_holo_serial_port(portname):
 
 
 def ZMQ_connect():
+    """
+    Connect to the Pupil-remote (specifically, pupil.1.3d which is right eye cam)
+    :return: ZMQ subscriber for right eye
+    """
     try:
         pupil_remote.connect(f"tcp://{ip}:{port}")
         # Request 'SUB_PORT' for reading data
@@ -48,21 +53,6 @@ def ZMQ_connect():
         pass
     print("ZMQ start receiving")
     return subscriber
-
-
-# pupil_remote.connect(f'tcp://{ip}:{port}')
-# # Request 'SUB_PORT' for reading data
-# pupil_remote.send_string('SUB_PORT')
-# sub_port = pupil_remote.recv_string()
-#
-# # Request 'PUB_PORT' for writing data
-# pupil_remote.send_string('PUB_PORT')
-# pub_port = pupil_remote.recv_string()
-#
-# subscriber = ctx.socket(zmq.SUB)
-# subscriber.connect(f'tcp://{ip}:{sub_port}')
-# subscriber.subscribe('pupil.1')
-# print('start receiving')
 
 
 class ZMQ_listener(threading.Thread):
@@ -103,11 +93,9 @@ class ZMQ_listener(threading.Thread):
         self.pupil_time = 0
 
     def run(self):
-        # actual part
         print(threading.currentThread().getName(), "is started")
         subscriber = ZMQ_connect()
-
-        sleep(1)
+        sleep(1)  # wait a second before hearing pupil-data
         self.start_time = time.time()
         import msgpack
 
@@ -115,8 +103,10 @@ class ZMQ_listener(threading.Thread):
             try:
 
                 topic, payload = subscriber.recv_multipart()
-                # undefined error ( might be msgpack version) , originally -> message = msgpack.unpackb(payload, encoding='utf-8')
-                message = msgpack.unpackb(payload)
+
+                message = msgpack.unpackb(
+                    payload)  # undefined error (might be msgpack version conflict) , originally -> message = msgpack.unpackb(payload, encoding='utf-8')
+
                 self.frame_count += 1
                 if self.frame_count == 1:
                     self.pupil_time = message['timestamp']
@@ -124,9 +114,10 @@ class ZMQ_listener(threading.Thread):
                     print("re-finding hololens port")
                     self.Holo = find_holo_serial_port("/dev/cu.Bluetooth")
                     continue
-
+                """
+                RECEIVING PART
+                """
                 self.buffer += self.Holo.read(self.Holo.in_waiting).decode()
-                # Receiving part
                 while "\n" in self.buffer:
                     data, self.buffer = self.buffer.split("\n", 1)
                     print('received :', data)
@@ -149,58 +140,29 @@ class ZMQ_listener(threading.Thread):
                             'mean delay : ',
                             sum(self.delays) / len(self.delays)
                         )
-                    # self.sent += 1000
-
-                # if self.count % 120 == 1:
-                #     self.send_time = time.time()
-                #     self.sent = self.count
-                #     sendstring = "#" + str(self.sent) + "#" * 10 + "\n"
-                #     print('send', sendstring)
-                #     # self.send_to_hololens(sendstring)
 
                 # norm_pos data form : [0.3894290751263883, 0.11579204756622086]
 
-                # Sending Part
-
-
+                """
+                SENDING PART
+                """
                 # message length: prefix 1 + confidence 1 + delimiter 1 + postfix 1 + data 6*2 = 16
                 prefix = 1
                 confidence = int(message["confidence"] * 5)
-                x = int(message["norm_pos"][0] * 10**4)
-                y = int(message["norm_pos"][1] * 10**4)
-                # x = int(self.frame_count)
-                # y = int(self.frame_count)
-                # print(self.frame_count)
-                # if self.frame_count > 10000: self.frame_count =1
+                x = int(message["norm_pos"][0] * 10 ** 4)
+                y = int(message["norm_pos"][1] * 10 ** 4)
+                # Actual message with 32-bit array
                 send_binary = np.binary_repr(prefix, width=1) \
                               + np.binary_repr(confidence, width=3) \
                               + np.binary_repr(x, width=14) \
                               + np.binary_repr(y, width=14)
+                # Unsigned 32 bit int ( UInt32 on C#)
                 send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
 
-                # send_message = (
-                #         "$"
-                #         + confidence
-                #         # + str(int(eye_x.iloc[self.test_count] * 10 ** 6))
-                #         + str(int(filtered_x * 10 ** 6))
-                #         + ","
-                #         # + str(int(eye_y.iloc[self.test_count] * 10 ** 6))
-                #         + str(int(filtered_y * 10 ** 6))
-                #         + "\n"
-                # )
-
-                # self.send_to_hololens("OOOOOO")
-                # self.send_uint32(send_uint32)
                 self.Holo.write(send_uint32)
-                # print("sending",format(time.time()-prev,".5f"))
 
                 if self.frame_count % 120 == 1:
-                    print(message['timestamp'] - self.pupil_time - (time.time() - self.start_time),
-                          (time.time() - self.start_time),
-                          self.frame_count,
-                          message['timestamp'] - self.pupil_time)
-                    self.start_time = time.time()
-                    self.pupil_time = message['timestamp']
+                    pass
 
                 if self.recording == True:
                     self.DATA.append(dict(
@@ -210,34 +172,27 @@ class ZMQ_listener(threading.Thread):
                         # message = send_message
                     ))
 
-                # TEST
-                self.test_count += 1
-                if self.test_count == len(eye_x): self.test_count = 0
-
-                # Check process by counting every loop
-                self.count += 1
-                if self.count > 9999:
-                    self.count = 1000
-
-                # if self.recording:
-                # 	self.stored_data.append([str(time.time()),str(message)])
-
-                # self.timestapmes.append(time.time())
-                # savefile_ZMQ(self, self.string2send)
-
             except KeyboardInterrupt:
-
                 break
+
         sleep(0.1)
         self.join()
         return
 
-        # return serial.Serial(port.device, 115200)
-
     def send_to_hololens(self, msg: str):
+        """
+        Send String message to serial port
+        :param msg: message string
+        :return: None
+        """
         self.Holo.write(msg.encode("UTF-8"))
 
-    def send_uint32(self, msg: bytes):
+    def send_bytes(self, msg: bytes):
+        """
+        Send bytes (bit array) to serial port
+        :param msg: message bytes
+        :return: None
+        """
         self.Holo.write(msg)
 
     def save_data(self):
