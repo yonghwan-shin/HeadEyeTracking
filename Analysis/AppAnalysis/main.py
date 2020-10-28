@@ -8,6 +8,7 @@ import plotly.figure_factory as ff
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from OneEuroFilter import *
 
 pio.renderers.default = "browser"
 
@@ -22,7 +23,7 @@ Index(['timestamp', 'head_position', 'head_rotation', 'head_forward', 'eye_x',
 
 # if __name__ == '__main__':
 # %%  reading record file
-f = open("data/Pilot4.json")
+f = open("995/4.json")
 data = pd.DataFrame(json.load(f)["data"])
 
 data.timestamp = data.timestamp - data.timestamp[0]
@@ -64,6 +65,8 @@ data = data[10:]
 # for i in range(lag, len(testdata)):
 #     peak_detect.thresholding_algo(testdata[i])
 # fig = make_subplots(rows=1, cols=1)
+one=one_euro(data.temp_H,data.timestamp,freq=60,mincutoff=0.5,beta=0.1)
+origin = one_euro(data.head_rotation_y,data.timestamp,freq=60,mincutoff=0.5,beta=0.1)
 fig=go.Figure(
     data=[
         go.Scatter(x=data.timestamp, y=data.head_rotation_y, name='head', visible='legendonly'),
@@ -71,9 +74,12 @@ fig=go.Figure(
         go.Scatter(x=data.timestamp, y=data.hp_H, name='head-hp'),
         go.Scatter(x=data.timestamp, y=data.hp_H + data.hp_H_eye * data.multiple_H, name='comp'),
         go.Scatter(x=data.timestamp, y=data.hp_H_eye * data.multiple_H, name='eye-multiple'),
-        go.Scatter(x=data.timestamp, y=data.temp_H, name='record-final', visible='legendonly')
+        go.Scatter(x=data.timestamp, y=data.temp_H, name='record-final', visible='legendonly'),
+        go.Scatter(x=data.timestamp,y=one,name='one'),
+        go.Scatter(x=data.timestamp,y=origin,name='origin'),
     ]
 )
+# one_euro(data.temp_H,data.timestamp,freq=60,mincutoff=0.8,beta=1.0)
 
 fig.update_layout(title='Horizontal')
 fig.show()

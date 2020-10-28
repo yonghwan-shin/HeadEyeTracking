@@ -37,7 +37,7 @@ global holo_buffer
 holo_buffer = []
 
 
-# curr_file = []
+curr_file = []
 
 def threadcontrol():  # init
     zmq_thread.start()

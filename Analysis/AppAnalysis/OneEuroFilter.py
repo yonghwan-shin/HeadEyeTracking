@@ -1,4 +1,5 @@
-
+import math
+import pandas as pd
 class LowPassFilter(object):
     def __init__(self, alpha):
         self.__setAlpha(alpha)
@@ -66,6 +67,7 @@ def one_euro(_data, timestamp=None, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0
     filter = OneEuroFilter(**config)
     f = []
     _data = list(_data)
+    timestamp = list(timestamp)
 
     for i in range(len(_data)):
         if timestamp is None:
