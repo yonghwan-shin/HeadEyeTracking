@@ -23,7 +23,7 @@ Index(['timestamp', 'head_position', 'head_rotation', 'head_forward', 'eye_x',
 
 # if __name__ == '__main__':
 # %%  reading record file
-f = open("995/4.json")
+f = open("998/4.json")
 data = pd.DataFrame(json.load(f)["data"])
 
 data.timestamp = data.timestamp - data.timestamp[0]
@@ -69,14 +69,20 @@ one=one_euro(data.temp_H,data.timestamp,freq=60,mincutoff=0.5,beta=0.1)
 origin = one_euro(data.head_rotation_y,data.timestamp,freq=60,mincutoff=0.5,beta=0.1)
 fig=go.Figure(
     data=[
+       # go.Scatter(x=data.timestamp,y=(data.original_eye_x-data.original_eye_x.mean())*250,name='originaleye'),
+
+        # go.Scatter(x=data.timestamp,y=data.hp_H_eye*250,name='bp-eye'),
+        # go.Scatter(x=data.timestamp,y=data.hp_H,name='bp-head')
         go.Scatter(x=data.timestamp, y=data.head_rotation_y, name='head', visible='legendonly'),
         # go.Scatter(x=data.timestamp,y=data.confidence,name='confidence'),
         go.Scatter(x=data.timestamp, y=data.hp_H, name='head-hp'),
         go.Scatter(x=data.timestamp, y=data.hp_H + data.hp_H_eye * data.multiple_H, name='comp'),
         go.Scatter(x=data.timestamp, y=data.hp_H_eye * data.multiple_H, name='eye-multiple'),
         go.Scatter(x=data.timestamp, y=data.temp_H, name='record-final', visible='legendonly'),
-        go.Scatter(x=data.timestamp,y=one,name='one'),
-        go.Scatter(x=data.timestamp,y=origin,name='origin'),
+       # go.Scatter(x=data.timestamp,y=data.multiple_H,name='multiple'),
+        #go.Scatter(x=data.timestamp,y=data.current_multiple_H,name='currentMultiple')
+        # go.Scatter(x=data.timestamp,y=one,name='one'),
+        # go.Scatter(x=data.timestamp,y=origin,name='origin'),
     ]
 )
 # one_euro(data.temp_H,data.timestamp,freq=60,mincutoff=0.8,beta=1.0)
@@ -89,10 +95,10 @@ fig.show()
 # %%
 fig = go.Figure(
     data=[
-        go.Scatter(x=data.timestamp, y=data.head_rotation_x, name='head', visible='legendonly'),
-        # go.Scatter(x=data.timestamp, y=data.eye_x*200,name='eye-original'),
+       go.Scatter(x=data.timestamp, y=data.head_rotation_x, name='head', visible='legendonly'),
+        #go.Scatter(x=data.timestamp, y=(data.eye_y-data.eye_y.mean())*20,name='eye-original'),
         go.Scatter(x=data.timestamp, y=data.hp_V, name='head-hp'),
-        go.Scatter(x=data.timestamp, y=data.hp_V + data.hp_V_eye * data.multiple_V, name='comp'),
+         go.Scatter(x=data.timestamp, y=data.hp_V + data.hp_V_eye * data.multiple_V, name='comp'),
         go.Scatter(x=data.timestamp, y=data.hp_V_eye * data.multiple_V, name='eye-multiple'),
         # go.Scatter(x=data.timestamp,y=data.hp_V_eye*200,name='eye-200'),
         go.Scatter(x=data.timestamp, y=data.temp_V, name='recorded_final', visible='legendonly')
