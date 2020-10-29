@@ -23,7 +23,7 @@ Index(['timestamp', 'head_position', 'head_rotation', 'head_forward', 'eye_x',
 
 # if __name__ == '__main__':
 # %%  reading record file
-f = open("998/4.json")
+f = open("800/4.json")
 data = pd.DataFrame(json.load(f)["data"])
 
 data.timestamp = data.timestamp - data.timestamp[0]
