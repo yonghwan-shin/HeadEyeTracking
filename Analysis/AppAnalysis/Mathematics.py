@@ -4,6 +4,8 @@ import math
 def LinearRegression(x, y):
     if len(x) != len(y):
         raise Exception("different length of x, y")
+    if len(x)==1:
+        return 0,0,1
     sumOfX = 0
     sumOfY = 0
     sumOfXSq = 0

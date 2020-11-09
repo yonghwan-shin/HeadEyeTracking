@@ -62,7 +62,7 @@ class OneEuroFilter(object):
         # ---- filter the given value
         return self.__x(x, timestamp, alpha=self.__alpha(cutoff))
 
-def one_euro(_data, timestamp=None, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0):
+def one_euro(_data, timestamp=None, freq=60, mincutoff=1, beta=1.0, dcutoff=1.0):
     config = dict(freq=freq, mincutoff=mincutoff, beta=beta, dcutoff=dcutoff)
     filter = OneEuroFilter(**config)
     f = []

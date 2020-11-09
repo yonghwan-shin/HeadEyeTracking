@@ -1,3 +1,4 @@
+import numpy as np
 def butterworth_lowpass(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
     """Filters a data sample based on two past unfiltered and filtered data samples.
 
