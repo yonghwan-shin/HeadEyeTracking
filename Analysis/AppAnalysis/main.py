@@ -134,6 +134,7 @@ fig = go.Figure(
     ]
 )
 
+data =data[data.timestamp>1.0]
 # ACCURACY : mean difference
 accuracy_lowpass = data.Phi.mean() - data.lp_H.mean()
 accuracy_algorithm = data.Phi.mean() - data.one_euro_filtered_vector_y.mean()

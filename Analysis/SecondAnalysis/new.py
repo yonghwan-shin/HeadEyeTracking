@@ -202,29 +202,17 @@ def one_trial(subject, target, env, pos, block):
 
 
 if __name__ == '__main__':
-    subjects = [201]
-    poss = ['W']
-    envs = ['U']
-    linregress_results = []
+    subjects = subjects = range(201, 212)
+    poss = ['W','S']
+    envs = ['U','W']
+    output=pd.DataFrame()
     for subject in subjects:
         [imu_file_list, eye_file_list, hololens_file_list] = FileHandling.get_one_subject_files(subject, refined=True)
         for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
             current_info = [target, env, pos, block]
             try:
-                eye = FileHandling.file_as_pandas(FileHandling.get_file_by_info(eye_file_list, current_info),
-                                                  refined=True)
                 holo = FileHandling.file_as_pandas(FileHandling.get_file_by_info(hololens_file_list, current_info))
-                imu = FileHandling.file_as_pandas(FileHandling.get_file_by_info(imu_file_list, current_info))
-                if eye.shape[0] < 100: print('empty eye data');continue
-                data_analysis(eye, holo, imu)
+                # Behavioural statistics
+
             except ValueError as err:
                 print(err, current_info)
-    plt.show()
-    slopes = []
-    for i in linregress_results:
-        slopes.append(i)
-    # plt.hist(slopes);
-    sns.distplot(slopes, fit=stats.norm, kde=True)
-    plt.show()
-    mean_slope = sum(slopes) / len(slopes)
-    print(mean_slope)
