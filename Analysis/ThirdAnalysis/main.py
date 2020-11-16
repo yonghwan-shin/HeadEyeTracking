@@ -82,10 +82,58 @@ def butter_bandpass_filter_zi_realtime(data, highcut, fs, order=2):
     b, a = butter_highpass(highcut, fs, order=order)
     out = []
     z = lfilter_zi(b, a) * data[0]
-    for i,D in enumerate(data):
-        res ,z= lfilter(b, a, data[i:i+2*order], zi=z)
+    for i, D in enumerate(data):
+        res, z = lfilter(b, a, data[i:i + 2 * order], zi=z)
         out.append(res[0])
     return pd.Series(out)
+
+
+def winter_low(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
+    """Filters a data sample based on two past unfiltered and filtered data samples.
+
+    2nd order low pass, single pass butterworth filter presented in Winter2009.
+
+    Parameters
+    ==========
+    cuttoff_freq: float
+        The desired lowpass cutoff frequency in Hertz.
+    sample_time: floaat
+        The difference in time between the current time and the previous time.
+    x0 : float
+        The current unfiltered signal, x_i
+    x1 : float
+        The unfiltered signal at the previous sampling time, x_i-1.
+    x2 : float
+        The unfiltered signal at the second previous sampling time, x_i-2.
+    y1 : float
+        The filtered signal at the previous sampling time, y_i-1.
+    y2 : float
+        The filtered signal at the second previous sampling time, y_i-2.
+
+    """
+    sampling_rate = 1 / sample_time  # Hertz
+
+    correction_factor = 1.0  # 1.0 for a single pass filter
+
+    corrected_cutoff_freq = np.tan(np.pi * cutoff_freq / sampling_rate) / correction_factor  # radians
+
+    K1 = np.sqrt(2) * corrected_cutoff_freq
+    K2 = corrected_cutoff_freq ** 2
+
+    a0 = K2 / (1 + K1 + K2)
+    a1 = 2 * a0
+    a2 = a0
+
+    K3 = a1 / K2
+
+    b1 = -a1 + K3
+    b2 = 1 - a1 - K3
+
+    if print_coeff:
+        print('num:', a0, a1, a2)
+        print('dem:', 1.0, -b1, -b2)
+
+    return a0 * x0 + a1 * x1 + a2 * x2 + b1 * y1 + b2 * y2
 
 
 def murphy_high(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
@@ -144,53 +192,69 @@ def murphy_high(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False)
 # eye.norm_y = eye.norm_y - eye.norm_y[0]
 
 # hp_h_rt = butter_bandpass_filter_zi_realtime(holo.head_rotation_y, 0.1, 60, 2)
-highpass_h = [0,0]
-for i in range(2,len(holo.head_rotation_x)):
-    highpass_h.append(murphy_high(0.15,holo.timestamp[i]-holo.timestamp[i-1],
-                                  holo.head_rotation_x[i],holo.head_rotation_x[i-1],holo.head_rotation_x[i-2],
-                                  highpass_h[i-1],highpass_h[i-2]))
-# plt.plot(holo.timestamp, hp_h)
-# plt.plot(holo.timestamp, holo.head_rotation_y,'r')
-# plt.plot(holo.timestamp,hp_h_rt,'g')
-# plt.plot(holo.timestamp,highpass_h,'b')
-# plt.show()
-# plt.plot(holo.timestamp, holo.head_rotation_x-hp_h_rt,'b')
-# plt.plot(holo.timestamp, holo.head_rotation_x - hp_h)
-# plt.show()
-E = interpolate.interp1d(eye.timestamp, eye.norm_y, fill_value='extrapolate')
-ey = E(holo.timestamp)
-# hp_e = butter_highpass_filter(ey, 0.1, 60, 2, real_time=True)
-# hp_e_zi = butter_bandpass_filter_zi(ey, 0.1, 5, 60, 2)
-# hp_e_rt = butter_bandpass_filter_zi_realtime(ey, 0.1, 60, 2)
-highpass_e = [0, 0]
-for i in range(2,len(ey)):
-    highpass_e.append(murphy_high(0.15, holo.timestamp[i] - holo.timestamp[i - 1],
-                                  ey[i], ey[i-1], ey[i-2],
-                                  highpass_e[i - 1], highpass_e[i - 2])
-                      )
-# plt.plot(holo.timestamp, hp_e,'y')
-# plt.plot(holo.timestamp, hp_e_zi,'b')
-# plt.plot(holo.timestamp, hp_e_rt,'r')
-# plt.plot(holo.timestamp, ey,'g')
-# plt.plot(holo.timestamp, highpass_e, 'b')
-# plt.plot(holo.timestamp, ey - hp_e)
-# plt.show()
+# highpass_h = [0,0]
+# for i in range(2,len(holo.head_rotation_x)):
+#     highpass_h.append(murphy_high(0.15,holo.timestamp[i]-holo.timestamp[i-1],
+#                                   holo.head_rotation_x[i],holo.head_rotation_x[i-1],holo.head_rotation_x[i-2],
+#                                   highpass_h[i-1],highpass_h[i-2]))
+
+def realtime_lowpass(time, sig, cutoff):
+    output = [sig[0], sig[1]]
+    for i in range(2, len(time)):
+        output.append(winter_low(cutoff,
+                                 time[i] - time[i - 1],
+                                 sig[i], sig[i - 1], sig[i - 2],
+                                 output[i - 1], output[i - 2]))
+    return output
+
+
+sig = holo.head_rotation_x
+time = holo.timestamp
+low_filtered_sig_5 = realtime_lowpass(time, sig, 5)
+low_filtered_sig_4 = realtime_lowpass(time, sig, 4)
+low_filtered_sig_3 = realtime_lowpass(time, sig, 3)
+low_filtered_sig_2 = realtime_lowpass(time, sig, 2)
+low_filtered_sig_1 = realtime_lowpass(time, sig, 1)
+low_filtered_sig_05 = realtime_lowpass(time, sig, 0.5)
+low_filtered_sig_03 = realtime_lowpass(time, sig, 0.3)
 
 # %%
-plt.plot(holo.timestamp,holo.head_rotation_x)
-plt.plot(holo.timestamp, pd.Series(highpass_h))
-plt.plot(holo.timestamp,holo.head_rotation_x - pd.Series(highpass_h))
-plt.show()
-# plt.plot(holo.timestamp, pd.Series(highpass_e )* 200)
-# plt.plot(holo.timestamp, (pd.Series(highpass_h) +pd.Series(highpass_e )* 200) /2)
-plt.plot(holo.timestamp,pd.Series(highpass_e))
-plt.plot(holo.timestamp,ey-ey[0])
-plt.plot(holo.timestamp,ey-ey[0] - pd.Series(highpass_e),'r')
-plt.show()
-plt.plot(holo.timestamp,pd.Series(highpass_e)*200)
-plt.plot(holo.timestamp, pd.Series(highpass_h) )
-plt.plot(holo.timestamp, (pd.Series(highpass_h) + pd.Series(highpass_e)*200)/2)
-plt.show()
+plt.plot(holo.timestamp, holo.head_rotation_x)
+fig = go.Figure(
+    data=[
+        go.Scatter(name='head', x=holo.timestamp, y=holo.head_rotation_x),
+        go.Scatter(name='5Hz lowpass', x=holo.timestamp, y=low_filtered_sig_5),
+        go.Scatter(name='4Hz lowpass', x=holo.timestamp, y=low_filtered_sig_4),
+        go.Scatter(name='3Hz lowpass', x=holo.timestamp, y=low_filtered_sig_3),
+        go.Scatter(name='2Hz lowpass', x=holo.timestamp, y=low_filtered_sig_2),
+        go.Scatter(name='1Hz lowpass', x=holo.timestamp, y=low_filtered_sig_1),
+        go.Scatter(name='0.5Hz lowpass', x=holo.timestamp, y=low_filtered_sig_05),
+        go.Scatter(name='0.3Hz lowpass', x=holo.timestamp, y=low_filtered_sig_03),
+    ]
+)
+fig.show()
+# %%
+
+one_euro_5 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 5, 0.001, 1.0)
+one_euro_4 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 4, 0.001, 1.0)
+one_euro_3 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 3, 0.001, 1.0)
+one_euro_2 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 2, 0.001, 1.0)
+one_euro_1 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 1, 0.001, 1.0)
+one_euro_05 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 0.5, 0.001, 1.0)
+one_euro_03 = one_euro(holo.head_rotation_x, holo.timestamp, 60, 0.3, 0.001, 1.0)
+fig = go.Figure(
+    data=[
+        go.Scatter(name='head', x=holo.timestamp, y=holo.head_rotation_x),
+        go.Scatter(name='one_euro 5Hz', x=holo.timestamp, y=one_euro_5),
+        go.Scatter(name='one_euro 4Hz', x=holo.timestamp, y=one_euro_4),
+        go.Scatter(name='one_euro 3Hz', x=holo.timestamp, y=one_euro_3),
+        go.Scatter(name='one_euro 2Hz', x=holo.timestamp, y=one_euro_2),
+        go.Scatter(name='one_euro 1Hz', x=holo.timestamp, y=one_euro_1),
+        go.Scatter(name='one_euro 0.5Hz', x=holo.timestamp, y=one_euro_05),
+        go.Scatter(name='one_euro 0.3Hz', x=holo.timestamp, y=one_euro_03),
+    ]
+)
+fig.show()
 # %%
 
 ## Algorithm Test
