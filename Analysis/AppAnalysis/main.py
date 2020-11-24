@@ -25,7 +25,7 @@ Index(['timestamp', 'head_position', 'head_rotation', 'head_forward', 'eye_x',
 
 # if __name__ == '__main__':
 # %%  reading record file
-f = open("135/W1.json")
+f = open("140/U2.json")
 data = pd.DataFrame(json.load(f)["data"])
 
 data.timestamp = data.timestamp - data.timestamp[0]
@@ -92,17 +92,17 @@ data["angle_speed_V"] = data.apply(
     axis=1
 )
 # data = data[10:]
-#%%
 
+#%%
 highpass_H = [0, 0]
 for i in range(2, len(data.current_head_rotation_y)):
     highpass_H.append(butterworth_highpass(0.10, data.timestamp.iloc[i] - data.timestamp.iloc[i - 1],
                                            data.current_head_rotation_y.iloc[i], data.current_head_rotation_y.iloc[i - 1], data.current_head_rotation_y.iloc[i - 2],
                                            highpass_H[i - 1], highpass_H[i - 2]))
 highpass_H = highpass_H
-one = one_euro(data.temp_H, data.timestamp, freq=60, mincutoff=0.5, beta=1.0)
-origin = one_euro(data.lp_H, data.timestamp,
-                  freq=60, mincutoff=0.5, beta=0.1)
+one = one_euro(data.temp_H, data.timestamp, freq=60, mincutoff=0.1, beta=1.0)
+# origin = one_euro(data.lp_H, data.timestamp,
+#                   freq=60, mincutoff=0.5, beta=0.1)
 
 fig = go.Figure(
     data=[
@@ -110,18 +110,20 @@ fig = go.Figure(
         go.Scatter(x=data.timestamp, y=data.current_head_rotation_y, name='head'),
         go.Scatter(x=data.timestamp, y=data.head_variance_H, name='head variance'),
         go.Scatter(x=data.timestamp, y=data.compensation_H, name='compensation'),
-        go.Scatter(x=data.timestamp, y=-data.eye_variance_H * 200, name='eye variance * 250'),
+        # go.Scatter(x=data.timestamp, y=data.eye_variance_H * 200, name='eye variance * 250'),
+        go.Scatter(x=data.timestamp, y=data.eye_variance_H * data.current_multiple_H, name='eye variance * 250'),
+        go.Scatter(x=data.timestamp, y=data.current_head_rotation_y+data.eye_variance_H * data.current_multiple_H, name='head-simulation'),
         go.Scatter(x=data.timestamp,y=data.Phi,name='phi'),
         go.Scatter(x=data.timestamp, y=data.temp_H, name='record-final'),
         go.Scatter(x=data.timestamp, y=data.one_euro_filtered_vector_y, name='one-final'),
         go.Scatter(x=data.timestamp, y=one, name='one'),
-        go.Scatter(x=data.timestamp, y=data.TargetHorizontal, name='target'),
-        go.Scatter(x=data.timestamp, y=origin, name='origin'),
+        go.Scatter(x=data.timestamp, y=-data.TargetHorizontal, name='target'),
+
         go.Scatter(x=data.timestamp,y=data.hp_H,name='highpass'),
         go.Scatter(x=data.timestamp,y=highpass_H,name='highpass-calculated'),
         go.Scatter(x=data.timestamp,y=data.current_head_rotation_y - data.hp_H,name='diff'),
         go.Scatter(x=data.timestamp,y=data.current_head_rotation_y - highpass_H,name='diff-cal;'),
-
+        go.Scatter(x=data.timestamp, y=-(data.lp_H_eye - data.lp_H_eye.rolling(360,min_periods=1).mean())*data.current_multiple_H, name='eye_roll'),
         go.Scatter(x=data.timestamp,y=data.current_head_rotation_y.rolling(60,min_periods=1).mean(),name='rolling-avg')
     ]
 )
@@ -131,7 +133,7 @@ fig = go.Figure(
 accuracy_lowpass = data.Phi.mean() - data.lp_H.mean()
 accuracy_algorithm = data.Phi.mean() - data.one_euro_filtered_vector_y.mean()
 # PRECISION : standard deviation
-precision_lowpass = data.lp_H.std();
+precision_lowpass = data.current_head_rotation_y.std();
 precision_algorithm = data.one_euro_filtered_vector_y.std()
 print('accuracy:', accuracy_lowpass, '->', accuracy_algorithm)
 print('precision:', precision_lowpass, '->', precision_algorithm)
@@ -159,10 +161,12 @@ origin = one_euro(data.current_head_rotation_x, data.timestamp,
                   freq=60, mincutoff=0.5, beta=0.1)
 fig = go.Figure(
     data=[
+        go.Scatter(x=data.timestamp, y=data.lp_V.shift(-3), name='head'),
         go.Scatter(x=data.timestamp, y=data.current_head_rotation_x, name='head'),
         go.Scatter(x=data.timestamp, y=data.head_variance_V, name='head variance'),
         go.Scatter(x=data.timestamp, y=data.compensation_V, name='compensation'),
         go.Scatter(x=data.timestamp, y=data.eye_variance_V * 200, name='eye variance * 250'),
+        go.Scatter(x=data.timestamp, y=(data.eye_y-data.eye_y.mean()) * 200, name='eye variance * 250'),
 
         # go.Scatter(x=data.timestamp,y=data.hp_V_eye*200,name='eye-200'),
         go.Scatter(x=data.timestamp, y=data.temp_V,
@@ -190,13 +194,34 @@ fig.update_layout(title=str(f.name)+'Vertical:' + str(accuracy_lowpass) + '->' +
 fig.show()
 
 # %%
+highpass_H_eye = [0, 0]
+for i in range(2, len(data.lp_H_eye)):
+    highpass_H_eye.append(butterworth_highpass(0.10, data.timestamp.iloc[i] - data.timestamp.iloc[i - 1],
+                                           data.lp_H_eye.iloc[i], data.lp_H_eye.iloc[i - 1], data.lp_H_eye.iloc[i - 2],
+                                           highpass_H_eye[i - 1], highpass_H_eye[i - 2]))
+highpass_H = highpass_H
 fig = go.Figure(
     data=[
         go.Scatter(x=data.timestamp, y=data.original_eye_x, name='original-eye-x'),
         go.Scatter(x=data.timestamp, y=data.eye_x, name='eye-x'),
         go.Scatter(x=data.timestamp, y=data.lp_H_eye, name='eye_lowpass'),
-        go.Scatter(x=data.timestamp, y=data.hp_H_eye, name='eye_highpass'),
+        # go.Scatter(x=data.timestamp, y=data.hp_H_eye, name='eye_highpass'),
         go.Scatter(x=data.timestamp, y=data.lp_H_eye - data.hp_H_eye, name='eye_diff'),
+        go.Scatter(x=data.timestamp, y=data.lp_H_eye.rolling(120,min_periods=1).mean(), name='eye_roll'),
+        go.Scatter(x=data.timestamp, y=data.lp_H_eye - highpass_H_eye, name='eye_diff-cal'),
+    ]
+)
+fig.show()
+#%%
+fig = go.Figure(
+    data=[
+        go.Scatter(x=data.timestamp, y=data.original_eye_y, name='original-eye-x'),
+        go.Scatter(x=data.timestamp, y=data.eye_y, name='eye-x'),
+        go.Scatter(x=data.timestamp, y=data.lp_V_eye, name='eye_lowpass'),
+        # go.Scatter(x=data.timestamp, y=data.hp_H_eye, name='eye_highpass'),
+        go.Scatter(x=data.timestamp, y=data.lp_V_eye - data.hp_V_eye, name='eye_diff'),
+        go.Scatter(x=data.timestamp, y=data.lp_V_eye.rolling(120,min_periods=1).mean(), name='eye_roll'),
+        # go.Scatter(x=data.timestamp, y=data.lp_V_eye - highpass_V_eye, name='eye_diff-cal'),
     ]
 )
 fig.show()
