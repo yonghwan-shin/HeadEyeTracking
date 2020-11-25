@@ -52,20 +52,44 @@ eye.timestamp = eye.timestamp - shift_time
 # eye.norm_y = eye.norm_y - eye.norm_y.mean()
 ## For easy manipulation/check, make all dataframes into 120Hz, and make same timestamp by interpolation (1-dimensional)
 new_holo, new_imu, new_eye = interpolated_dataframes(holo, imu, eye)
-# eye.norm_x.to_csv('eye_x.csv', index=False)
-# eye.norm_y.to_csv('eye_y.csv', index=False)
-# head_x = interpolate.interp1d(holo.timestamp, holo.head_rotation_x, fill_value='extrapolate')
-# head_y = interpolate.interp1d(holo.timestamp, holo.head_rotation_y, fill_value='extrapolate')
-# pd.Series(head_x(eye.timestamp)).to_csv('head_x.csv', index=False)
-# pd.Series(head_y(eye.timestamp)).to_csv('head_y.csv', index=False)
-#
-# """
-# horizontal way : -> abandoned
-# iirfilter on eye-norm-x : order=2, lowcut = 0.001, highcut = 0.05, bandpass
-# iirfilter on head-rotation-y : order=2, lowcut = 0.001, highcut = 0.05, bandpass
-# head and eye have opposite signal
-# apply on lowpass- head : order=2,lowcut=0.05
-# """
+
+
+#%% success/fail test
+
+subjects = subjects = range(301, 317)
+poss = ['W']
+envs = ['U','W']
+targets=range(8)
+# blocks=range(5)
+blocks = [1,2,3,4]
+output=pd.DataFrame()
+success_count=0
+fail_count=0
+for subject in subjects:
+    for target, env, pos, block in itertools.product(targets, envs, poss, blocks):
+        holo, imu, eye = bring_data(target, env, block, subject)
+        current_info = [target, env, pos, block]
+        print(subject,current_info)
+        ## Get the delayed time between hololens - laptop
+        # shift, corr, shift_time = synchronise_timestamp(imu, holo, show_plot=False)
+
+        holo.timestamp = holo.timestamp - holo.timestamp[0]
+        # holo = add_columns(holo)
+        if holo[holo.target_entered ==True].shape[0]<1:
+            print('No target-in');fail_count+=1;continue
+        else:
+            print('Yes target-in');success_count+=1;continue
+        result = dict(
+            subject=  subject,
+            target=target,
+            env=env,
+            pos=pos,block=block,
+            success_frames=holo[holo.target_entered ==True].shape[0],
+            walk_length=holo.head_position_z.values[-1] - holo.head_position_z.values[0]
+        )
+        output=output.append(result,ignore_index=True)
+        # start_index= holo[ holo.target_entered==True].index[0]
+
 
 # %%
 from scipy.signal import lfilter_zi, lfilter
