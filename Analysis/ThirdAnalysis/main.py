@@ -371,10 +371,11 @@ fig.show()
 fig = go.Figure(
     data=[
         go.Scatter(x=eye.timestamp, y=eye.norm_y, name='eye-original'),
-        go.Scatter(x=eye.timestamp, y=one_euro(eye.norm_y, eye.timestamp, 120, 0.2, 0.001, 1.0), name='eye-0.02'),
+        go.Scatter(x=eye.timestamp, y=one_euro(eye.norm_y, eye.timestamp, 120, 10, 0.001, 1.0), name='eye-0.02'),
         # go.Scatter(x=eye.timestamp,y= one_euro(eye.norm_y, eye.timestamp, 120, 0.1, 0.1, 1.0),name='eye-0.01'),
-        go.Scatter(x=eye.timestamp, y=one_euro(eye.norm_y, eye.timestamp, 120, 0.2, 0.01, 1.0), name='eye-0.03'),
-        go.Scatter(x=eye.timestamp, y=one_euro(eye.norm_y, eye.timestamp, 120, 0.2, 0.1, 1.0), name='eye-0.03'),
+        go.Scatter(x=eye.timestamp, y=one_euro(eye.norm_y, eye.timestamp, 120, 5, 0.01, 1.0), name='eye-0.03'),
+        go.Scatter(x=eye.timestamp, y=one_euro(eye.norm_y, eye.timestamp, 120, 3, 0.1, 1.0), name='eye-0.03'),
+        go.Scatter(x=holo.timestamp,y=-holo.TargetVertical/200+eye.norm_y.mean(),name='target')
     ]
 )
 fig.show()
