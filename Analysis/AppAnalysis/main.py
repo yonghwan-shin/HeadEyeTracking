@@ -25,7 +25,7 @@ Index(['timestamp', 'head_position', 'head_rotation', 'head_forward', 'eye_x',
 
 # if __name__ == '__main__':
 # %%  reading record file
-f = open("140/U2.json")
+f = open("130/W2.json")
 data = pd.DataFrame(json.load(f)["data"])
 
 data.timestamp = data.timestamp - data.timestamp[0]
@@ -111,7 +111,7 @@ fig = go.Figure(
         go.Scatter(x=data.timestamp, y=data.head_variance_H, name='head variance'),
         go.Scatter(x=data.timestamp, y=data.compensation_H, name='compensation'),
         # go.Scatter(x=data.timestamp, y=data.eye_variance_H * 200, name='eye variance * 250'),
-        go.Scatter(x=data.timestamp, y=data.eye_variance_H * data.current_multiple_H, name='eye variance * 250'),
+        go.Scatter(x=data.timestamp, y=-data.eye_variance_H * data.current_multiple_H, name='eye variance * 250'),
         go.Scatter(x=data.timestamp, y=data.current_head_rotation_y+data.eye_variance_H * data.current_multiple_H, name='head-simulation'),
         go.Scatter(x=data.timestamp,y=data.Phi,name='phi'),
         go.Scatter(x=data.timestamp, y=data.temp_H, name='record-final'),

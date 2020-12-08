@@ -200,8 +200,11 @@ def interpolated_dataframes(holo, imu, eye):
     holo_columns = ['angular_distance',
                     'head_position_x', 'head_position_y', 'head_position_z',
                     'head_rotation_x', 'head_rotation_y', 'head_rotation_z',
-                    'head_forward_x', 'head_forward_y', 'head_forward_z','Theta','Phi',
-                    'target_position_x', 'target_position_y', 'target_position_z','TargetVertical','TargetHorizontal']
+                    'head_forward_x', 'head_forward_y', 'head_forward_z', 'Theta', 'Phi',
+                    'target_position_x', 'target_position_y', 'target_position_z',
+                    'norm_target_vector_x', 'norm_target_vector_y', 'norm_target_vector_z',
+                    'norm_head_vector_x', 'norm_head_vector_y', 'norm_head_vector_z', 'TargetVertical',
+                    'TargetHorizontal']
     for column in holo_columns:
         interpolate_function = interpolate.interp1d(holo.timestamp, holo[column], fill_value='extrapolate')
         interpolated_column = interpolate_function(timestamp)
@@ -209,17 +212,17 @@ def interpolated_dataframes(holo, imu, eye):
     interpolated_holo['timestamp'] = timestamp
     imu_columns = ['rotationX', 'rotationY', 'rotationZ']
     for column in imu_columns:
-        interpolate_function = interpolate.interp1d(imu.IMUtimestamp,imu[column],fill_value='extrapolate')
+        interpolate_function = interpolate.interp1d(imu.IMUtimestamp, imu[column], fill_value='extrapolate')
         interpolated_column = interpolate_function(timestamp)
         interpolated_imu[column] = interpolated_column
     interpolated_imu['timestamp'] = timestamp
     eye_columns = ['confidence', 'theta', 'phi', 'norm_x', 'norm_y']
     for column in eye_columns:
-        interpolate_function = interpolate.interp1d(eye.timestamp,eye[column],fill_value='extrapolate')
+        interpolate_function = interpolate.interp1d(eye.timestamp, eye[column], fill_value='extrapolate')
         interpolated_column = interpolate_function(timestamp)
         interpolated_eye[column] = interpolated_column
     interpolated_eye['timestamp'] = timestamp
-    return interpolated_holo,interpolated_imu,interpolated_eye
+    return interpolated_holo, interpolated_imu, interpolated_eye
 
 
 def manipulate_imu(_imu_dataframe: pd.DataFrame):
@@ -312,6 +315,19 @@ def change_angle(_angle):
     return _angle
 
 
+def apply_zaxis(x, y, theta_z):
+    # takes list xyz (single coord)
+    r = math.sqrt(x * x + y * y)
+    beta = math.radians(-theta_z)
+    changed_x = math.cos(beta) * x - math.sin(beta) * y
+    changed_y = math.sin(beta) * x + math.cos(beta) * y
+    # changed_x = r * ((x / r) * (math.cos(math.radians(theta_z))) + (y / r) * (math.sin(math.radians(theta_z))))
+    # changed_y = r*((y / r) * (math.cos(math.radians(theta_z))) - (x / r) * (math.sin(math.radians(theta_z))))
+    # theta = math.acos(z / r) * 180 / math.pi  # to degrees
+    # phi = math.atan2(y, x) * 180 / math.pi
+    return changed_x, changed_y
+
+
 def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
     # Initialization of timestamp (set start-point to 0)
     _data.timestamp = _data.timestamp - _data.timestamp[0]
@@ -324,20 +340,40 @@ def refining_hololens_dataframe(_data: pd.DataFrame) -> pd.DataFrame:
     # Change angle range to -180 ~ 180
     for col in ["head_rotation_x", "head_rotation_y", "head_rotation_z"]:
         _data[col] = _data[col].apply(change_angle)
+
+    norm_target_vectors = []
+    norm_head_vectors = []
     thetas = []
     phis = []
     for index, row in _data.iterrows():
+        norm_head_vectors.append(
+            np.array([row['head_forward_x'], row['head_forward_y'], row['head_forward_z']]) / row['head_forward_z'])
         x = row["target_position_x"] - row["head_position_x"]
         y = row["target_position_y"] - row["head_position_y"]
         z = row["target_position_z"] - row["head_position_z"]
+        # x, y = apply_zaxis(x, y, row['head_rotation_z'])
         [r, theta, phi] = asSpherical([x, z, y])
         thetas.append(90 - theta)
         phis.append(90 - phi)
+        norm_target_vector = np.array([x, y, z]) / np.linalg.norm(np.array([x, y, z]))
+        norm_target_vectors.append(norm_target_vector / norm_target_vector[2])
+    _data['norm_head_vector'] = norm_head_vectors
+    _data['norm_head_vector_x'] = _data['norm_head_vector'].apply(pd.Series)[0]
+    _data['norm_head_vector_y'] = _data['norm_head_vector'].apply(pd.Series)[1]
+    _data['norm_head_vector_z'] = _data['norm_head_vector'].apply(pd.Series)[2]
     _data['Theta'] = thetas
     _data["Phi"] = phis
     _data['TargetVertical'] = _data.head_rotation_x + _data.Theta
     _data['TargetHorizontal'] = _data.head_rotation_y - _data.Phi
-
+    _data['norm_target_vector'] = norm_target_vectors
+    _data['norm_target_vector_x'] = _data['norm_target_vector'].apply(pd.Series)[0]
+    _data['norm_target_vector_y'] = _data['norm_target_vector'].apply(pd.Series)[1]
+    _data['norm_target_vector_z'] = _data['norm_target_vector'].apply(pd.Series)[2]
+    # for col, item in itertools.product(
+    #         ["norm_target_vector"],
+    #         ["x", "y", "z"],
+    # ):
+    #     _data[col + "_" + item] = _data[col].apply(pd.Series)[item]
     return _data
 
 
@@ -351,4 +387,4 @@ def bring_hololens_data(target: int, environment: str, block: int,
 
 
 if __name__ == "__main__":
-   pass
+    pass

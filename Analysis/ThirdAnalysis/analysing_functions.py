@@ -13,6 +13,150 @@ from scipy import interpolate, signal, stats
 from filehandling import *
 
 
+def winter_low(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
+    """Filters a data sample based on two past unfiltered and filtered data samples.
+
+    2nd order low pass, single pass butterworth filter presented in Winter2009.
+
+    Parameters
+    ==========
+    cuttoff_freq: float
+        The desired lowpass cutoff frequency in Hertz.
+    sample_time: floaat
+        The difference in time between the current time and the previous time.
+    x0 : float
+        The current unfiltered signal, x_i
+    x1 : float
+        The unfiltered signal at the previous sampling time, x_i-1.
+    x2 : float
+        The unfiltered signal at the second previous sampling time, x_i-2.
+    y1 : float
+        The filtered signal at the previous sampling time, y_i-1.
+    y2 : float
+        The filtered signal at the second previous sampling time, y_i-2.
+
+    """
+    sampling_rate = 1 / sample_time  # Hertz
+
+    correction_factor = 1.0  # 1.0 for a single pass filter
+
+    corrected_cutoff_freq = np.tan(np.pi * cutoff_freq / sampling_rate) / correction_factor  # radians
+
+    K1 = np.sqrt(2) * corrected_cutoff_freq
+    K2 = corrected_cutoff_freq ** 2
+
+    a0 = K2 / (1 + K1 + K2)
+    a1 = 2 * a0
+    a2 = a0
+
+    K3 = a1 / K2
+
+    b1 = -a1 + K3
+    b2 = 1 - a1 - K3
+
+    if print_coeff:
+        print('num:', a0, a1, a2)
+        print('dem:', 1.0, -b1, -b2)
+
+    return a0 * x0 + a1 * x1 + a2 * x2 + b1 * y1 + b2 * y2
+
+
+def murphy_high(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
+    """
+    Parameters
+    ==========
+    cuttoff_freq: float
+        The desired lowpass cutoff frequency in Hertz.
+    sample_time: floaat
+        The difference in time between the current time and the previous time.
+    x0 : float
+        The current unfiltered signal, x_i
+    x1 : float
+        The unfiltered signal at the previous sampling time, x_i-1.
+    x2 : float
+        The unfiltered signal at the second previous sampling time, x_i-2.
+    y1 : float
+        The filtered signal at the previous sampling time, y_i-1.
+    y2 : float
+        The filtered signal at the second previous sampling time, y_i-2.
+    """
+    sampling_rate = 1 / sample_time  # Hertz
+
+    correction_factor = 1.0
+
+    cutoff_freq = 1 / 2 / sample_time - cutoff_freq  # covert high pass freq to equivalent lowpass freq
+
+    corrected_cutoff_freq = np.tan(np.pi * cutoff_freq / sampling_rate) / correction_factor
+
+    K1 = np.sqrt(2) * corrected_cutoff_freq
+    K2 = corrected_cutoff_freq ** 2
+
+    a0 = K2 / (1 + K1 + K2)
+    a1 = 2 * a0
+    a2 = a0
+
+    K3 = a1 / K2
+
+    b1 = -a1 + K3
+    b2 = 1 - a1 - K3
+
+    c0 = a0
+    c1 = -a1
+    c2 = a2
+
+    d1 = -b1
+    d2 = b2
+
+    if print_coeff:
+        print('num:', c0, c1, c2)
+        print('dem:', 1.0, -d1, -d2)
+
+    return c0 * x0 + c1 * x1 + c2 * x2 + d1 * y1 + d2 * y2
+
+
+def realtime_lowpass(time, sig, cutoff):
+    output = [sig[0], sig[1]]
+    for i in range(2, len(time)):
+        output.append(winter_low(cutoff,
+                                 time[i] - time[i - 1],
+                                 sig[i], sig[i - 1], sig[i - 2],
+                                 output[i - 1], output[i - 2]))
+    return output
+
+
+class Butterworth_LowPassFilter():
+    def __init__(self, cutoff_freq):
+        self.currentValue = 0
+        self.previousValue = 0
+        self.secondPreviousValue = 0
+        self.currentData = 0
+        self.previousData = 0
+        self.secondPreviousData = 0
+        self.cutoffFrequency = cutoff_freq
+        self.count = 0;
+
+    def set_initial_data(self, x0, x1):
+        self.secondPreviousValue = x0
+        self.previousValue = x1
+        self.secondPreviousData = x0
+        self.previousData = x1
+        self.currentData=x1
+
+    def set_cutoff_frequency(self, _cutoff_freq):
+        self.cutoffFrequency = _cutoff_freq
+
+    def filter(self, sample_time, x0):
+        self.currentValue = winter_low(self.cutoffFrequency, sample_time, x0, self.previousData,
+                                       self.secondPreviousData,
+                                       self.previousValue, self.secondPreviousValue)
+        self.secondPreviousData = self.previousData
+        self.previousData = x0
+        self.currentData = x0
+        self.secondPreviousValue = self.previousValue
+        self.previousValue = self.currentValue
+        return self.currentValue
+
+
 # %% check the distribution fo x-pos and angle distance
 def check_distribution():
     # from plotly.subplots import make_subplots
@@ -660,20 +804,19 @@ def crosscorr(datax, datay, lag=0, wrap=False):
         return datax.corr(datay.shift(lag))
 
 
-def normalize(_from, _to,RMS=False):
-    if RMS==True:
+def normalize(_from, _to, RMS=False):
+    if RMS == True:
         _from = np.array(_from)
         _to = np.array(_to)
         mean_difference = _to.mean() - _from.mean()
         multiple_power2 = np.power((_to - _to.mean()), 2).mean() / np.power((_from - _from.mean()), 2).mean()
-        multiple=np.sqrt(multiple_power2)
+        multiple = np.sqrt(multiple_power2)
         return multiple, mean_difference
     a = _from - sum(_from) / len(_from)
     b = _to - sum(_to) / len(_to)
     multiple = (max(b) - min(b)) / (max(a) - min(a))
     shift = sum(_to) / len(_to) - sum(_from) / len(_from)
     return multiple, shift
-
 
 
 def linear_regression(_from, _to):
@@ -1042,6 +1185,9 @@ class OneEuroFilter(object):
         self.__dx = LowPassFilter(self.__alpha(self.__dcutoff))
         self.__lasttime = None
 
+    def change_parameters(self,mincutoff,beta):
+        self.__mincutoff=mincutoff
+        self.__beta = beta
     def __alpha(self, cutoff):
         te = 1.0 / self.__freq
         tau = 1.0 / (2 * math.pi * cutoff)
@@ -1075,13 +1221,14 @@ def one_euro(_data, timestamp=None, freq=120, mincutoff=1, beta=1.0, dcutoff=1.0
             f.append(filter(_data[i], timestamp=timestamp[i]))
     return pd.Series(f)
 
-def one_euro_highpass(_data,timestamp=None,freq=120,lowcut=0.1,highcut=3,beta=1.0,dcutoff=1.0):
+
+def one_euro_highpass(_data, timestamp=None, freq=120, lowcut=0.1, highcut=3, beta=1.0, dcutoff=1.0):
     config_low = dict(freq=freq, mincutoff=lowcut, beta=beta, dcutoff=dcutoff)
     config_high = dict(freq=freq, mincutoff=highcut, beta=beta, dcutoff=dcutoff)
     filter_low = OneEuroFilter(**config_low)
     filter_high = OneEuroFilter(**config_high)
-    f1=[]
-    f2=[]
+    f1 = []
+    f2 = []
     _data = list(_data)
 
     for i in range(len(_data)):
@@ -1095,6 +1242,8 @@ def one_euro_highpass(_data,timestamp=None,freq=120,lowcut=0.1,highcut=3,beta=1.
         else:
             f2.append(filter_high(f1[i], timestamp=timestamp[i]))
     return pd.Series(f2)
+
+
 from scipy.signal import firwin, remez, kaiser_atten, kaiser_beta
 
 
