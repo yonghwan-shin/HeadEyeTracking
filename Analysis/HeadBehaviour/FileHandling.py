@@ -5,7 +5,7 @@ import json
 import itertools
 import math
 import numpy as np
-
+import time
 
 # %%
 
@@ -44,6 +44,10 @@ def read_hololens_data(target, environment, posture, block, subject, study_num):
         data_root = root / '2ndData' / 'hololens_data' / ('compressed_sub' + str(subject))
         trial_detail = "T" + str(target) + "_E" + environment + "_P" + posture + "_B" + str(block)
         try:
+            pickled_files = data_root.rglob('*' + trial_detail + '*.pkl')
+            for file in pickled_files:
+                if trial_detail in file.name:
+                    return pd.read_pickle(file)
             whole_files = data_root.rglob('*' + trial_detail + '*.csv')
             for file in whole_files:
                 if trial_detail in file.name:
@@ -78,6 +82,10 @@ def read_hololens_data(target, environment, posture, block, subject, study_num):
         data_root = root / '3rdData' / (str(subject) + '_holo')
         trial_detail = "T" + str(target) + "_E" + environment + "_B" + str(block)
         try:
+            pickled_files = data_root.rglob('*' + trial_detail + '*.pkl')
+            for file in pickled_files:
+                if trial_detail in file.name:
+                    return pd.read_pickle(file)
             whole_files = data_root.rglob('*' + trial_detail + '*.json')
             for file in whole_files:
                 if trial_detail in file.name:
@@ -106,8 +114,8 @@ def read_hololens_data(target, environment, posture, block, subject, study_num):
     output['time_interval'] = output.timestamp.diff()
     output['angle_speed'] = output.apply(
         lambda row: angle_velocity([row.head_forward_x, row.head_forward_y, row.head_forward_z],
-                                 [row.head_forward_x_next, row.head_forward_y_next, row.head_forward_z_next],
-                                 row.time_interval
+                                   [row.head_forward_x_next, row.head_forward_y_next, row.head_forward_z_next],
+                                   row.time_interval
                                    ), axis=1
     )
     thetas = []
@@ -130,11 +138,24 @@ def read_hololens_data(target, environment, posture, block, subject, study_num):
     output['TargetVertical'] = output.head_rotation_x - output.Theta
     output['TargetHorizontal'] = output.head_rotation_y - output.Phi
     output['MaximumTargetSize'] = maxTargetsizes
+    output.to_pickle(data_root / (str(trial_detail) + '.pkl'))
     return output
 
 
 if __name__ == '__main__':
-    # output = read_hololens_data(1, 'W', 'W', 3, 1, 3)
 
-    output = read_hololens_data(1, 'W', 'W', 3, 1, 2)
-    print(output.columns)
+    subjects = range(1, 17)
+    envs = ['U', 'W']
+    targets = range(8)
+    blocks = range(1, 5)
+    final_result = []
+    start = time.time()
+    for subject, env, target, block in itertools.product(
+            subjects, envs, targets, blocks
+    ):
+        try:
+            print(subject, env, target, block)
+            output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                                        study_num=3)
+        except Exception as e:
+            print(e)
