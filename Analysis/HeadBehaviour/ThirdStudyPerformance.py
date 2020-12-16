@@ -6,6 +6,7 @@ import time
 import plotly.graph_objects as go
 import plotly.io as pio
 import seaborn as sns
+from natsort import natsorted
 
 sns.set_theme(style='whitegrid')
 pio.renderers.default = 'browser'
@@ -76,10 +77,12 @@ def dwell_analysis(target, env, block, subject, output, apply: str):
 
     if target_in_count > 0:
         total_target_on_time = sum([dwell.timestamp.values[-1] - dwell.timestamp.values[0] for dwell in dwell_list])
+        longets_target_on_time = max([dwell.timestamp.values[-1] - dwell.timestamp.values[0] for dwell in dwell_list])
         mean_target_on_time = total_target_on_time / target_in_count
     else:  # if there is no target-in
         total_target_on_time = 0
         mean_target_on_time = 0
+        longets_target_on_time = 0
     result = dict(apply=apply,
                   target=target, environment=env, block=block, subject=subject,
                   walklength=walklength,
@@ -88,16 +91,23 @@ def dwell_analysis(target, env, block, subject, output, apply: str):
                   maintain_total_frame=maintain_total_frame, target_on_frame=target_on_frame,
                   target_on_rate=target_on_frame / maintain_total_frame * 100,
                   target_in_count=target_in_count, total_target_on_time=total_target_on_time,
-                  mean_target_on_time=mean_target_on_time
+                  mean_target_on_time=mean_target_on_time, longets_target_on_time=longets_target_on_time
                   )
 
     for threshold in dwell_thresholds:
         dwell_success_list = []
+        prior_count = 0
+        prior_go = True
         for dwell in dwell_list:
+
             if len(dwell) * 1 / 60 > threshold:
+                prior_go = False
                 dwell_success_list.append(dwell)
+            if prior_go == True:
+                prior_count += 1
+
         if len(dwell_success_list) <= 0:
-            print('no dwell success');
+            # print('no dwell success');
             continue;
         first_dwell_success_time = dwell_success_list[0].timestamp.iloc[0]
         # print('first dwell success', first_dwell_success_time)
@@ -108,6 +118,7 @@ def dwell_analysis(target, env, block, subject, output, apply: str):
             mean_angular_speed.append(success_dwell.angle_speed.mean())
 
             dwell_success_frame += len(success_dwell)
+        result['dwell_prior_count_' + str(threshold)] = prior_count
         result['dwell_success_frame_' + str(threshold)] = dwell_success_frame
         result['dwell_success_count_' + str(threshold)] = len(dwell_success_list)
         result['first_dwell_' + str(threshold)] = first_dwell_success_time
@@ -117,14 +128,15 @@ def dwell_analysis(target, env, block, subject, output, apply: str):
 
 
 # %%
-
-
 # third
-subjects = range(1, 17)
+
 # subjects = [1]
 # envs = ['W']
 # targets = [0]
 # blocks = [1]
+
+# whole dataset
+subjects = range(1, 17)
 envs = ['U', 'W']
 targets = range(8)
 blocks = range(1, 5)
@@ -134,13 +146,13 @@ t = time.time()
 for subject, env, target, block in itertools.product(
         subjects, envs, targets, blocks
 ):
+    output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                                study_num=3)
     for roll in rolling_size:
         try:
 
             print(subject, env, target, block, roll)
 
-            output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                                        study_num=3)
             output['rolling_average' + str(roll)] = get_new_angular_distance(
                 output.head_rotation_y.rolling(roll, min_periods=1).mean(),
                 output.head_rotation_x.rolling(roll, min_periods=1).mean(), output)
@@ -151,46 +163,48 @@ for subject, env, target, block in itertools.product(
                 final_result.append(result)
         except Exception as e:
             print(e)
-    for cutoff in cutoff_freqs:
-        try:
-
-            print(subject, env, target, block, cutoff)
-
-            output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                                        study_num=3)
-            output['lowpass' + str(cutoff)] = get_new_angular_distance(
-                pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_y,cutoff)),
-                pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_x,cutoff)), output)
-
-            result = dwell_analysis(target, env, block, subject, output, 'lowpass' + str(roll))
-
-            if result is not None:
-                final_result.append(result)
-        except Exception as e:
-            print(e)
-    try:
-        output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                                    study_num=3)
-        output['default'] = get_new_angular_distance(
-            output.head_rotation_y, output.head_rotation_x, output
-        )
-        result = dwell_analysis(target, env, block, subject, output, 'default')
-
-        if result is not None:
-            final_result.append(result)
-    except Exception as e:
-        print(e)
+    # for cutoff in cutoff_freqs:
+    #     try:
+    #
+    #         print(subject, env, target, block, cutoff)
+    #
+    #         output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+    #                                     study_num=3)
+    #         output['lowpass' + str(cutoff)] = get_new_angular_distance(
+    #             pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_y,cutoff)),
+    #             pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_x,cutoff)), output)
+    #
+    #         result = dwell_analysis(target, env, block, subject, output, 'lowpass' + str(cutoff))
+    #
+    #         if result is not None:
+    #             final_result.append(result)
+    #     except Exception as e:
+    #         print(e)
+    # try:
+    #     print(subject, env, target, block)
+    #     output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+    #                                 study_num=3)
+    #     output['default'] = get_new_angular_distance(
+    #         output.head_rotation_y, output.head_rotation_x, output
+    #     )
+    #     result = dwell_analysis(target, env, block, subject, output, 'default')
+    #
+    #     if result is not None:
+    #         final_result.append(result)
+    # except Exception as e:
+    #     print(e)
 summary = pd.DataFrame(final_result)
-summary.to_csv('summary3_LP.csv')
+summary.to_csv('summary3_rolling_average.csv')
 print('overall time', time.time() - t)
 # %%
-from natsort import natsorted
+
 
 summary = pd.read_csv('summary3.csv')
 
 UI = summary[summary.environment == 'U']
 World = summary[summary.environment == 'W']
-comparison = ['default'] + ['rolling_average' + str(roll) for roll in rolling_size]
+comparison = ['default'] + ['rolling_average' + str(roll) for roll in rolling_size] + ['lowpass' + str(cutoff) for
+                                                                                       cutoff in cutoff_freqs]
 
 mean_dataframe = summary.groupby(['environment', 'apply']).mean()
 mean_dataframe = mean_dataframe.reindex(natsorted(mean_dataframe.index))
@@ -202,13 +216,14 @@ first_dwell_columns = [col for col in mean_dataframe.columns if 'first_dwell' in
 # UI_dwell_success_rate = 100 - UI.isnull().groupby('apply').sum().astype(int) / len(UI)*100
 UI_dwell_success_rate = UI.groupby('apply').apply(lambda x: x.notnull().mean())
 UI_dwell_success_rate = UI_dwell_success_rate.reindex(natsorted(UI_dwell_success_rate.index))
-UI_dwell_success_rate[dwell_success_frame_columns].plot();
+
+UI_dwell_success_rate[dwell_success_frame_columns].plot()
 plt.show()
-mean_dataframe.loc['U'][dwell_success_count_columns].plot();
+mean_dataframe.loc['U'][dwell_success_count_columns].plot()
 plt.show()
-mean_dataframe.loc['U'][dwell_success_frame_columns].plot();
+mean_dataframe.loc['U'][dwell_success_frame_columns].plot()
 plt.show()
-mean_dataframe.loc['U'][first_dwell_columns].plot();
+mean_dataframe.loc['U'][first_dwell_columns].plot()
 plt.show()
 
 #
@@ -220,7 +235,7 @@ fig_dwell, (ax_dwell_success_count, ax_first_dwell, ax_dwell_success_rate) = plt
 for subset in comparison:
     # data = World[World['apply'] == subset]
     data = UI[UI['apply'] == subset]
-    print(subset, len(data), end=':');
+    print(subset, len(data), end=':')
     # print('init', data['initial_contact_time'].mean(), '\t',
     #       'max', data['max_angle_distance'].mean(), '\t',
     #       'rate', data['target_on_rate'].mean(), '\t',
@@ -267,3 +282,62 @@ ax_dwell_success_rate.grid()
 fig_basic.show()
 fig_dwell.legend()
 fig_dwell.show()
+
+# %%
+# summary1 = pd.read_csv('summary3.csv')
+# summary2 = pd.read_csv('summary3_LP.csv')
+# default_dataframe = summary1[summary1['apply']=='default']
+# lowpass_dataframe=  summary2[summary2['apply'].str.contains('lowpass')  ]
+# rolling_average_dataframe = summary2[summary2['apply'].str.contains('rolling_average')]
+# summary = pd.concat([summary1,summary2])
+# %%
+summary_default = pd.read_csv('summary3_default.csv')
+default_mean_dataframe = summary_default.groupby(['environment', 'apply']).mean()
+default_mean_dataframe = default_mean_dataframe.reindex(natsorted(default_mean_dataframe.index))
+summary_rolling_average = pd.read_csv('summary3_rolling_average.csv')
+rolling_mean_dataframe = summary_rolling_average.groupby(['environment', 'apply']).mean()
+rolling_mean_dataframe = rolling_mean_dataframe.reindex(natsorted(rolling_mean_dataframe.index))
+rolling_mean_dataframe = pd.concat([default_mean_dataframe, rolling_mean_dataframe])
+summary_lowpass = pd.read_csv('summary3_lowpass.csv')
+lowpass_mean_dataframe = summary_lowpass.groupby(['environment', 'apply']).mean()
+lowpass_mean_dataframe = lowpass_mean_dataframe.reindex(natsorted(lowpass_mean_dataframe.index))
+
+
+# %%
+def find_int_string(string):
+    if string == 'default': return string
+    return "".join(filter(str.isdigit, string))
+
+
+plot_columns = ['initial_contact_time', 'max_angle_distance', 'target_on_rate', 'target_in_count',
+                'mean_target_on_time', 'longets_target_on_time']
+# non-dwell-wise outcomes
+# for col in plot_columns:
+#     xtick_labels = pd.Series(rolling_mean_dataframe.loc['U'].index).apply(find_int_string)
+#     ind = np.arange(len(xtick_labels))
+#     width = 0.3
+#     plt.bar(ind, rolling_mean_dataframe.loc['U'][col], width=width, alpha=0.75, label='UI')
+#     plt.bar(ind + width, rolling_mean_dataframe.loc['W'][col], width=width, alpha=0.75, label='World')
+#     # rolling_mean_dataframe.loc['U']['initial_contact_time'].plot()
+#     # rolling_mean_dataframe.loc['W']['initial_contact_time'].plot()
+#     plt.xticks(ind + width, xtick_labels)
+#     plt.xlabel('rolling window size (frame)')
+#     plt.ylabel(col)
+#     plt.title(col)
+#     plt.legend()
+#     plt.show()
+# dwell-wise outcomes
+dwell_plot_columns = ['dwell_prior_count', 'dwell_success_count', 'first_dwell']
+for col in dwell_plot_columns:
+    fig,ax = plt.subplots(figsize=(10,10))
+    columns = [column for column in rolling_mean_dataframe.columns if col in column]
+    d = rolling_mean_dataframe.loc['W'][columns]
+    sns.heatmap(d,cmap='Blues',annot=True)
+    plt.title(col)
+    plt.show()
+
+
+    # for row in d.iterrows():
+    #     plt.plot(pd.Series(d.index).apply(find_int_string), d.values)
+    # plt.title(col)
+    # plt.show()
