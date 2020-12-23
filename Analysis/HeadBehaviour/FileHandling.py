@@ -36,7 +36,33 @@ def asSpherical(xyz: list):
     phi = math.atan2(y, x) * 180 / math.pi
     return [r, theta, phi]
 
-
+def read_eye_data(target, environment, posture, block, subject, study_num):
+    root = Path(__file__).resolve().parent.parent.parent / 'Datasets'
+    if study_num == 2:
+        subject += 200
+        data_root = root / '2ndData' / 'hololens_data' / ('compressed_sub' + str(subject))
+        trial_detail = "T" + str(target) + "_E" + environment + "_P" + posture + "_B" + str(block)
+    elif study_num==3:
+        subject+=300
+        data_root = root / '3rdData' / (str(subject))
+        trial_detail = "T" + str(target) + "_E" + environment + "_B" + str(block)
+        try:
+            pickled_files = data_root.rglob('EYE*' + trial_detail + '*.pkl')
+            for file in pickled_files:
+                if trial_detail in file.name:
+                    return pd.read_pickle(file)
+            whole_files = data_root.rglob('EYE*' + trial_detail + '*.json')
+            for file in whole_files:
+                if trial_detail in file.name:
+                    with open(file) as f:
+                        third_output = pd.DataFrame(json.load(f)['data'])
+                        third_output.timestamp = third_output.timestamp - third_output.timestamp[0]                        
+                        output = third_output
+        except Exception as e:
+            raise Exception('----Finding Hololens error-----\n', e.args)
+    else:
+        print('study_num should be 2 or 3, input was ', study_num)
+    return output
 def read_hololens_data(target, environment, posture, block, subject, study_num):
     root = Path(__file__).resolve().parent.parent.parent / 'Datasets'
     if study_num == 2:

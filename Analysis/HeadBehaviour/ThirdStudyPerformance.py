@@ -148,38 +148,38 @@ for subject, env, target, block in itertools.product(
 ):
     output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
                                 study_num=3)
-    for roll in rolling_size:
-        try:
-
-            print(subject, env, target, block, roll)
-
-            output['rolling_average' + str(roll)] = get_new_angular_distance(
-                output.head_rotation_y.rolling(roll, min_periods=1).mean(),
-                output.head_rotation_x.rolling(roll, min_periods=1).mean(), output)
-
-            result = dwell_analysis(target, env, block, subject, output, 'rolling_average' + str(roll))
-
-            if result is not None:
-                final_result.append(result)
-        except Exception as e:
-            print(e)
-    # for cutoff in cutoff_freqs:
+    # for roll in rolling_size:
     #     try:
     #
-    #         print(subject, env, target, block, cutoff)
+    #         print(subject, env, target, block, roll)
     #
-    #         output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-    #                                     study_num=3)
-    #         output['lowpass' + str(cutoff)] = get_new_angular_distance(
-    #             pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_y,cutoff)),
-    #             pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_x,cutoff)), output)
+    #         output['rolling_average' + str(roll)] = get_new_angular_distance(
+    #             output.head_rotation_y.rolling(roll, min_periods=1).mean(),
+    #             output.head_rotation_x.rolling(roll, min_periods=1).mean(), output)
     #
-    #         result = dwell_analysis(target, env, block, subject, output, 'lowpass' + str(cutoff))
+    #         result = dwell_analysis(target, env, block, subject, output, 'rolling_average' + str(roll))
     #
     #         if result is not None:
     #             final_result.append(result)
     #     except Exception as e:
     #         print(e)
+    for cutoff in cutoff_freqs:
+        try:
+
+            print(subject, env, target, block, cutoff)
+
+            output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                                        study_num=3)
+            output['lowpass' + str(cutoff)] = get_new_angular_distance(
+                pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_y,cutoff)),
+                pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_x,cutoff)), output)
+
+            result = dwell_analysis(target, env, block, subject, output, 'lowpass' + str(cutoff))
+
+            if result is not None:
+                final_result.append(result)
+        except Exception as e:
+            print(e)
     # try:
     #     print(subject, env, target, block)
     #     output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
@@ -226,7 +226,7 @@ plt.show()
 mean_dataframe.loc['U'][first_dwell_columns].plot()
 plt.show()
 
-#
+#%%
 fig_basic, (ax_init_time, ax_max_angle_distance, ax_rate, ax_in_count) = plt.subplots(4, 1, figsize=(10, 20),
                                                                                       sharex=True)
 fig_dwell, (ax_dwell_success_count, ax_first_dwell, ax_dwell_success_rate) = plt.subplots(3, 1, figsize=(10, 15),
@@ -295,12 +295,16 @@ summary_default = pd.read_csv('summary3_default.csv')
 default_mean_dataframe = summary_default.groupby(['environment', 'apply']).mean()
 default_mean_dataframe = default_mean_dataframe.reindex(natsorted(default_mean_dataframe.index))
 summary_rolling_average = pd.read_csv('summary3_rolling_average.csv')
+summary_rolling_average = pd.concat([summary_rolling_average,summary_default])
 rolling_mean_dataframe = summary_rolling_average.groupby(['environment', 'apply']).mean()
 rolling_mean_dataframe = rolling_mean_dataframe.reindex(natsorted(rolling_mean_dataframe.index))
-rolling_mean_dataframe = pd.concat([default_mean_dataframe, rolling_mean_dataframe])
+# rolling_mean_dataframe = pd.concat([default_mean_dataframe, rolling_mean_dataframe])
 summary_lowpass = pd.read_csv('summary3_lowpass.csv')
+summary_lowpass = pd.concat([summary_lowpass,summary_default])
+# summary_lowpass = summary_lowpass.reindex(natsorted(summary_lowpass.index))
 lowpass_mean_dataframe = summary_lowpass.groupby(['environment', 'apply']).mean()
 lowpass_mean_dataframe = lowpass_mean_dataframe.reindex(natsorted(lowpass_mean_dataframe.index))
+# lowpass_mean_dataframe=pd.concat([default_mean_dataframe,lowpass_mean_dataframe])
 
 
 # %%
@@ -312,32 +316,102 @@ def find_int_string(string):
 plot_columns = ['initial_contact_time', 'max_angle_distance', 'target_on_rate', 'target_in_count',
                 'mean_target_on_time', 'longets_target_on_time']
 # non-dwell-wise outcomes
-# for col in plot_columns:
-#     xtick_labels = pd.Series(rolling_mean_dataframe.loc['U'].index).apply(find_int_string)
-#     ind = np.arange(len(xtick_labels))
-#     width = 0.3
-#     plt.bar(ind, rolling_mean_dataframe.loc['U'][col], width=width, alpha=0.75, label='UI')
-#     plt.bar(ind + width, rolling_mean_dataframe.loc['W'][col], width=width, alpha=0.75, label='World')
-#     # rolling_mean_dataframe.loc['U']['initial_contact_time'].plot()
-#     # rolling_mean_dataframe.loc['W']['initial_contact_time'].plot()
-#     plt.xticks(ind + width, xtick_labels)
-#     plt.xlabel('rolling window size (frame)')
-#     plt.ylabel(col)
-#     plt.title(col)
-#     plt.legend()
-#     plt.show()
+for col in plot_columns:
+    xtick_labels = pd.Series(rolling_mean_dataframe.loc['U'].index).apply(find_int_string)
+    ind = np.arange(len(xtick_labels))
+    width = 0.3
+    plt.bar(ind, rolling_mean_dataframe.loc['U'][col], width=width, alpha=0.75, label='UI')
+    plt.bar(ind + width, rolling_mean_dataframe.loc['W'][col], width=width, alpha=0.75, label='World')
+    # rolling_mean_dataframe.loc['U']['initial_contact_time'].plot()
+    # rolling_mean_dataframe.loc['W']['initial_contact_time'].plot()
+    plt.xticks(ind + width, xtick_labels)
+    plt.xlabel('rolling window size (frame)')
+    plt.ylabel(col)
+    plt.title(col)
+    plt.legend()
+    plt.show()
+    xtick_labels = pd.Series(lowpass_mean_dataframe.loc['U'].index).apply(find_int_string)
+    ind = np.arange(len(xtick_labels))
+    width=0.3
+    plt.bar(ind,lowpass_mean_dataframe.loc['U'][col],width=width,alpha=0.75,label='UI')
+    plt.bar(ind+width, lowpass_mean_dataframe.loc['W'][col], width=width, alpha=0.75, label='World')
+    plt.xticks(ind + width, xtick_labels)
+    plt.xlabel('lowpass cutoff frequency (Hz)')
+    plt.ylabel(col)
+    plt.title(col)
+    plt.legend()
+    plt.show()
 # dwell-wise outcomes
 dwell_plot_columns = ['dwell_prior_count', 'dwell_success_count', 'first_dwell']
 for col in dwell_plot_columns:
     fig,ax = plt.subplots(figsize=(10,10))
     columns = [column for column in rolling_mean_dataframe.columns if col in column]
-    d = rolling_mean_dataframe.loc['W'][columns]
+    d = rolling_mean_dataframe.loc['U'][columns]
     sns.heatmap(d,cmap='Blues',annot=True)
     plt.title(col)
     plt.show()
-
+    fig,ax = plt.subplots(figsize=(10,10))
+    columns = [column for column in lowpass_mean_dataframe.columns if col in column]
+    d = lowpass_mean_dataframe.loc['U'][columns]
+    sns.heatmap(d,cmap='Blues',annot=True)
+    plt.title(col)
+    plt.show()
 
     # for row in d.iterrows():
     #     plt.plot(pd.Series(d.index).apply(find_int_string), d.values)
     # plt.title(col)
     # plt.show()
+
+#%%
+# U_fail_count = summary_lowpass[summary_lowpass['environment']=='U'].isnull().sum(axis=0)
+# W_fail_count = summary_lowpass[summary_lowpass['environment']=='W'].isnull().sum(axis=0)
+
+# print(U_fail_count[columns]/len(summary_lowpass[summary_lowpass['environment']=='U'])*100)
+#
+# xtick_labels = pd.Series(U_fail_count[columns].index).apply(find_int_string)
+# ind = np.arange(len(xtick_labels))
+# width = 0.3
+# plt.bar(ind, U_fail_count[columns].values, width=width, alpha=0.75, label='UI')
+# plt.bar(ind + width, W_fail_count[columns].values, width=width, alpha=0.75, label='World')
+# plt.xticks(ind + width, xtick_labels)
+# plt.xlabel('lowpass cutoff frequency (Hz)')
+# plt.ylabel(col)
+# plt.title(col)
+# plt.legend()
+# plt.show()
+# UI = summary_default[summary_default['environment']=='U']
+# World = summary_default[summary_default['environment']=='W']
+UI_LP = summary_lowpass[summary_lowpass['environment']=='U']
+World_LP = summary_lowpass[summary_lowpass['environment']=='W']
+UI_dwell_success_rate_LP = UI_LP.groupby('apply').apply(lambda x: x.notnull().mean())
+World_dwell_success_rate_LP = World_LP.groupby('apply').apply(lambda x: x.notnull().mean())
+
+UI_RA = summary_rolling_average[summary_rolling_average['environment']=='U']
+World_RA = summary_rolling_average[summary_rolling_average['environment']=='W']
+
+UI_dwell_success_rate_RA = UI_RA.groupby('apply').apply(lambda x: x.notnull().mean())
+World_dwell_success_rate_RA = World_RA.groupby('apply').apply(lambda x: x.notnull().mean())
+
+UI_dwell_success_rate_RA = UI_dwell_success_rate_RA.reindex(natsorted(UI_dwell_success_rate_RA.index))
+World_dwell_success_rate_RA = World_dwell_success_rate_RA.reindex(natsorted(World_dwell_success_rate_RA.index))
+# UI_dwell_success_rate_LP = UI_LP.notnull().sum(axis=0) / len(UI_LP) * 100
+# a = UI_LP.groupby('apply')
+# for g,k in a:
+#
+#     print(k.notnull().sum(axis=0)['first_dwell_1.2'])
+# UI_dwell_success_rate_LP = UI_dwell_success_rate_LP.reindex(natsorted(UI_dwell_success_rate_LP.index))
+# UI_dwell_success_rate = UI.groupby('apply').apply(lambda  x: x.notnull().mean())
+# UI_dwell_success_rate = pd.concat([UI_dwell_success_rate,UI_dwell_success_rate_LP])
+columns = [column for column in UI_RA.columns if 'first_dwell' in column]
+sns.heatmap(UI_dwell_success_rate_LP[columns])
+plt.title("UI-LP")
+plt.show()
+sns.heatmap(World_dwell_success_rate_LP[columns])
+plt.title("World-LP")
+plt.show()
+sns.heatmap(UI_dwell_success_rate_RA[columns])
+plt.title("UI-Rolling Average")
+plt.show()
+sns.heatmap(World_dwell_success_rate_RA[columns])
+plt.title("World-Rolling Average")
+plt.show()
