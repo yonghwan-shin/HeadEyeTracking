@@ -3,6 +3,8 @@ import numpy as np
 import math
 import vg
 import matplotlib.pyplot as plt
+import pandas as pd
+
 
 def winter_low(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
     """Filters a data sample based on two past unfiltered and filtered data samples.
@@ -50,6 +52,7 @@ def winter_low(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
         print('dem:', 1.0, -b1, -b2)
 
     return a0 * x0 + a1 * x1 + a2 * x2 + b1 * y1 + b2 * y2
+
 
 def murphy_high(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
     """
@@ -103,6 +106,7 @@ def murphy_high(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False)
 
     return c0 * x0 + c1 * x1 + c2 * x2 + d1 * y1 + d2 * y2
 
+
 def realtime_lowpass(time, sig, cutoff):
     output = [sig[0], sig[1]]
     for i in range(2, len(time)):
@@ -111,6 +115,8 @@ def realtime_lowpass(time, sig, cutoff):
                                  sig[i], sig[i - 1], sig[i - 2],
                                  output[i - 1], output[i - 2]))
     return output
+
+
 def head_angle_to_angle_distance(H, V, tH, tV):
     H = H.apply(math.radians)
     tH = tH.apply(math.radians)
@@ -138,6 +144,37 @@ def angle_distance(x, y, z, x1, y1, z1):
     return vg.angle(vector1, vector2)
 
 
+def get_cosine(a, b, c, d):
+    u = np.array([a, c])
+    v = np.array([b, d])
+    u = u / np.linalg.norm(u)
+    v = v / np.linalg.norm(v)
+    # c= np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v)
+    # angle = np.degrees(np.arccos(np.clip(c,-1,1)))
+    dot_product = np.dot(u, v)
+    angle = np.degrees(np.arccos(dot_product))
+    # if angle > 90:
+    #     angle = 180-angle
+    return angle
+
+
+def get_angle_between_vectors(Heye, Himu, Veye, Vimu):
+    df = pd.DataFrame({'Heye': Heye, 'Himu': Himu, 'Veye': Veye, 'Vimu': Vimu})
+    df['angle'] = df.apply(
+        lambda x: get_cosine(x['Heye'], x['Himu'], x['Veye'], x['Vimu']),
+        axis=1
+    )
+    df['eye_magnitude'] = df.apply(
+        lambda x: np.sqrt(x['Heye'] ** 2 + x['Veye'] ** 2),
+        axis=1
+    )
+    df['imu_magnitude'] = df.apply(
+        lambda x: np.sqrt(x['Himu'] ** 2 + x['Vimu'] ** 2),
+        axis=1
+    )
+    return df
+
+
 def get_new_angular_distance(H, V, data):
     x, y, z = angle_to_vector(H, V)
     # print(x)
@@ -146,7 +183,8 @@ def get_new_angular_distance(H, V, data):
     data['Z'] = np.array(z)
     data['changed_angular_distance'] = data.apply(
         lambda x: angle_distance(x['X'], x['Y'], x['Z'], (x.target_position_x - x.head_position_x),
-                                 (x.target_position_y - x.head_position_y), (x.target_position_z - x.head_position_z)),axis=1
+                                 (x.target_position_y - x.head_position_y), (x.target_position_z - x.head_position_z)),
+        axis=1
     )
     return data['changed_angular_distance']
 
@@ -265,6 +303,7 @@ def draw_stand_walk_comparison_plot(stand_UI, stand_World, walk_UI, walk_World, 
     fig.tight_layout()
     plt.show()
 
+
 # def draw_simple_plot(column_name):
 #     simple_xtick = ['stand/UI', 'stand/World', 'walk/UI', 'walk/World']
 #     simple_x = [0, 1, 2, 3]
@@ -296,3 +335,83 @@ def draw_stand_walk_comparison_plot(stand_UI, stand_World, walk_UI, walk_World, 
 #     ax.yaxis.grid(True)
 #     fig.tight_layout()
 #     plt.show()
+
+class LowPassFilter(object):
+    def __init__(self, alpha):
+        self.__setAlpha(alpha)
+        self.__y = self.__s = None
+
+    def __setAlpha(self, alpha):
+        alpha = float(alpha)
+        if alpha <= 0 or alpha > 1.0:
+            raise ValueError("alpha (%s) should be in (0.0, 1.0]" % alpha)
+        self.__alpha = alpha
+
+    def __call__(self, value, timestamp=None, alpha=None):
+        if alpha is not None:
+            self.__setAlpha(alpha)
+        if self.__y is None:
+            s = value
+        else:
+            s = self.__alpha * value + (1.0 - self.__alpha) * self.__s
+        self.__y = value
+        self.__s = s
+        return s
+
+    def lastValue(self):
+        return self.__y
+
+
+class OneEuroFilter(object):
+
+    def __init__(self, freq, mincutoff=1.0, beta=0.0, dcutoff=1.0):
+        if freq <= 0:
+            raise ValueError("freq should be >0")
+        if mincutoff <= 0:
+            raise ValueError("mincutoff should be >0")
+        if dcutoff <= 0:
+            raise ValueError("dcutoff should be >0")
+        self.__freq = float(freq)
+        self.__mincutoff = float(mincutoff)
+        self.__beta = float(beta)
+        self.__dcutoff = float(dcutoff)
+        self.__x = LowPassFilter(self.__alpha(self.__mincutoff))
+        self.__dx = LowPassFilter(self.__alpha(self.__dcutoff))
+        self.__lasttime = None
+
+    def change_cutoff(self, mincutoff):
+        self.__mincutoff = mincutoff
+
+    def __alpha(self, cutoff):
+        te = 1.0 / self.__freq
+        tau = 1.0 / (2 * math.pi * cutoff)
+        return 1.0 / (1.0 + tau / te)
+
+    def __call__(self, x, timestamp=None):
+        # ---- update the sampling frequency based on timestamps
+        if self.__lasttime and timestamp:
+            self.__freq = 1.0 / (timestamp - self.__lasttime)
+        self.__lasttime = timestamp
+        # ---- estimate the current variation per second
+        prev_x = self.__x.lastValue()
+        dx = 0.0 if prev_x is None else (x - prev_x) * self.__freq  # FIXME: 0.0 or value?
+        edx = self.__dx(dx, timestamp, alpha=self.__alpha(self.__dcutoff))
+        # ---- use it to update the cutoff frequency
+        cutoff = self.__mincutoff + self.__beta * math.fabs(edx)
+        # ---- filter the given value
+        return self.__x(x, timestamp, alpha=self.__alpha(cutoff))
+
+
+def one_euro(_data, timestamp=None, freq=60, mincutoff=1, beta=1.0, dcutoff=1.0):
+    config = dict(freq=freq, mincutoff=mincutoff, beta=beta, dcutoff=dcutoff)
+    filter = OneEuroFilter(**config)
+    f = []
+    _data = list(_data)
+    timestamp = list(timestamp)
+
+    for i in range(len(_data)):
+        if timestamp is None:
+            f.append(filter(x=_data[i]))
+        else:
+            f.append(filter(_data[i], timestamp=timestamp[i]))
+    return pd.Series(f)

@@ -19,6 +19,69 @@ def inverse(a):
     return 1 / a
 
 
+def vector_analysis(target, env, block, subject):
+    output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                                study_num=3)
+    eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                        study_num=3)
+    print('mean eye confidence', eye.confidence.mean())
+    if eye.confidence.mean() < 0.8:
+        print('Too low eye confidence')
+        return
+    eye = eye[eye['confidence'] > 0.8]
+    imu = read_imu_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                        study_num=3)
+    shift, corr, shift_time = synchronise_timestamp(imu, output, show_plot=False)
+    eye.timestamp = eye.timestamp - shift_time
+    imu.timestamp = imu.timestamp - shift_time
+    Timestamp = np.arange(0, 6.5, 1 / 120)
+    Vholo = interpolate.interp1d(output.timestamp, output.head_rotation_x, fill_value='extrapolate')
+    Vimu = interpolate.interp1d(imu.timestamp, imu.rotationX, fill_value='extrapolate')
+    Veye = interpolate.interp1d(eye.timestamp, eye.norm_y, fill_value='extrapolate')
+    Hholo = interpolate.interp1d(output.timestamp, output.head_rotation_y, fill_value='extrapolate')
+    Himu = interpolate.interp1d(imu.timestamp, imu.rotationZ, fill_value='extrapolate')
+    Heye = interpolate.interp1d(eye.timestamp, eye.norm_x, fill_value='extrapolate')
+    AngleSpeed = interpolate.interp1d(output.timestamp, output.angle_speed, fill_value='extrapolate')
+    Hpre_cutoff = 5.0
+    Vpre_cutoff = 5.0
+
+    walklength = output.head_position_z.values[-1] - output.head_position_z.values[0]
+    if (walklength < 3.5):
+        print('too short walklength');
+        return
+        # continue;
+
+    if env == 'W':
+        r = 0.3 / 2
+    else:
+        r = 0.3 / 2
+    apply = 'angular_distance'
+    output['MaximumTargetAngle'] = (r * 1 / output.Distance).apply(math.asin) * 180 / math.pi
+    initial_contact_time_data = output[output[apply] < output['MaximumTargetAngle']]
+    if len(initial_contact_time_data) <= 0:
+        return;
+    initial_contact_time = initial_contact_time_data.timestamp.values[0]
+
+    Vholo = pd.Series(Vholo(Timestamp))
+    Vimu = pd.Series(realtime_lowpass(Timestamp, Vimu(Timestamp), Vpre_cutoff))
+    Veye = pd.Series(realtime_lowpass(Timestamp, Veye(Timestamp), Vpre_cutoff))
+    Hholo = pd.Series(Hholo(Timestamp))
+    Himu = pd.Series(realtime_lowpass(Timestamp, Himu(Timestamp), Hpre_cutoff))
+    Heye = pd.Series(realtime_lowpass(Timestamp, Heye(Timestamp), Hpre_cutoff))
+    vector = (Heye.diff(1) * Himu.diff(1) + Veye.diff(1) * Vimu.diff(1))
+    index = len(Timestamp[Timestamp < initial_contact_time])
+    vector_df  = get_angle_between_vectors(Heye.diff(1),Himu.diff(1),Veye.diff(1),Vimu.diff(1))
+    # APPROACH
+
+    # MAINTAIN
+    return index,vector_df,vector[:index], vector[index:]
+
+    # Approach = output[output.timestamp <= initial_contact_time].reset_index(drop=True)
+    # Maintain = output[output.timestamp > initial_contact_time].reset_index(drop=True)
+
+    # Maintain['targetOn'] = np.where(Maintain[apply] < Maintain['MaximumTargetAngle'], True, False)
+
+
 def dwell_analysis(target, env, block, subject, output, apply: str):
     walklength = output.head_position_z.values[-1] - output.head_position_z.values[0]
     if (walklength < 3.5):
@@ -54,6 +117,7 @@ def dwell_analysis(target, env, block, subject, output, apply: str):
     mean_error = Maintain.TargetHorizontal.mean()
     std_error = Maintain.TargetHorizontal.std()
     max_angle_distance = Maintain[apply].max()
+    mean_angle_distance = Maintain[apply].mean()
 
     # plt.plot(Maintain.targetOn)
     # plt.show()
@@ -88,6 +152,7 @@ def dwell_analysis(target, env, block, subject, output, apply: str):
                   walklength=walklength,
                   initial_contact_time=initial_contact_time,
                   mean_error=mean_error, std_error=std_error, max_angle_distance=max_angle_distance,
+                  mean_angle_distance=mean_angle_distance,
                   maintain_total_frame=maintain_total_frame, target_on_frame=target_on_frame,
                   target_on_rate=target_on_frame / maintain_total_frame * 100,
                   target_in_count=target_in_count, total_target_on_time=total_target_on_time,
@@ -163,23 +228,23 @@ for subject, env, target, block in itertools.product(
     #             final_result.append(result)
     #     except Exception as e:
     #         print(e)
-    for cutoff in cutoff_freqs:
-        try:
-
-            print(subject, env, target, block, cutoff)
-
-            output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                                        study_num=3)
-            output['lowpass' + str(cutoff)] = get_new_angular_distance(
-                pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_y,cutoff)),
-                pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_x,cutoff)), output)
-
-            result = dwell_analysis(target, env, block, subject, output, 'lowpass' + str(cutoff))
-
-            if result is not None:
-                final_result.append(result)
-        except Exception as e:
-            print(e)
+    # for cutoff in cutoff_freqs:
+    #     try:
+    #
+    #         print(subject, env, target, block, cutoff)
+    #
+    #         output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+    #                                     study_num=3)
+    #         output['lowpass' + str(cutoff)] = get_new_angular_distance(
+    #             pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_y,cutoff)),
+    #             pd.Series(realtime_lowpass(output.timestamp,output.head_rotation_x,cutoff)), output)
+    #
+    #         result = dwell_analysis(target, env, block, subject, output, 'lowpass' + str(cutoff))
+    #
+    #         if result is not None:
+    #             final_result.append(result)
+    #     except Exception as e:
+    #         print(e)
     # try:
     #     print(subject, env, target, block)
     #     output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
@@ -193,8 +258,26 @@ for subject, env, target, block in itertools.product(
     #         final_result.append(result)
     # except Exception as e:
     #     print(e)
+
+    # betas = [1, 0.1, 0.01, 0.001, 0.0001]
+    betas = [0.1, 0.01, 0.001]
+    for cutoff in cutoff_freqs:
+        for beta in betas:
+            print(subject, env, target, block, cutoff, beta)
+            try:
+                output['one_euro' + str(cutoff) + '_' + str(beta)] = get_new_angular_distance(
+                    pd.Series(one_euro(output.head_rotation_y, output.timestamp, 60, cutoff, beta)),
+                    pd.Series(one_euro(output.head_rotation_x, output.timestamp, 60, cutoff, beta)),
+                    output)
+
+                result = dwell_analysis(target, env, block, subject, output, 'one_euro' + str(cutoff) + '_' + str(beta))
+
+                if result is not None:
+                    final_result.append(result)
+            except Exception as e:
+                print(e)
 summary = pd.DataFrame(final_result)
-summary.to_csv('summary3_rolling_average.csv')
+summary.to_csv('summary3_oneEuro_meanAngleDistance.csv')
 print('overall time', time.time() - t)
 # %%
 
@@ -226,7 +309,7 @@ plt.show()
 mean_dataframe.loc['U'][first_dwell_columns].plot()
 plt.show()
 
-#%%
+# %%
 fig_basic, (ax_init_time, ax_max_angle_distance, ax_rate, ax_in_count) = plt.subplots(4, 1, figsize=(10, 20),
                                                                                       sharex=True)
 fig_dwell, (ax_dwell_success_count, ax_first_dwell, ax_dwell_success_rate) = plt.subplots(3, 1, figsize=(10, 15),
@@ -294,17 +377,54 @@ fig_dwell.show()
 summary_default = pd.read_csv('summary3_default.csv')
 default_mean_dataframe = summary_default.groupby(['environment', 'apply']).mean()
 default_mean_dataframe = default_mean_dataframe.reindex(natsorted(default_mean_dataframe.index))
+
 summary_rolling_average = pd.read_csv('summary3_rolling_average.csv')
-summary_rolling_average = pd.concat([summary_rolling_average,summary_default])
+summary_rolling_average = pd.concat([summary_rolling_average, summary_default])
 rolling_mean_dataframe = summary_rolling_average.groupby(['environment', 'apply']).mean()
 rolling_mean_dataframe = rolling_mean_dataframe.reindex(natsorted(rolling_mean_dataframe.index))
 # rolling_mean_dataframe = pd.concat([default_mean_dataframe, rolling_mean_dataframe])
 summary_lowpass = pd.read_csv('summary3_lowpass.csv')
-summary_lowpass = pd.concat([summary_lowpass,summary_default])
+summary_lowpass = pd.concat([summary_lowpass, summary_default])
 # summary_lowpass = summary_lowpass.reindex(natsorted(summary_lowpass.index))
 lowpass_mean_dataframe = summary_lowpass.groupby(['environment', 'apply']).mean()
 lowpass_mean_dataframe = lowpass_mean_dataframe.reindex(natsorted(lowpass_mean_dataframe.index))
+
+summary_oneeuro = pd.read_csv('summary3_oneEuro.csv')
+summary_oneeuro = pd.concat([summary_default, summary_oneeuro])
+oneeuro_mean_dataframe = summary_oneeuro.groupby(['environment', 'apply']).mean()
+oneeuro_mean_dataframe = oneeuro_mean_dataframe.reindex(natsorted(oneeuro_mean_dataframe.index))
+
 # lowpass_mean_dataframe=pd.concat([default_mean_dataframe,lowpass_mean_dataframe])
+
+# %%
+# col40 = [col for col in oneeuro_mean_dataframe.columns if '4.0' in col]
+
+plot_columns = ['initial_contact_time', 'max_angle_distance', 'target_on_rate', 'target_in_count',
+                'mean_target_on_time', 'longets_target_on_time']
+
+betas = [0.1, 0.01, 0.001, 0.0001]
+betas = [str(beta) for beta in betas]
+barPlot = []
+for col in plot_columns:
+    barPlot = []
+    for beta in betas:
+        ind = oneeuro_mean_dataframe.loc['U'].index[
+            (oneeuro_mean_dataframe.loc['U'].index.str.contains('_' + str(beta))) | (
+                oneeuro_mean_dataframe.loc['U'].index.str.contains('default'))]
+        # barPlot.append(go.Bar(
+        #     name=str(beta),
+        #     x=[0] + cutoff_freqs, y=oneeuro_mean_dataframe.loc['U'][col].loc[ind],
+        #     textposition='auto'
+        # ))
+        barPlot.append(go.Scatter(
+            name=str(beta),
+            x=[0] + cutoff_freqs, y=oneeuro_mean_dataframe.loc['U'][col].loc[ind],
+        ))
+
+    fig = go.Figure(data=barPlot)
+    # fig.update_layout(title_text=col, barmode='group',xaxis_tickangle=-45)
+    fig.update_layout(title_text=col, xaxis_tickangle=-45)
+    fig.show()
 
 
 # %%
@@ -330,30 +450,32 @@ for col in plot_columns:
     plt.title(col)
     plt.legend()
     plt.show()
+
     xtick_labels = pd.Series(lowpass_mean_dataframe.loc['U'].index).apply(find_int_string)
     ind = np.arange(len(xtick_labels))
-    width=0.3
-    plt.bar(ind,lowpass_mean_dataframe.loc['U'][col],width=width,alpha=0.75,label='UI')
-    plt.bar(ind+width, lowpass_mean_dataframe.loc['W'][col], width=width, alpha=0.75, label='World')
+    width = 0.3
+    plt.bar(ind, lowpass_mean_dataframe.loc['U'][col], width=width, alpha=0.75, label='UI')
+    plt.bar(ind + width, lowpass_mean_dataframe.loc['W'][col], width=width, alpha=0.75, label='World')
     plt.xticks(ind + width, xtick_labels)
     plt.xlabel('lowpass cutoff frequency (Hz)')
     plt.ylabel(col)
     plt.title(col)
     plt.legend()
     plt.show()
+
 # dwell-wise outcomes
 dwell_plot_columns = ['dwell_prior_count', 'dwell_success_count', 'first_dwell']
 for col in dwell_plot_columns:
-    fig,ax = plt.subplots(figsize=(10,10))
+    fig, ax = plt.subplots(figsize=(10, 10))
     columns = [column for column in rolling_mean_dataframe.columns if col in column]
     d = rolling_mean_dataframe.loc['U'][columns]
-    sns.heatmap(d,cmap='Blues',annot=True)
+    sns.heatmap(d, cmap='Blues', annot=True)
     plt.title(col)
     plt.show()
-    fig,ax = plt.subplots(figsize=(10,10))
+    fig, ax = plt.subplots(figsize=(10, 10))
     columns = [column for column in lowpass_mean_dataframe.columns if col in column]
     d = lowpass_mean_dataframe.loc['U'][columns]
-    sns.heatmap(d,cmap='Blues',annot=True)
+    sns.heatmap(d, cmap='Blues', annot=True)
     plt.title(col)
     plt.show()
 
@@ -362,7 +484,7 @@ for col in dwell_plot_columns:
     # plt.title(col)
     # plt.show()
 
-#%%
+# %%
 # U_fail_count = summary_lowpass[summary_lowpass['environment']=='U'].isnull().sum(axis=0)
 # W_fail_count = summary_lowpass[summary_lowpass['environment']=='W'].isnull().sum(axis=0)
 
@@ -381,19 +503,26 @@ for col in dwell_plot_columns:
 # plt.show()
 # UI = summary_default[summary_default['environment']=='U']
 # World = summary_default[summary_default['environment']=='W']
-UI_LP = summary_lowpass[summary_lowpass['environment']=='U']
-World_LP = summary_lowpass[summary_lowpass['environment']=='W']
+UI_LP = summary_lowpass[summary_lowpass['environment'] == 'U']
+World_LP = summary_lowpass[summary_lowpass['environment'] == 'W']
 UI_dwell_success_rate_LP = UI_LP.groupby('apply').apply(lambda x: x.notnull().mean())
 World_dwell_success_rate_LP = World_LP.groupby('apply').apply(lambda x: x.notnull().mean())
 
-UI_RA = summary_rolling_average[summary_rolling_average['environment']=='U']
-World_RA = summary_rolling_average[summary_rolling_average['environment']=='W']
-
+UI_RA = summary_rolling_average[summary_rolling_average['environment'] == 'U']
+World_RA = summary_rolling_average[summary_rolling_average['environment'] == 'W']
 UI_dwell_success_rate_RA = UI_RA.groupby('apply').apply(lambda x: x.notnull().mean())
 World_dwell_success_rate_RA = World_RA.groupby('apply').apply(lambda x: x.notnull().mean())
 
 UI_dwell_success_rate_RA = UI_dwell_success_rate_RA.reindex(natsorted(UI_dwell_success_rate_RA.index))
 World_dwell_success_rate_RA = World_dwell_success_rate_RA.reindex(natsorted(World_dwell_success_rate_RA.index))
+
+UI_oneeuro = summary_oneeuro[summary_oneeuro['environment'] == 'U']
+World_oneeuro = summary_oneeuro[summary_oneeuro['environment'] == 'W']
+UI_dwell_success_rate_OE = UI_oneeuro.groupby('apply').apply(lambda x: x.notnull().mean())
+World_dwell_success_rate_OE = World_oneeuro.groupby('apply').apply(lambda x: x.notnull().mean())
+
+UI_dwell_success_rate_OE = UI_dwell_success_rate_OE.reindex(natsorted(UI_dwell_success_rate_OE.index))
+World_dwell_success_rate_OE = World_dwell_success_rate_OE.reindex(natsorted(World_dwell_success_rate_OE.index))
 # UI_dwell_success_rate_LP = UI_LP.notnull().sum(axis=0) / len(UI_LP) * 100
 # a = UI_LP.groupby('apply')
 # for g,k in a:
@@ -403,15 +532,113 @@ World_dwell_success_rate_RA = World_dwell_success_rate_RA.reindex(natsorted(Worl
 # UI_dwell_success_rate = UI.groupby('apply').apply(lambda  x: x.notnull().mean())
 # UI_dwell_success_rate = pd.concat([UI_dwell_success_rate,UI_dwell_success_rate_LP])
 columns = [column for column in UI_RA.columns if 'first_dwell' in column]
-sns.heatmap(UI_dwell_success_rate_LP[columns])
-plt.title("UI-LP")
+# sns.heatmap(UI_dwell_success_rate_LP[columns])
+# plt.title("UI-LP")
+# plt.show()
+# sns.heatmap(World_dwell_success_rate_LP[columns])
+# plt.title("World-LP")
+# plt.show()
+# sns.heatmap(UI_dwell_success_rate_RA[columns])
+# plt.title("UI-Rolling Average")
+# plt.show()
+# sns.heatmap(World_dwell_success_rate_RA[columns])
+# plt.title("World-Rolling Average")
+# plt.show()
+# UI_dwell_success_rate_OE=pd.DataFrame(np.roll(UI_dwell_success_rate_OE.values,1,axis=0),
+#                                       index=np.roll(UI_dwell_success_rate_OE.index,1),columns=UI_dwell_success_rate_OE.columns)
+idx = UI_dwell_success_rate_OE.index.tolist()
+idx.pop(0)
+UI_dwell_success_rate_OE = UI_dwell_success_rate_OE.reindex(idx + ['default'])
+sns.heatmap(UI_dwell_success_rate_OE[columns])
 plt.show()
-sns.heatmap(World_dwell_success_rate_LP[columns])
-plt.title("World-LP")
+# %% heatmap in plotly way
+import plotly.express as px
+
+fig = px.imshow(UI_dwell_success_rate_OE[columns])
+
+fig.show()
+
+# %% watch only 500ms dwell
+summary_whole = pd.concat([
+    pd.read_csv('summary3_default.csv'),
+    pd.read_csv('summary3_lowpass.csv'),
+    pd.read_csv('summary3_oneEuro_meanAngleDistance.csv')
+])
+whole_mean_dataframe = summary_whole.groupby(['environment', 'apply']).mean()
+whole_mean_dataframe = whole_mean_dataframe.reindex(natsorted(whole_mean_dataframe.index))
+betas = [1, 0.1, 0.01, 0.001, 0.0001]
+betas = [str(beta) for beta in betas]
+filtered_plots = []
+plot_env = 'U'
+plot_dwell_threshold = 1.0
+plot_data = whole_mean_dataframe.loc[plot_env]
+dwell_plot_columns = ['dwell_prior_count', 'dwell_success_count', 'first_dwell', 'mean_angle_distance',
+                      'initial_contact_time', 'max_angle_distance', 'target_on_rate', 'target_in_count',
+                      'mean_target_on_time', 'longets_target_on_time'
+                      ]
+for col in dwell_plot_columns:
+    filtered_plots = []
+    columns = [column for column in plot_data.columns if (col + '_' + str(plot_dwell_threshold)) in column]
+    if 'dwell' in col:
+        col = col + '_' + str(plot_dwell_threshold)
+    ind = plot_data.index[
+        plot_data.index.str.contains('lowpass')
+    ]
+    filtered_plots.append(go.Bar(name='lowpass', x=cutoff_freqs, y=plot_data[col].loc[ind]))
+    filtered_plots.append(go.Bar(name='default', x=['default'], y=[plot_data[col].loc['default']]))
+    for beta in betas:
+        ind = plot_data.index[
+            plot_data.index.str.contains('_' + str(beta))
+        ]
+        filtered_plots.append(go.Bar(
+            name=str(beta),
+            x=cutoff_freqs, y=plot_data[col].loc[ind]
+        ))
+    fig = go.Figure(data=filtered_plots)
+    fig.layout = go.Layout(xaxis=dict(type='category'))
+    fig.update_layout(title_text=col, barmode='group')
+    fig.show()
+
+# %%
+subject = 1
+env = 'U'
+target = 2
+block = 4
+index,vector_df,approach,maintain = vector_analysis(target, env, block, subject)
+vector_df.eye_magnitude.plot();plt.show()
+vector_df.imu_magnitude.plot();plt.show()
+
+plt.scatter(vector_df.index,vector_df.angle,marker='+')
+plt.axhline(y=90)
+plt.axvline(x=vector_df.index[index])
 plt.show()
-sns.heatmap(UI_dwell_success_rate_RA[columns])
-plt.title("UI-Rolling Average")
-plt.show()
-sns.heatmap(World_dwell_success_rate_RA[columns])
-plt.title("World-Rolling Average")
-plt.show()
+# vector_df.angle.loc[:index].plot();plt.show()
+sns.histplot(vector_df.angle.loc[:index],kde=True);plt.show()
+sns.histplot(vector_df.angle.loc[index:],kde=True);plt.show()
+# plt.plot(vector_df.index[1:],butter_lowpass_filter(vector_df.angle[1:],5,120,2,False))
+
+# plt.fill_between(vector_df.index[1:],butter_lowpass_filter(vector_df.angle[1:],5,120,2,False),where=(butter_lowpass_filter(vector_df.angle[1:],5,120,2,False)<=90),facecolor='red',alpha=0.5)
+# plt.show()
+# approach.plot()
+# maintain.plot()
+# plt.show()
+#%%
+subject = 1
+env = 'U'
+target = 2
+block = 4
+output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                                study_num=3)
+eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                    study_num=3)
+print('mean eye confidence', eye.confidence.mean())
+if eye.confidence.mean() < 0.8:
+    print('Too low eye confidence')
+    # return
+eye = eye[eye['confidence'] > 0.8]
+imu = read_imu_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                    study_num=3)
+shift, corr, shift_time = synchronise_timestamp(imu, output, show_plot=False)
+eye.timestamp = eye.timestamp - shift_time
+imu.timestamp = imu.timestamp - shift_time
+Timestamp = np.arange(0, 6.5, 1 / 120)
