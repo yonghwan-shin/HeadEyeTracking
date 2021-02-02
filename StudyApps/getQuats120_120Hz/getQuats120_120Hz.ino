@@ -26,7 +26,8 @@
 BNO080 myIMU;
 
 
-
+int Time ;
+int count;
 int ptsAfterZero = 5;
 
 void setup()
@@ -40,43 +41,55 @@ void setup()
   if (myIMU.begin() == false)
   {
     Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
-    while (1);
+    while (1){
+      Serial.println("not connected");
+    }
   }
 
   Wire.setClock(400000); //Increase I2C data rate to 400kHz
-//  Wire.setClock  (1000000); //Increase I2C data rate to 400kHz
+//  Wire.setClock  (100000); //Increase I2C data rate to 400kHz
 
-  myIMU.enableRotationVector(5); //Send data update every 50ms
-
+  myIMU.enableRotationVector(16); //Send data update every 50ms
+//  myIMU.enableGameRotationVector(16);
   Serial.println(F("Rotation vector enabled"));
   Serial.println(F("Output in form i, j, k, real, accuracy"));
-  
+  Time = millis();
+  count = 0;
 }
 
 void loop()
 {
-  
+
   //Look for reports from the IMU
   if (myIMU.dataAvailable() == true)
   {
-    float quatI = myIMU.getQuatI();
-    float quatJ = myIMU.getQuatJ();
-    float quatK = myIMU.getQuatK();
-    float quatReal = myIMU.getQuatReal();
-    float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
-
     
-    Serial.print(quatI, ptsAfterZero);
-    Serial.print(F(","));
-    Serial.print(quatJ, ptsAfterZero);
-    Serial.print(F(","));
-    Serial.print(quatK, ptsAfterZero);
-    Serial.print(F(","));
-    Serial.print(quatReal, ptsAfterZero);
-    Serial.print(F(","));
-    Serial.print(quatRadianAccuracy, ptsAfterZero);
-    Serial.print(F(","));
+    count++;
+    if (millis()  >= Time + 1000){
+      Serial.println(count);
+      count=0;
+      Time = millis();
+    }
+    
 
-    Serial.println();
+//    float quatI = myIMU.getQuatI();
+//    float quatJ = myIMU.getQuatJ();
+//    float quatK = myIMU.getQuatK();
+//    float quatReal = myIMU.getQuatReal();
+//    float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
+//
+//    
+//    Serial.print(quatI, ptsAfterZero);
+//    Serial.print(F(","));
+//    Serial.print(quatJ, ptsAfterZero);
+//    Serial.print(F(","));
+//    Serial.print(quatK, ptsAfterZero);
+//    Serial.print(F(","));
+//    Serial.print(quatReal, ptsAfterZero);
+//    Serial.print(F(","));
+//    Serial.print(quatRadianAccuracy, ptsAfterZero);
+//    Serial.print(F(","));
+//
+//    Serial.println();
   }
 }

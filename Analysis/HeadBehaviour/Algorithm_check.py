@@ -13,7 +13,7 @@ pio.renderers.default = 'browser'
 subject = 1
 env = 'U'
 target = 3
-block = 4
+block = 2
 cutoff = 0.5
 beta = 0.01
 
@@ -183,6 +183,7 @@ fig = go.Figure(data=[
     go.Scatter(x=Timestamp, y=Vholo, name='Vholo'),
     go.Scatter(x=Timestamp, y=Hholo, name='Hholo'),
     go.Scatter(x=output.timestamp, y=output.Phi, name='phi'),
+    go.Scatter(x=output.timestamp, y=output.Theta, name='theta'),
     go.Scatter(x=Timestamp, y=one_euro(Hholo,Timestamp,120,0.3,0.01), name='Hholo-oneeuro'),
 ])
 s = []
