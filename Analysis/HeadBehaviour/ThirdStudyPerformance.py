@@ -70,11 +70,11 @@ def vector_analysis(target, env, block, subject):
     Heye = pd.Series(realtime_lowpass(Timestamp, Heye(Timestamp), Hpre_cutoff))
     vector = (Heye.diff(1) * Himu.diff(1) + Veye.diff(1) * Vimu.diff(1))
     index = len(Timestamp[Timestamp < initial_contact_time])
-    vector_df  = get_angle_between_vectors(Heye.diff(1),Himu.diff(1),Veye.diff(1),Vimu.diff(1))
+    vector_df = get_angle_between_vectors(Heye.diff(1), Himu.diff(1), Veye.diff(1), Vimu.diff(1))
     # APPROACH
 
     # MAINTAIN
-    return index,vector_df,vector[:index], vector[index:]
+    return index, vector_df, vector[:index], vector[index:]
 
     # Approach = output[output.timestamp <= initial_contact_time].reset_index(drop=True)
     # Maintain = output[output.timestamp > initial_contact_time].reset_index(drop=True)
@@ -604,19 +604,23 @@ subject = 1
 env = 'U'
 target = 2
 block = 4
-index,vector_df,approach,maintain = vector_analysis(target, env, block, subject)
+index, vector_df, approach, maintain = vector_analysis(target, env, block, subject)
 vector_df.eye_magnitude.plot()
-plt.axvline(index);plt.show()
+plt.axvline(index);
+plt.show()
 vector_df.imu_magnitude.plot();
-plt.axvline(index);plt.show()
+plt.axvline(index);
+plt.show()
 
-plt.scatter(vector_df.index,vector_df.angle,marker='+')
+plt.scatter(vector_df.index, vector_df.angle, marker='+')
 plt.axhline(y=90)
 plt.axvline(x=vector_df.index[index])
 plt.show()
 # vector_df.angle.loc[:index].plot();plt.show()
-sns.histplot(vector_df.angle.loc[:index],kde=True);plt.show()
-sns.histplot(vector_df.angle.loc[index:],kde=True);plt.show()
+sns.histplot(vector_df.angle.loc[:index], kde=True);
+plt.show()
+sns.histplot(vector_df.angle.loc[index:], kde=True);
+plt.show()
 # plt.plot(vector_df.index[1:],butter_lowpass_filter(vector_df.angle[1:],5,120,2,False))
 
 # plt.fill_between(vector_df.index[1:],butter_lowpass_filter(vector_df.angle[1:],5,120,2,False),where=(butter_lowpass_filter(vector_df.angle[1:],5,120,2,False)<=90),facecolor='red',alpha=0.5)
@@ -624,13 +628,13 @@ sns.histplot(vector_df.angle.loc[index:],kde=True);plt.show()
 # approach.plot()
 # maintain.plot()
 # plt.show()
-#%%
+# %%
 subject = 1
 env = 'U'
 target = 3
 block = 4
 output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                                study_num=3)
+                            study_num=3)
 eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
                     study_num=3)
 print('mean eye confidence', eye.confidence.mean())
@@ -643,14 +647,19 @@ imu = read_imu_data(target=target, environment=env, posture='W', block=block, su
 shift, corr, shift_time = synchronise_timestamp(imu, output, show_plot=False)
 eye.timestamp = eye.timestamp - shift_time
 imu.timestamp = imu.timestamp - shift_time
-Timestamp = np.arange(0, 6.5, 1 / 120)
+Timestamp = np.arange(0, 6.5, 1 / 200)
+
+HTarget = interpolate.interp1d(output.timestamp, output.Phi, fill_value='extrapolate')
+VTarget = interpolate.interp1d(output.timestamp, output.Theta, fill_value='extrapolate')
 
 Vholo = interpolate.interp1d(output.timestamp, output.head_rotation_x, fill_value='extrapolate')
 Vimu = interpolate.interp1d(imu.timestamp, imu.rotationX, fill_value='extrapolate')
-Veye = interpolate.interp1d(eye.timestamp, eye.norm_y, fill_value='extrapolate')
+# Veye = interpolate.interp1d(eye.timestamp, eye.norm_y, fill_value='extrapolate')
+Veye = interpolate.interp1d(eye.timestamp, -eye.theta, fill_value='extrapolate')
 Hholo = interpolate.interp1d(output.timestamp, output.head_rotation_y, fill_value='extrapolate')
 Himu = interpolate.interp1d(imu.timestamp, imu.rotationZ, fill_value='extrapolate')
-Heye = interpolate.interp1d(eye.timestamp, eye.norm_x, fill_value='extrapolate')
+# Heye = interpolate.interp1d(eye.timestamp, eye.norm_x, fill_value='extrapolate')
+Heye = interpolate.interp1d(eye.timestamp, eye.phi, fill_value='extrapolate')
 AngleSpeed = interpolate.interp1d(output.timestamp, output.angle_speed, fill_value='extrapolate')
 Hpre_cutoff = 5.0
 Vpre_cutoff = 5.0
@@ -670,26 +679,77 @@ initial_contact_time_data = output[output[apply] < output['MaximumTargetAngle']]
 if len(initial_contact_time_data) <= 0:
     print('no contact')
 initial_contact_time = initial_contact_time_data.timestamp.values[0]
-Vholo = pd.Series(Vholo(Timestamp))
+VTarget = pd.Series(realtime_lowpass(Timestamp, VTarget(Timestamp), Vpre_cutoff))
+Vholo = pd.Series(realtime_lowpass(Timestamp, Vholo(Timestamp), Vpre_cutoff))
 Vimu = pd.Series(realtime_lowpass(Timestamp, Vimu(Timestamp), Vpre_cutoff))
 Veye = pd.Series(realtime_lowpass(Timestamp, Veye(Timestamp), Vpre_cutoff))
-Hholo = pd.Series(Hholo(Timestamp))
+HTarget = pd.Series(realtime_lowpass(Timestamp, HTarget(Timestamp), Hpre_cutoff))
+Hholo = pd.Series(realtime_lowpass(Timestamp, Hholo(Timestamp), Hpre_cutoff))
 Himu = pd.Series(realtime_lowpass(Timestamp, Himu(Timestamp), Hpre_cutoff))
 Heye = pd.Series(realtime_lowpass(Timestamp, Heye(Timestamp), Hpre_cutoff))
 vector = (Heye.diff(1) * Himu.diff(1) + Veye.diff(1) * Vimu.diff(1))
+vector = vector * 200*200
 index = len(Timestamp[Timestamp < initial_contact_time])
-vector_df  = get_angle_between_vectors(Heye.diff(1),Himu.diff(1),Veye.diff(1),Vimu.diff(1))
+vector_df = get_angle_between_vectors(Heye.diff(1), Himu.diff(1), Veye.diff(1), Vimu.diff(1))
 
-vector_df.eye_magnitude.plot()
-plt.axvline(index);plt.show()
-Heye.diff(1).plot()
-plt.axvline(index);plt.show()
-Veye.diff(1).plot()
-plt.axvline(index);plt.show()
-#
+# Hholo.plot();
+# plt.axvline(index);plt.show()
+# Himu.plot();
+# plt.axvline(index);plt.show()
+# Heye.plot();
+# plt.axvline(index);plt.show()
+# vector_df.eye_magnitude.plot()
+
+
+# Heye.diff(1).plot()
+# plt.axvline(index);plt.show()
+# Veye.diff(1).plot()
+# plt.axvline(index);plt.show()
+# #
 # vector_df.imu_magnitude.plot()
 # plt.axvline(index);plt.show()
 # Himu.plot()
 # plt.axvline(index);plt.show()
 # Vimu.plot()
 # plt.axvline(index);plt.show()
+
+fig, ax = plt.subplots(2, 1)
+lag = 20
+ax[0].plot(vector)
+plt.axvline(index,color='r');
+# plt.show()
+
+peak_detection = real_time_peak_detection(array=[0]*lag, lag=lag, threshold=5, influence=0.1)
+output = []
+for n, i in enumerate(vector):
+    # if i < 0: i = 0
+    p = peak_detection.thresholding_algo(i)
+    output.append(p)
+    if p>0.9 and i>0:
+        ax[0].axvline(n)
+ax[1].plot(output);
+for n, i in enumerate(Hholo.diff(1)):
+    if n==0:continue
+    if Hholo.diff(1).iloc[n]*Hholo.diff(1).iloc[n-1]<0 or Vholo.diff(1).iloc[n]*Vholo.diff(1).iloc[n-1]<0:
+        ax[0].axvline(n,color='g')
+plt.show()
+# ((Heye-Heye.mean())*180/math.pi).plot();
+# (Hholo-Hholo.mean()).plot()
+# ((Heye-Heye.mean())*180/math.pi+(Hholo-Hholo.mean())).plot();
+# (HTarget-Hholo.mean()).plot()
+# plt.show()
+# # (Himu-Himu.mean()).plot();plt.show()
+#
+# ((Veye-Veye.mean())*180/math.pi).plot();
+# (Vholo-Vholo.mean()).plot()
+#
+# ((Veye-Veye.mean())*180/math.pi+(Vholo-Vholo.mean())).plot();
+# (VTarget-Vholo.mean()).plot()
+# plt.show()
+#
+# ((Veye-Veye.mean())*180/math.pi).plot();
+# (Vimu-Vimu.mean()).plot()
+#
+# ((Veye-Veye.mean())*180/math.pi+(Vimu-Vimu.mean())).plot();
+# (VTarget-Vholo.mean()).plot()
+# plt.show()
