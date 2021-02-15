@@ -631,8 +631,8 @@ plt.show()
 # %%
 subject = 1
 env = 'U'
-target = 3
-block = 4
+target =6
+block = 1
 output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
                             study_num=3)
 eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
@@ -687,11 +687,18 @@ HTarget = pd.Series(realtime_lowpass(Timestamp, HTarget(Timestamp), Hpre_cutoff)
 Hholo = pd.Series(realtime_lowpass(Timestamp, Hholo(Timestamp), Hpre_cutoff))
 Himu = pd.Series(realtime_lowpass(Timestamp, Himu(Timestamp), Hpre_cutoff))
 Heye = pd.Series(realtime_lowpass(Timestamp, Heye(Timestamp), Hpre_cutoff))
+Heye = Heye * 180/math.pi
+Veye =Veye * 180/math.pi
 vector = (Heye.diff(1) * Himu.diff(1) + Veye.diff(1) * Vimu.diff(1))
-vector = vector * 200*200
+vector = vector * 200 * 200
 index = len(Timestamp[Timestamp < initial_contact_time])
 vector_df = get_angle_between_vectors(Heye.diff(1), Himu.diff(1), Veye.diff(1), Vimu.diff(1))
+plt.plot(Himu)
+# plt.show()
+plt.plot(Himu[0] +Heye.diff(1)*200+Himu.diff(1)*200)
+# plt.plot(Himu+Heye-Heye.mean())
 
+plt.show()
 # Hholo.plot();
 # plt.axvline(index);plt.show()
 # Himu.plot();
@@ -712,27 +719,41 @@ vector_df = get_angle_between_vectors(Heye.diff(1), Himu.diff(1), Veye.diff(1), 
 # plt.axvline(index);plt.show()
 # Vimu.plot()
 # plt.axvline(index);plt.show()
+# vector = vector.append(vector)
 
-fig, ax = plt.subplots(2, 1)
-lag = 20
-ax[0].plot(vector)
-plt.axvline(index,color='r');
+# fig, ax = plt.subplots(2, 1, figsize=(10, 10))
+# lag = 20
+#
+# ax[0].plot(list(vector))
+# # ax[0].axhline(5)
+# ax[0].axvline(index, color='r');
+# ax[1].axvline(index, color='r');
+# # plt.show()
+#
+# # peak_detection = real_time_peak_detection(array=[0]*lag, lag=lag, threshold=5, influence=0.1)
+# threshold = 10
+# peak_detection = real_time_peak_detection(array=vector[:lag], lag=lag, threshold=threshold, influence=0.10)
+# output = [0] * lag
+# for n, i in enumerate(vector[lag:]):
+#     # if i < 0: i = 0
+#
+#     p, avg, dev = peak_detection.thresholding_algo(i)
+#     output.append(p)
+#
+#     # if p > 0.9 and i > 0:
+#     #     ax[0].axvline(n + lag, alpha=0.2)
+# # ax[0].plot(list(pd.Series(peak_detection.avgFilter)), color='cyan')
+# # ax[0].plot(list(pd.Series(peak_detection.avgFilter) + pd.Series(peak_detection.stdFilter) * threshold), color='g')
+# # ax[0].plot(list(pd.Series(peak_detection.avgFilter) - pd.Series(peak_detection.stdFilter) * threshold), color='g')
+#
+# # ax[0].plot(ii, upper, color='g')
+# # ax[0].plot(ii, lower, color='g')
+# ax[1].plot(output);
+# for n, i in enumerate(Hholo.diff(1)):
+#     if n == 0: continue
+#     # if Hholo.diff(1).iloc[n]*Hholo.diff(1).iloc[n-1]<0 or Vholo.diff(1).iloc[n]*Vholo.diff(1).iloc[n-1]<0:
+#     # ax[0].axvline(n,color='g')
 # plt.show()
-
-peak_detection = real_time_peak_detection(array=[0]*lag, lag=lag, threshold=5, influence=0.1)
-output = []
-for n, i in enumerate(vector):
-    # if i < 0: i = 0
-    p = peak_detection.thresholding_algo(i)
-    output.append(p)
-    if p>0.9 and i>0:
-        ax[0].axvline(n)
-ax[1].plot(output);
-for n, i in enumerate(Hholo.diff(1)):
-    if n==0:continue
-    if Hholo.diff(1).iloc[n]*Hholo.diff(1).iloc[n-1]<0 or Vholo.diff(1).iloc[n]*Vholo.diff(1).iloc[n-1]<0:
-        ax[0].axvline(n,color='g')
-plt.show()
 # ((Heye-Heye.mean())*180/math.pi).plot();
 # (Hholo-Hholo.mean()).plot()
 # ((Heye-Heye.mean())*180/math.pi+(Hholo-Hholo.mean())).plot();

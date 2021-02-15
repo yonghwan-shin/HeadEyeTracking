@@ -435,7 +435,7 @@ class real_time_peak_detection():
         i = len(self.y) - 1
         self.length = len(self.y)
         if i < self.lag:
-            return 0
+            return 0,self.avgFilter[i],self.stdFilter[i]
         elif i == self.lag:
             self.signals = [0] * len(self.y)
             self.filteredY = np.array(self.y).tolist()
@@ -443,7 +443,7 @@ class real_time_peak_detection():
             self.stdFilter = [0] * len(self.y)
             self.avgFilter[self.lag - 1] = np.mean(self.y[0:self.lag]).tolist()
             self.stdFilter[self.lag - 1] = np.std(self.y[0:self.lag]).tolist()
-            return 0
+            return 0,self.avgFilter[i],self.stdFilter[i]
 
         self.signals += [0]
         self.filteredY += [0]
@@ -465,4 +465,4 @@ class real_time_peak_detection():
             self.avgFilter[i] = np.mean(self.filteredY[(i - self.lag):i])
             self.stdFilter[i] = np.std(self.filteredY[(i - self.lag):i])
 
-        return self.signals[i]
+        return self.signals[i],self.avgFilter[i],self.stdFilter[i]
