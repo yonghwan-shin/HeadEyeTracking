@@ -6,6 +6,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
+def filter_sbs(data,cutoff=10,fs=200):
+    fc=cutoff
+    w = fc/(fs/2)
+    b, a =signal.butter(3,w,'high')
+    result =[]
+    zi = signal.lfilter_zi(b,a)
+    z,_ = signal.lfilter(b,a,data,zi=zi*data[0])
+    return z
+
+
 def winter_low(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False):
     """Filters a data sample based on two past unfiltered and filtered data samples.
 
@@ -416,6 +426,7 @@ def one_euro(_data, timestamp=None, freq=60, mincutoff=1, beta=1.0, dcutoff=1.0)
             f.append(filter(_data[i], timestamp=timestamp[i]))
     return pd.Series(f)
 
+
 class real_time_peak_detection():
     def __init__(self, array, lag, threshold, influence):
         self.y = list(array)
@@ -435,7 +446,7 @@ class real_time_peak_detection():
         i = len(self.y) - 1
         self.length = len(self.y)
         if i < self.lag:
-            return 0,self.avgFilter[i],self.stdFilter[i]
+            return 0, self.avgFilter[i], self.stdFilter[i]
         elif i == self.lag:
             self.signals = [0] * len(self.y)
             self.filteredY = np.array(self.y).tolist()
@@ -443,7 +454,7 @@ class real_time_peak_detection():
             self.stdFilter = [0] * len(self.y)
             self.avgFilter[self.lag - 1] = np.mean(self.y[0:self.lag]).tolist()
             self.stdFilter[self.lag - 1] = np.std(self.y[0:self.lag]).tolist()
-            return 0,self.avgFilter[i],self.stdFilter[i]
+            return 0, self.avgFilter[i], self.stdFilter[i]
 
         self.signals += [0]
         self.filteredY += [0]
@@ -465,4 +476,4 @@ class real_time_peak_detection():
             self.avgFilter[i] = np.mean(self.filteredY[(i - self.lag):i])
             self.stdFilter[i] = np.std(self.filteredY[(i - self.lag):i])
 
-        return self.signals[i],self.avgFilter[i],self.stdFilter[i]
+        return self.signals[i], self.avgFilter[i], self.stdFilter[i]

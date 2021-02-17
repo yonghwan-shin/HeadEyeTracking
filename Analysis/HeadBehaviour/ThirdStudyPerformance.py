@@ -631,14 +631,14 @@ plt.show()
 # %%
 subject = 1
 env = 'U'
-target =6
+target = 6
 block = 1
 output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
                             study_num=3)
 eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
                     study_num=3)
 print('mean eye confidence', eye.confidence.mean())
-if eye.confidence.mean() < 0.8:
+if eye.confidence.mean() < 0.95:
     print('Too low eye confidence')
     # return
 eye = eye[eye['confidence'] > 0.8]
@@ -679,98 +679,150 @@ initial_contact_time_data = output[output[apply] < output['MaximumTargetAngle']]
 if len(initial_contact_time_data) <= 0:
     print('no contact')
 initial_contact_time = initial_contact_time_data.timestamp.values[0]
-VTarget = pd.Series(realtime_lowpass(Timestamp, VTarget(Timestamp), Vpre_cutoff))
-Vholo = pd.Series(realtime_lowpass(Timestamp, Vholo(Timestamp), Vpre_cutoff))
-Vimu = pd.Series(realtime_lowpass(Timestamp, Vimu(Timestamp), Vpre_cutoff))
-Veye = pd.Series(realtime_lowpass(Timestamp, Veye(Timestamp), Vpre_cutoff))
-HTarget = pd.Series(realtime_lowpass(Timestamp, HTarget(Timestamp), Hpre_cutoff))
-Hholo = pd.Series(realtime_lowpass(Timestamp, Hholo(Timestamp), Hpre_cutoff))
-Himu = pd.Series(realtime_lowpass(Timestamp, Himu(Timestamp), Hpre_cutoff))
-Heye = pd.Series(realtime_lowpass(Timestamp, Heye(Timestamp), Hpre_cutoff))
-Heye = Heye * 180/math.pi
-Veye =Veye * 180/math.pi
-vector = (Heye.diff(1) * Himu.diff(1) + Veye.diff(1) * Vimu.diff(1))
-vector = vector * 200 * 200
 index = len(Timestamp[Timestamp < initial_contact_time])
-vector_df = get_angle_between_vectors(Heye.diff(1), Himu.diff(1), Veye.diff(1), Vimu.diff(1))
-plt.plot(Himu)
+HTarget = pd.Series(HTarget(Timestamp))
+VTarget = pd.Series(VTarget(Timestamp))
+Vholo = pd.Series(Vholo(Timestamp))
+Veye = pd.Series(Veye(Timestamp))
+Hholo = pd.Series(Hholo(Timestamp))
+Heye = pd.Series(Heye(Timestamp))
+import scipy.signal
+
+fc = 5
+w = fc / (200 / 2)
+b, a = scipy.signal.butter(1, w, 'low')
+# Veye=  scipy.signal.filtfilt(b,a,Veye)
+# Heye = scipy.signal.filtfilt(b,a,Heye)
+# VTarget = pd.Series(realtime_lowpass(Timestamp, VTarget(Timestamp), Vpre_cutoff))
+# Vholo = pd.Series(realtime_lowpass(Timestamp, Vholo(Timestamp), Vpre_cutoff))
+# Vimu = pd.Series(realtime_lowpass(Timestamp, Vimu(Timestamp), Vpre_cutoff))
+# Veye = pd.Series(realtime_lowpass(Timestamp, Veye(Timestamp), Vpre_cutoff))
+# HTarget = pd.Series(realtime_lowpass(Timestamp, HTarget(Timestamp), Hpre_cutoff))
+# Hholo = pd.Series(realtime_lowpass(Timestamp, Hholo(Timestamp), Hpre_cutoff))
+# Himu = pd.Series(realtime_lowpass(Timestamp, Himu(Timestamp), Hpre_cutoff))
+# Heye = pd.Series(realtime_lowpass(Timestamp, Heye(Timestamp), Hpre_cutoff))
+Heye = Heye * 180 / math.pi
+Veye = Veye * 180 / math.pi
+fig, ax = plt.subplots(2, 1, figsize=(8, 10), sharex=True)
+ax[0].plot(Hholo,alpha=0.5)
+# ax[0].plot(Heye - Heye.mean())
+ax[0].plot(HTarget)
+ax[0].plot(HTarget-Hholo)
+ax[0].axvline(index)
 # plt.show()
-plt.plot(Himu[0] +Heye.diff(1)*200+Himu.diff(1)*200)
-# plt.plot(Himu+Heye-Heye.mean())
 
+import scipy.stats
+
+window = 100
+rs = []
+ps = []
+linreg_slopes = []
+linreg_intercepts = []
+linreg_rs = []
+linreg_ps = []
+comp=[0,0]
+simple=[0,0]
+Heye_rolling=Heye-pd.Series(Heye).rolling(100,min_periods=1).mean()
+# comp = [0] * window
+for i in range(2, len(Hholo)):
+
+    if i < window:
+        if i==2:
+            comp.append(0);simple.append(0);continue
+        r, p = scipy.stats.pearsonr(np.array(Hholo[:i]), np.array(Heye[:i]))
+        result = scipy.stats.linregress(np.array(Hholo[:i]), np.array(Heye[:i]))
+        # rs.append(r)
+        # ps.append(p)
+        # linreg_slopes.append(result.slope)
+        # linreg_intercepts.append(result.intercept)
+        # linreg_rs.append(result.rvalue)
+        # linreg_ps.append(result.pvalue)
+        #
+        # continue
+    else:
+        r, p = scipy.stats.pearsonr(np.array(Heye[i - window:i]), np.array(Hholo[i - window:i]))
+        result = scipy.stats.linregress(np.array(Heye[i - window:i]), np.array(Hholo[i - window:i]))
+    rs.append(r)
+    ps.append(p)
+    linreg_slopes.append(result.slope)
+    linreg_intercepts.append(result.intercept)
+    linreg_rs.append(result.rvalue ** 2)
+    linreg_ps.append(result.pvalue)
+    if  linreg_ps[-1] < 0.05 and result.slope < 0.75 and result.rvalue**2 >0.5:
+        # comp.append(-1*(result.slope * Heye[i] + result.intercept) + np.array(Hholo[i - window:i]).mean())
+        simple.append(Hholo[i]+Heye_rolling[i])
+        comp.append(-1*(linreg_slopes[-1] * Heye[i] + result.intercept) + np.array(Hholo[i - window:i]).mean())
+    else:
+        # comp.append(Hholo[i])
+        simple.append(Hholo[i])
+        comp.append(0)
+
+# ax[0].plot(signal.filtfilt(b,a,comp))
+# ax[0].plot(signal.filtfilt(b,a,comp+Hholo))
+ax[0].plot(comp)
+ax[0].plot(comp+Hholo)
+ax[0].plot(Heye-pd.Series(Heye).rolling(100,min_periods=1).mean())
+ax[0].plot(simple)
+ax[0].plot(pd.Series(simple)-Hholo)
+print((HTarget-Hholo).mean(),(HTarget-Hholo).std() )
+print((HTarget-simple).mean(),(HTarget-simple).std())
+ax[1].plot(linreg_slopes, label='slope')
+# plt.plot(linreg_intercepts,label='intercepts')
+ax[1].plot(linreg_rs, label='rvalues')
+ax[1].plot(linreg_ps, label='pvalues')
+plt.legend()
+ax[1].set_ylim((-2, 2))
+plt.axvline(index, color='red', alpha=0.4)
 plt.show()
-# Hholo.plot();
-# plt.axvline(index);plt.show()
-# Himu.plot();
-# plt.axvline(index);plt.show()
-# Heye.plot();
-# plt.axvline(index);plt.show()
-# vector_df.eye_magnitude.plot()
 
-
-# Heye.diff(1).plot()
-# plt.axvline(index);plt.show()
-# Veye.diff(1).plot()
-# plt.axvline(index);plt.show()
-# #
-# vector_df.imu_magnitude.plot()
-# plt.axvline(index);plt.show()
-# Himu.plot()
-# plt.axvline(index);plt.show()
-# Vimu.plot()
-# plt.axvline(index);plt.show()
-# vector = vector.append(vector)
-
-# fig, ax = plt.subplots(2, 1, figsize=(10, 10))
-# lag = 20
-#
-# ax[0].plot(list(vector))
-# # ax[0].axhline(5)
-# ax[0].axvline(index, color='r');
-# ax[1].axvline(index, color='r');
+# fig, ax = plt.subplots(2, 1, figsize=(8, 10), sharex=True)
+# ax[0].plot(Vholo)
+# ax[0].plot(Veye - Veye.mean())
+# ax[0].plot(VTarget)
+# ax[0].plot(Vholo + Veye - Veye.mean())
+# ax[0].axvline(index)
 # # plt.show()
 #
-# # peak_detection = real_time_peak_detection(array=[0]*lag, lag=lag, threshold=5, influence=0.1)
-# threshold = 10
-# peak_detection = real_time_peak_detection(array=vector[:lag], lag=lag, threshold=threshold, influence=0.10)
-# output = [0] * lag
-# for n, i in enumerate(vector[lag:]):
-#     # if i < 0: i = 0
+# import scipy.stats
 #
-#     p, avg, dev = peak_detection.thresholding_algo(i)
-#     output.append(p)
+# window = 100
+# rs = []
+# ps = []
+# linreg_slopes = []
+# linreg_intercepts = []
+# linreg_rs = []
+# linreg_ps = []
 #
-#     # if p > 0.9 and i > 0:
-#     #     ax[0].axvline(n + lag, alpha=0.2)
-# # ax[0].plot(list(pd.Series(peak_detection.avgFilter)), color='cyan')
-# # ax[0].plot(list(pd.Series(peak_detection.avgFilter) + pd.Series(peak_detection.stdFilter) * threshold), color='g')
-# # ax[0].plot(list(pd.Series(peak_detection.avgFilter) - pd.Series(peak_detection.stdFilter) * threshold), color='g')
+# for i in range(2, len(Vholo)):
 #
-# # ax[0].plot(ii, upper, color='g')
-# # ax[0].plot(ii, lower, color='g')
-# ax[1].plot(output);
-# for n, i in enumerate(Hholo.diff(1)):
-#     if n == 0: continue
-#     # if Hholo.diff(1).iloc[n]*Hholo.diff(1).iloc[n-1]<0 or Vholo.diff(1).iloc[n]*Vholo.diff(1).iloc[n-1]<0:
-#     # ax[0].axvline(n,color='g')
-# plt.show()
-# ((Heye-Heye.mean())*180/math.pi).plot();
-# (Hholo-Hholo.mean()).plot()
-# ((Heye-Heye.mean())*180/math.pi+(Hholo-Hholo.mean())).plot();
-# (HTarget-Hholo.mean()).plot()
-# plt.show()
-# # (Himu-Himu.mean()).plot();plt.show()
+#     if i < window:
+#         r, p = scipy.stats.pearsonr(np.array(Vholo[:i]), np.array(Veye[:i]))
+#         result = scipy.stats.linregress(np.array(Vholo[:i]), np.array(Veye[:i]))
+#         rs.append(r)
+#         ps.append(p)
+#         linreg_slopes.append(result.slope)
+#         linreg_intercepts.append(result.intercept)
+#         linreg_rs.append(result.rvalue)
+#         linreg_ps.append(result.pvalue)
+#         continue
+#     r, p = scipy.stats.pearsonr(np.array(Vholo[i - window:i]), np.array(Veye[i - window:i]))
+#     result = scipy.stats.linregress(np.array(Vholo[i - window:i]), np.array(Veye[i - window:i]))
+#     rs.append(r)
+#     ps.append(p)
+#     linreg_slopes.append(result.slope)
+#     linreg_intercepts.append(result.intercept)
+#     linreg_rs.append(result.rvalue ** 2)
+#     linreg_ps.append(result.pvalue)
 #
-# ((Veye-Veye.mean())*180/math.pi).plot();
-# (Vholo-Vholo.mean()).plot()
+# # plt.plot(rs);
 #
-# ((Veye-Veye.mean())*180/math.pi+(Vholo-Vholo.mean())).plot();
-# (VTarget-Vholo.mean()).plot()
-# plt.show()
-#
-# ((Veye-Veye.mean())*180/math.pi).plot();
-# (Vimu-Vimu.mean()).plot()
-#
-# ((Veye-Veye.mean())*180/math.pi+(Vimu-Vimu.mean())).plot();
-# (VTarget-Vholo.mean()).plot()
+# # plt.plot(ps);
+# # plt.show()
+# ax[1].plot(linreg_slopes, label='slope')
+# # plt.plot(linreg_intercepts,label='intercepts')
+# ax[1].plot(linreg_rs, label='rvalues')
+# ax[1].plot(linreg_ps, label='pvalues')
+# plt.legend()
+# ax[1].set_ylim((-2, 2))
+# plt.axvline(index, color='red', alpha=0.4)
 # plt.show()
