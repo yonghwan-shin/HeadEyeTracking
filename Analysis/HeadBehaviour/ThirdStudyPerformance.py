@@ -704,31 +704,33 @@ b, a = scipy.signal.butter(1, w, 'low')
 Heye = Heye * 180 / math.pi
 Veye = Veye * 180 / math.pi
 fig, ax = plt.subplots(2, 1, figsize=(8, 10), sharex=True)
-ax[0].plot(Hholo,alpha=0.5)
+ax[0].plot(Hholo, alpha=0.5)
 # ax[0].plot(Heye - Heye.mean())
 ax[0].plot(HTarget)
-ax[0].plot(HTarget-Hholo)
+ax[0].plot(HTarget - Hholo)
 ax[0].axvline(index)
 # plt.show()
 
 import scipy.stats
 
-window = 100
+window = 50
 rs = []
 ps = []
 linreg_slopes = []
 linreg_intercepts = []
 linreg_rs = []
 linreg_ps = []
-comp=[0,0]
-simple=[0,0]
-Heye_rolling=Heye-pd.Series(Heye).rolling(100,min_periods=1).mean()
+comp = [0, 0]
+simple = [0, 0]
+Heye_rolling = Heye - pd.Series(Heye).rolling(100, min_periods=1).mean()
 # comp = [0] * window
 for i in range(2, len(Hholo)):
 
     if i < window:
-        if i==2:
-            comp.append(0);simple.append(0);continue
+        if i == 2:
+            comp.append(0);
+            simple.append(0);
+            continue
         r, p = scipy.stats.pearsonr(np.array(Hholo[:i]), np.array(Heye[:i]))
         result = scipy.stats.linregress(np.array(Hholo[:i]), np.array(Heye[:i]))
         # rs.append(r)
@@ -748,10 +750,10 @@ for i in range(2, len(Hholo)):
     linreg_intercepts.append(result.intercept)
     linreg_rs.append(result.rvalue ** 2)
     linreg_ps.append(result.pvalue)
-    if  linreg_ps[-1] < 0.05 and result.slope < 0.75 and result.rvalue**2 >0.5:
+    if linreg_ps[-1] < 0.05 and result.slope < 0.75 and result.rvalue ** 2 > 0.5:
         # comp.append(-1*(result.slope * Heye[i] + result.intercept) + np.array(Hholo[i - window:i]).mean())
-        simple.append(Hholo[i]+Heye_rolling[i])
-        comp.append(-1*(linreg_slopes[-1] * Heye[i] + result.intercept) + np.array(Hholo[i - window:i]).mean())
+        simple.append(Hholo[i] + Heye_rolling[i])
+        comp.append(-1 * (linreg_slopes[-1] * Heye[i] + result.intercept) + np.array(Hholo[i - window:i]).mean())
     else:
         # comp.append(Hholo[i])
         simple.append(Hholo[i])
@@ -760,12 +762,12 @@ for i in range(2, len(Hholo)):
 # ax[0].plot(signal.filtfilt(b,a,comp))
 # ax[0].plot(signal.filtfilt(b,a,comp+Hholo))
 ax[0].plot(comp)
-ax[0].plot(comp+Hholo)
-ax[0].plot(Heye-pd.Series(Heye).rolling(100,min_periods=1).mean())
+ax[0].plot(comp + Hholo)
+ax[0].plot(Heye - pd.Series(Heye).rolling(100, min_periods=1).mean())
 ax[0].plot(simple)
-ax[0].plot(pd.Series(simple)-Hholo)
-print((HTarget-Hholo).mean(),(HTarget-Hholo).std() )
-print((HTarget-simple).mean(),(HTarget-simple).std())
+ax[0].plot(pd.Series(simple) - Hholo)
+print((HTarget - Hholo)[index:].mean(), signal.filtfilt(b, a, HTarget - Hholo)[index:].std())
+print((HTarget - simple)[index:].mean(), signal.filtfilt(b, a, HTarget - simple)[index:].std())
 ax[1].plot(linreg_slopes, label='slope')
 # plt.plot(linreg_intercepts,label='intercepts')
 ax[1].plot(linreg_rs, label='rvalues')

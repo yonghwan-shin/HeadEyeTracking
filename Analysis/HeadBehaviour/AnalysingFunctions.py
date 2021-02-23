@@ -116,7 +116,14 @@ def murphy_high(cutoff_freq, sample_time, x0, x1, x2, y1, y2, print_coeff=False)
 
     return c0 * x0 + c1 * x1 + c2 * x2 + d1 * y1 + d2 * y2
 
-
+def realtime_highpass(time, sig, cutoff):
+    output = [0, 0]
+    for i in range(2, len(time)):
+        output.append(murphy_high(cutoff,
+                                 time[i] - time[i - 1],
+                                 sig[i], sig[i - 1], sig[i - 2],
+                                 output[i - 1], output[i - 2]))
+    return output
 def realtime_lowpass(time, sig, cutoff):
     output = [sig[0], sig[1]]
     for i in range(2, len(time)):
