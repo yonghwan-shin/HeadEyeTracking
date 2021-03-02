@@ -113,6 +113,7 @@ class ZMQ_listener(threading.Thread):
                 topic, payload = subscriber.recv_multipart()
 
                 message = msgpack.unpackb(payload)
+                pos = message['norm_pos']
                 # undefined error (might be msgpack version conflict) , originally -> message = msgpack.unpackb(
                 # payload, encoding='utf-8')
 
@@ -143,17 +144,17 @@ class ZMQ_listener(threading.Thread):
                 SENDING PART
                 """
                 # message length: prefix 1 + confidence 1 + delimiter 1 + postfix 1 + data 6*2 = 16
-                prefix = 1
-                confidence = int(message["confidence"] * 7)
-                x = int(message["norm_pos"][0] * 10 ** 4)
-                y = int(message["norm_pos"][1] * 10 ** 4)
-                # Actual message with 32-bit array
-                send_binary = np.binary_repr(prefix, width=1) \
-                              + np.binary_repr(confidence, width=3) \
-                              + np.binary_repr(x, width=14) \
-                              + np.binary_repr(y, width=14)
-                # Unsigned 32 bit int ( UInt32 on C#)
-                send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
+                # prefix = 1
+                # confidence = int(message["confidence"] * 7)
+                # x = int(message["norm_pos"][0] * 10 ** 4)
+                # y = int(message["norm_pos"][1] * 10 ** 4)
+                # # Actual message with 32-bit array
+                # send_binary = np.binary_repr(prefix, width=1) \
+                #               + np.binary_repr(confidence, width=3) \
+                #               + np.binary_repr(x, width=14) \
+                #               + np.binary_repr(y, width=14)
+                # # Unsigned 32 bit int ( UInt32 on C#)
+                # send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
 
                 self.Holo.write(send_uint32)
                 if self.recording:
