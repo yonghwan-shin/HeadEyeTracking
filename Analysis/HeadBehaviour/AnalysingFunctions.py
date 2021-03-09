@@ -542,3 +542,67 @@ class real_time_peak_detection():
             self.stdFilter[i] = np.std(self.filteredY[(i - self.lag):i])
 
         return self.signals[i], self.avgFilter[i], self.stdFilter[i]
+
+
+def dispersion(x, y):
+    if len(x) == 0:
+        return 0
+
+    res = math.sqrt(
+        (np.max(x) - np.min(x)) ** 2 +
+        (np.max(y) - np.min(y)) ** 2
+    )
+    return res
+
+
+def norm_dist(x, mu, sigma):
+    return math.e ** (-(x - mu) ** 2 / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * math.pi))
+
+
+def single_item_jitter(data, print_debug=False):
+    output = [data[0], data[1]]
+    for i in range(2, len(data)):
+        g = data[i - 1]
+        x = data[i]
+        x1 = data[i - 1]
+        x2 = data[i - 2]
+        if print_debug:
+            print(x2, x1, x)
+        if (x1 < x and x1 < x2) or (x2 < x1 and x < x1):
+            if print_debug:
+                print('jitter')
+            if abs(x2 - x2) < abs(x - x1):
+                g = x2
+            else:
+                g = x
+        output[i - 1] = g
+        output.append(x)
+    return output
+
+
+def double_item_jitter(data, print_debug=False):
+    output = [data[0], data[1], data[2]]
+
+    for i in range(3, len(data)):
+        g1 = data[i - 1]
+        g2 = data[i - 2]
+        x = data[i]
+        x1 = data[i - 1]
+        x2 = data[i - 2]
+        x3 = data[i - 3]
+        # if print_debug:
+        #     print(x3, x2, x1, x)
+        if (x2 == x1) and not (x == x1 or x2 == x3):
+            if print_debug:
+                print('jitter')
+            if abs(x1 - x) < abs(x1 - x3):
+                g1 = x
+                g2 = x
+            else:
+                g1 = x3
+                g2 = x3
+        output[i - 1] = g1
+        output[i - 2] = g2
+        output.append(x)
+
+    return output
