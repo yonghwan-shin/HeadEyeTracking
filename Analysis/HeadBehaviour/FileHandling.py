@@ -12,6 +12,57 @@ from scipy import interpolate, signal
 # %%
 
 
+def interpolate_dataframe(df, startTime=0, endTime=6.5, framerate=200):
+    data = dict()
+    T = np.arange(startTime, endTime, 1 / framerate)
+    for col in df.columns:
+        try:
+            interpolation_function = interpolate.interp1d(df.timestamp, df[str(col)], fill_value='extrapolate')
+            interpolated_data = interpolation_function(T)
+            data[str(col)] = interpolated_data
+        except Exception as e:
+            print(col, e)
+    return pd.DataFrame(data=data)
+
+
+def bring_one_trial(target, env, posture, block, subject, study_num=3):
+    try:
+        output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                                    study_num=3)
+
+        eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                            study_num=3)
+        print(eye.confidence.mean())
+        # eye = eye[eye['confidence'] > 0.8]
+        imu = read_imu_data(target=target, environment=env, posture='W', block=block, subject=subject,
+                            study_num=3)
+        shift, corr, shift_time = synchronise_timestamp(imu, output, show_plot=False)
+        eye.timestamp = eye.timestamp - shift_time
+        imu.timestamp = imu.timestamp - shift_time
+        if env == 'W':
+            r = 0.3 / 2
+        else:
+            r = 0.3 / 2
+        apply = 'angular_distance'
+        output['MaximumTargetAngle'] = (r * 1 / output.Distance).apply(math.asin) * 180 / math.pi
+        initial_contact_time_data = output[output[apply] < output['MaximumTargetAngle']]
+        if len(initial_contact_time_data) <= 0:
+            print('no contact');
+            return
+            # continue
+        initial_contact_time = initial_contact_time_data.timestamp.values[0]
+        # index = len(Timestamp[Timestamp < initial_contact_time])
+
+        eye.theta = (eye.theta - eye.theta[0]) * 360 / (2 * math.pi)
+        eye.phi = (eye.phi - eye.phi[0]) * 360 / (2 * math.pi)
+    except Exception as e:
+        print(e)
+        return
+    return output, eye, imu, initial_contact_time
+    # eye.theta = double_item_jitter(single_item_jitter(eye.theta))
+    # eye.phi = double_item_jitter(single_item_jitter(eye.phi))
+
+
 def change_angle(_angle):
     if _angle > 180:
         _angle = _angle - 360
@@ -204,13 +255,13 @@ def read_eye_data(target, environment, posture, block, subject, study_num):
                         'norm_x': float,
                         'norm_y': float
                     })
-                    output=third_output
+                    output = third_output
                     return output
             whole_files = data_root.rglob('EYE*' + trial_detail + '*.csv')
             for file in whole_files:
                 if trial_detail in file.name:
                     with open(file) as f:
-                        third_output = pd.DataFrame(f,header=1)
+                        third_output = pd.DataFrame(f, header=1)
                         third_output.timestamp = third_output.timestamp - third_output.python_timestamp[0]
                         third_output.python_timestamp = third_output.python_timestamp - third_output.python_timestamp[0]
                         third_output = third_output.astype({
