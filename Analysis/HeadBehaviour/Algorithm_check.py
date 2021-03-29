@@ -8,6 +8,8 @@ import plotly.io as pio
 import seaborn as sns
 from natsort import natsorted
 
+# import remodnav
+
 """
 NOTE: vertical/horizontal parameters
 Vertical:     imu-x/head-rotation-x/holo-the/eye-y/eye-the
@@ -15,16 +17,15 @@ Horizontal:   imu-z/head-rotation-y/holo-phi/eye-x/eye-phi
 """
 sns.set_theme(style='whitegrid')
 pio.renderers.default = 'browser'
-# subject = 1
-# env = 'U'
-# target = 3
-# block = 3
-# holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
-#                                                        subject=subject, study_num=3)
-# eye.theta = double_item_jitter(single_item_jitter(eye.theta))
-# eye.phi = double_item_jitter(single_item_jitter(eye.phi))
-
-# %% Check Ground Truth
+subject = 1
+env = 'U'
+target = 3
+block = 3
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+                                                       subject=subject, study_num=3)
+eye.theta = double_item_jitter(single_item_jitter(eye.theta))
+eye.phi = double_item_jitter(single_item_jitter(eye.phi))
+# %% Check stand-condition data
 subject = 2
 env = 'U'
 target = 3
@@ -33,6 +34,26 @@ holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, p
                                                        subject=subject, study_num=3)
 eye = eye[eye.confidence > 0.8]
 fc = 10
+holo = interpolate_dataframe(holo)
+eye = interpolate_dataframe(eye)
+imu = interpolate_dataframe(imu)
+holo['added_yaw'] = holo.head_rotation_y + eye.phi
+holo['added_pitch'] = holo.head_rotation_x - eye.theta
+data = [holo['added_yaw'], holo['added_pitch']]
+eye_tsv = pd.concat(data, axis=1)
+eye_tsv.to_csv('testADD.tsv', sep='\t', header=None, index=False)
+
+# a = remodnav.main(['remodnav', 'testADD.tsv', 'eventsADD.tsv', '1.0', '200'])
+
+# %% Check Ground Truth
+subject = 14
+env = 'U'
+target = 3
+block = 2
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+                                                       subject=subject, study_num=3)
+eye = eye[eye.confidence > 0.8]
+fc = 5
 holo = interpolate_dataframe(holo)
 eye = interpolate_dataframe(eye)
 imu = interpolate_dataframe(imu)
@@ -60,99 +81,74 @@ for i in [601]:  # median filter
     eye['median_phi_filtered'] = eye['filtered_phi'] - a
     eye['median_theta_filtered'] = eye['filtered_theta'] - b
 
-eye_dist = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt)
-eye_vel = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt) / eye.timestamp.diff(1)
-eye_vel_filtered = (eye['median_phi_filtered'].diff(1) ** 2 + eye['median_theta_filtered'].diff(
-    1) ** 2).apply(math.sqrt) / eye.timestamp.diff(1)
-head_dist = (holo.head_rotation_y.diff(1) ** 2 + holo.head_rotation_y.diff(1) ** 2).apply(math.sqrt)
-head_vel = (holo.head_rotation_y.diff(1) ** 2 + holo.head_rotation_y.diff(1) ** 2).apply(
-    math.sqrt) / holo.timestamp.diff(1)
-imu_dist = (imu.rotationX.diff(1) ** 2 + imu.rotationZ.diff(1) ** 2).apply(math.sqrt)
-imu_vel = (imu.rotationX.diff(1) ** 2 + imu.rotationZ.diff(1) ** 2).apply(math.sqrt) / imu.timestamp.diff(1)
+summary = pd.DataFrame()
+summary['timestamp'] = holo.timestamp
+summary['H_eye_distance'] = eye['median_phi_filtered'].diff(1)
+summary['V_eye_distance'] = eye['median_theta_filtered'].diff(1)
+summary['eye_distance'] = (summary['H_eye_distance'] ** 2 + summary['V_eye_distance'] ** 2).apply(math.sqrt)
+summary['H_eye_velocity'] = eye['median_phi_filtered'].diff(1).apply(math.sin) / eye.timestamp.diff(1)
+summary['V_eye_velocity'] = eye['median_theta_filtered'].diff(1).apply(math.sin) / eye.timestamp.diff(1)
+summary['eye_velocity'] = (summary.H_eye_velocity ** 2 + summary.V_eye_velocity ** 2).apply(math.sqrt)
 
-holo['added_yaw'] = holo.head_rotation_y + eye.median_phi
-holo['added_pitch'] = holo.head_rotation_x - eye.median_theta
-holo['added_vel'] = (holo['added_yaw'].diff(1) ** 2 + holo['added_pitch'].diff(1) ** 2).apply(
-    math.sqrt) / holo.timestamp.diff(1)
+summary['H_head_distance'] = holo['filtered_head_rotation_y'].diff(1)
+summary['V_head_distance'] = holo['filtered_head_rotation_x'].diff(1)
+summary['head_distance'] = (summary['H_head_distance'] ** 2 + summary['V_head_distance'] ** 2).apply(math.sqrt)
+summary['H_head_velocity'] = summary['H_head_distance'].apply(math.sin) / holo.timestamp.diff(1)
+summary['V_head_velocity'] = summary['V_head_distance'].apply(math.sin) / holo.timestamp.diff(1)
+summary['head_velocity'] = (summary.H_head_velocity ** 2 + summary.V_head_velocity ** 2).apply(math.sqrt)
 
-holo['added_yaw_filtered'] = butter_lowpass_filter(holo['added_yaw'], fc, 200)
-holo['added_pitch_filtered'] = butter_lowpass_filter(holo['added_pitch'], fc, 200)
-holo['added_vel_filtered'] = (holo['added_yaw_filtered'].diff(1) ** 2 + holo['added_pitch_filtered'].diff(
-    1) ** 2).apply(
-    math.sqrt) / holo.timestamp.diff(1)
-from scipy.signal import find_peaks
+summary['H_add_distance'] = (eye['median_phi_filtered'] + holo['filtered_head_rotation_y']).diff(1)
+summary['V_add_distance'] = (-eye['median_theta_filtered'] + holo['filtered_head_rotation_x']).diff(1)
+summary['add_distance'] = (summary['H_add_distance']**2 + summary['V_add_distance']**2).apply(math.sqrt)
+summary['H_add_velocity'] = summary['H_add_distance'].apply(math.sin)/holo.timestamp.diff(1)
+summary['V_add_velocity'] = summary['V_add_distance'].apply(math.sin)/holo.timestamp.diff(1)
+summary['add_velocity'] = (summary.H_add_velocity ** 2 + summary.V_add_velocity**2).apply(math.sqrt)
+window = 20
+window_feature_vectors = []
+for i in range(len(summary)):
+    if i <= window:
+        window_feature_vectors.append(None)
+        continue
+    eye_angular_distance = summary.eye_distance[i - window:i].mean()
+    head_angular_distance = summary.head_distance[i - window:i].mean()
+    eye_velocity_deviation = summary.eye_velocity[i - window:i].std()
+    head_velocity_deviation = summary.head_velocity[i - window:i].std()
+    absolute_eye_velocities = list(summary.eye_velocity[i - window:i])
+    absolute_head_velocities = list(summary.head_velocity[i - window:i])
+    H_eye_angular_velocity = list(summary.H_eye_velocity[i - window:i])
+    V_eye_angular_velocity = list(summary.V_eye_velocity[i - window:i])
+    H_head_angular_velocity = list(summary.H_head_velocity[i - window:i])
+    V_head_angular_velocity = list(summary.V_head_velocity[i - window:i])
+    window_feature_vector = [absolute_eye_velocities, absolute_head_velocities, H_eye_angular_velocity,
+                             H_head_angular_velocity, V_eye_angular_velocity, V_head_angular_velocity,
+                             eye_angular_distance, head_angular_distance, eye_velocity_deviation,
+                             head_velocity_deviation]
+    window_feature_vectors.append(window_feature_vector)
+summary['window_feature_vector'] = window_feature_vectors
 
-# eye.theta.plot()
-# eye.phi.plot()
-# plt.title("theta,phi")
-# plt.show()
-# plt.plot(eye.timestamp, eye_vel)
+plt.plot(summary.timestamp, summary.eye_velocity.rolling(window,min_periods=1).mean(), label='eye_vel')
+plt.plot(summary.timestamp, summary.head_velocity.rolling(window,min_periods=1).mean(), label='head_vel')
+plt.plot(summary.timestamp, summary.add_velocity.rolling(window,min_periods=1).mean(), label='add_vel')
+plt.axvline(initial_contact_time)
+plt.legend()
+plt.show()
+plt.plot(summary.timestamp,(summary.eye_velocity/summary.head_velocity).rolling(window,min_periods=1).mean(),label='eye/head')
+plt.plot(summary.timestamp,summary.add_velocity/summary.head_velocity.rolling(window,min_periods=1).mean(),label='add/head')
+plt.legend()
+plt.ylim(0,3)
+plt.show()
+plt.plot(holo.timestamp,holo.head_rotation_x)
+plt.plot(imu.timestamp,imu.rotationX)
+plt.show()
+plt.plot(holo.timestamp,holo.head_rotation_y)
+plt.plot(imu.timestamp,imu.rotationZ)
+# plt.plot(holo.timestamp,holo.head_rotation_x)
+# plt.plot(holo.timestamp,holo.head_rotation_y)
+# plt.plot(holo.timestamp,holo.angular_distance)
 # plt.axvline(initial_contact_time)
 # plt.show()
-plt.plot(holo.timestamp, head_vel, label='head_vel', alpha=0.5)
-peaks, _ = find_peaks(head_vel, height=20, distance=50)
-plt.plot(holo.timestamp[peaks], head_vel[peaks], 'x')
-plt.axhline(20)
-plt.legend()
-plt.show()
-# plt.plot(imu.timestamp, imu_vel)
-# plt.plot(eye.timestamp, eye_vel, label='eye_vel', alpha=0.5)
-plt.plot(eye.timestamp, eye_vel_filtered, label='eye_vel_filtered')
-peaks, _ = find_peaks(eye_vel_filtered, height=20, distance=20)
-plt.plot(eye.timestamp[peaks], eye_vel_filtered[peaks], 'x')
-plt.show()
-# plt.plot(holo.timestamp, holo.added_vel, label='added_vel', alpha=0.5)
-plt.plot(holo.timestamp, holo.added_vel_filtered, label='added_vel_filtered')
-peaks,_=find_peaks(holo.added_vel_filtered,height = 20,distance = 50)
-plt.plot(holo.timestamp[peaks],holo.added_vel_filtered[peaks],'x')
-plt.axvline(initial_contact_time)
-plt.legend()
-plt.show()
-plt.plot(holo.timestamp, holo.head_rotation_y)
-plt.plot(holo.timestamp, butter_lowpass_filter(holo.head_rotation_y, fc, 200), linestyle='--')
-plt.plot(eye.timestamp, eye.phi, alpha=0.2)
-plt.plot(eye.timestamp, eye.median_phi)
-plt.plot(holo.timestamp, holo.added_yaw, alpha=0.4)
-plt.plot(holo.timestamp, butter_lowpass_filter(holo.added_yaw, fc, 200))
 
-plt.plot(holo.timestamp, -holo.TargetHorizontal, alpha=0.3)
-plt.plot(holo.timestamp, holo.Phi, alpha=0.3)
-plt.axvline(initial_contact_time)
-plt.show()
-plt.plot(holo.timestamp, holo.head_rotation_x)
-plt.plot(holo.timestamp, butter_lowpass_filter(holo.head_rotation_x, fc, 200), linestyle='--')
-plt.plot(eye.timestamp, -eye.theta, alpha=0.2)
-plt.plot(eye.timestamp, -eye.median_theta)
-plt.plot(holo.timestamp, holo.added_pitch, alpha=0.4)
-plt.plot(holo.timestamp, butter_lowpass_filter(holo.added_pitch, fc, 200))
-plt.plot(holo.timestamp, -holo.TargetVertical, alpha=0.3)
-plt.plot(holo.timestamp, holo.Theta, alpha=0.3)
-plt.axvline(initial_contact_time)
-plt.show()
-
-# lookup = 120
-# xs = list(range(lookup))
-# fig = go.Figure(
-#     data=[
-#         go.Scatter(x=xs, y=eye.theta[:lookup], name='theta'),
-#         go.Scatter(x=xs, y=eye.phi[:lookup], name='phi'),
-#     ]
-# )
-# fig.show()
-# fig = go.Figure(
-#     data=[
-#         go.Scatter(x=xs, y=eye_vel[:lookup])
-#     ]
-# )
-# fig.show()
-# fig = go.Figure(
-#     data=[
-#         go.Scatter(x=holo.timestamp,y=holo.head_rotation_y,name='yaw'),
-#         go.Scatter(x=holo.timestamp,y=holo.head_rotation_x,name='pitch'),
-#     ]
-# )
-# fig.show()
-print(initial_contact_time, len(eye.timestamp[eye.timestamp <= initial_contact_time]))
+print('contact time', initial_contact_time, 'contact frame', len(eye.timestamp[eye.timestamp <= initial_contact_time]))
 
 """
 1 U 3 3 -> 51-55, 125
@@ -221,7 +217,7 @@ fig = ff.create_distplot(hist_data, labels)
 fig.show()
 
 # %%
-Nw = 5
+Nw = 10
 
 window = 120
 

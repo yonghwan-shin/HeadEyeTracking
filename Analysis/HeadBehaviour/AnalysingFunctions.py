@@ -1,4 +1,5 @@
 from scipy import signal
+from EyeBehaviourDetection import *
 import numpy as np
 import math
 import vg

@@ -21,7 +21,7 @@ def interpolate_dataframe(df, startTime=0, endTime=6.5, framerate=200):
             interpolated_data = interpolation_function(T)
             data[str(col)] = interpolated_data
         except Exception as e:
-            print(col, e)
+            pass;# print(col, e)
     return pd.DataFrame(data=data)
 
 
@@ -32,7 +32,7 @@ def bring_one_trial(target, env, posture, block, subject, study_num=3):
 
         eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
                             study_num=3)
-        print(eye.confidence.mean())
+        print('mean eye confidence:',eye.confidence.mean())
         # eye = eye[eye['confidence'] > 0.8]
         imu = read_imu_data(target=target, environment=env, posture='W', block=block, subject=subject,
                             study_num=3)
