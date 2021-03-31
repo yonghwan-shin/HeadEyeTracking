@@ -8,6 +8,7 @@ import pandas as pd
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 
+
 def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     """
     Create a plot of the covariance confidence ellipse of *x* and *y*.
@@ -220,16 +221,18 @@ def angle_distance(x, y, z, x1, y1, z1):
 
 
 def get_cosine(a, b, c, d):
-    u = np.array([a, c])
-    v = np.array([b, d])
-    u = u / np.linalg.norm(u)
-    v = v / np.linalg.norm(v)
+    # u = np.array([a, c])
+    # v = np.array([b, d])
+    # u = u / np.linalg.norm(u)
+    # v = v / np.linalg.norm(v)
     # c= np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v)
     # angle = np.degrees(np.arccos(np.clip(c,-1,1)))
-    dot_product = np.dot(u, v)
-    angle = np.degrees(np.arccos(dot_product))
+    # dot_product = np.dot(u, v)
+    dot_product = a * b + c * d
+    cosine_theta = dot_product / (math.sqrt(a ** 2 + c ** 2) * math.sqrt(b ** 2 + d ** 2))
+    angle = np.degrees(np.arccos(cosine_theta))
     # if angle > 90:
-    #     angle = 180-angle
+    #     angle = angle-360
     return angle
 
 
@@ -605,4 +608,12 @@ def double_item_jitter(data, print_debug=False):
         output[i - 2] = g2
         output.append(x)
 
+    return output
+
+def lerp(data,coef):
+    output=[]
+    output.append(data[0])
+    for i in range(1,len(data)):
+        cursor = (1-coef)*output[i-1] + coef*data[i]
+        output.append(cursor)
     return output

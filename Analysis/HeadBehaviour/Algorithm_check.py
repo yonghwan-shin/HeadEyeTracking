@@ -17,14 +17,14 @@ Horizontal:   imu-z/head-rotation-y/holo-phi/eye-x/eye-phi
 """
 sns.set_theme(style='whitegrid')
 pio.renderers.default = 'browser'
-subject = 1
-env = 'U'
-target = 3
-block = 3
-holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
-                                                       subject=subject, study_num=3)
-eye.theta = double_item_jitter(single_item_jitter(eye.theta))
-eye.phi = double_item_jitter(single_item_jitter(eye.phi))
+# subject = 1
+# env = 'U'
+# target = 3
+# block = 3
+# holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+#                                                        subject=subject, study_num=3)
+# eye.theta = double_item_jitter(single_item_jitter(eye.theta))
+# eye.phi = double_item_jitter(single_item_jitter(eye.phi))
 # %% Check stand-condition data
 subject = 2
 env = 'U'
@@ -46,10 +46,10 @@ eye_tsv.to_csv('testADD.tsv', sep='\t', header=None, index=False)
 # a = remodnav.main(['remodnav', 'testADD.tsv', 'eventsADD.tsv', '1.0', '200'])
 
 # %% Check Ground Truth
-subject = 14
+subject = 16
 env = 'U'
 target = 3
-block = 2
+block = 3
 holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
                                                        subject=subject, study_num=3)
 eye = eye[eye.confidence > 0.8]
@@ -59,6 +59,7 @@ eye = interpolate_dataframe(eye)
 imu = interpolate_dataframe(imu)
 imu['rotationX'] = imu['rotationX'] - imu['rotationX'][0]
 imu['rotationZ'] = imu['rotationZ'] - imu['rotationZ'][0]
+imu['rotationY'] = imu['rotationY'] - imu['rotationY'][0]
 eye['filtered_phi'] = butter_lowpass_filter(eye.phi, fc, 200, real_time=True)
 eye['filtered_theta'] = butter_lowpass_filter(eye.theta, fc, 200, real_time=True)
 holo['filtered_head_rotation_y'] = butter_lowpass_filter(holo.head_rotation_y, fc, 200, real_time=True)
@@ -99,10 +100,10 @@ summary['head_velocity'] = (summary.H_head_velocity ** 2 + summary.V_head_veloci
 
 summary['H_add_distance'] = (eye['median_phi_filtered'] + holo['filtered_head_rotation_y']).diff(1)
 summary['V_add_distance'] = (-eye['median_theta_filtered'] + holo['filtered_head_rotation_x']).diff(1)
-summary['add_distance'] = (summary['H_add_distance']**2 + summary['V_add_distance']**2).apply(math.sqrt)
-summary['H_add_velocity'] = summary['H_add_distance'].apply(math.sin)/holo.timestamp.diff(1)
-summary['V_add_velocity'] = summary['V_add_distance'].apply(math.sin)/holo.timestamp.diff(1)
-summary['add_velocity'] = (summary.H_add_velocity ** 2 + summary.V_add_velocity**2).apply(math.sqrt)
+summary['add_distance'] = (summary['H_add_distance'] ** 2 + summary['V_add_distance'] ** 2).apply(math.sqrt)
+summary['H_add_velocity'] = summary['H_add_distance'].apply(math.sin) / holo.timestamp.diff(1)
+summary['V_add_velocity'] = summary['V_add_distance'].apply(math.sin) / holo.timestamp.diff(1)
+summary['add_velocity'] = (summary.H_add_velocity ** 2 + summary.V_add_velocity ** 2).apply(math.sqrt)
 window = 20
 window_feature_vectors = []
 for i in range(len(summary)):
@@ -125,29 +126,64 @@ for i in range(len(summary)):
                              head_velocity_deviation]
     window_feature_vectors.append(window_feature_vector)
 summary['window_feature_vector'] = window_feature_vectors
-
-plt.plot(summary.timestamp, summary.eye_velocity.rolling(window,min_periods=1).mean(), label='eye_vel')
-plt.plot(summary.timestamp, summary.head_velocity.rolling(window,min_periods=1).mean(), label='head_vel')
-plt.plot(summary.timestamp, summary.add_velocity.rolling(window,min_periods=1).mean(), label='add_vel')
-plt.axvline(initial_contact_time)
-plt.legend()
-plt.show()
-plt.plot(summary.timestamp,(summary.eye_velocity/summary.head_velocity).rolling(window,min_periods=1).mean(),label='eye/head')
-plt.plot(summary.timestamp,summary.add_velocity/summary.head_velocity.rolling(window,min_periods=1).mean(),label='add/head')
-plt.legend()
-plt.ylim(0,3)
-plt.show()
-plt.plot(holo.timestamp,holo.head_rotation_x)
-plt.plot(imu.timestamp,imu.rotationX)
-plt.show()
-plt.plot(holo.timestamp,holo.head_rotation_y)
-plt.plot(imu.timestamp,imu.rotationZ)
-# plt.plot(holo.timestamp,holo.head_rotation_x)
-# plt.plot(holo.timestamp,holo.head_rotation_y)
-# plt.plot(holo.timestamp,holo.angular_distance)
+# off = summary.loc[
+#     (summary['eye_velocity'] > summary['head_velocity']) & (summary['add_velocity'] > summary['head_velocity'])].index
+# plt.plot(summary.timestamp, summary.eye_velocity, label='eye_vel')
+# plt.plot(summary.timestamp, summary.head_velocity, label='head_vel')
+# for i in summary.timestamp[off].values:
+#     plt.axvline(i)
+# plt.plot(summary.timestamp, summary.add_velocity.rolling(window, min_periods=1).mean(), label='add_vel')
 # plt.axvline(initial_contact_time)
+# plt.legend()
+# plt.show()
+ratio_threshold = 1.5
+summary['eye_ratio'] = summary.eye_velocity / summary.head_velocity
+summary['add_ratio'] = summary.add_velocity / summary.head_velocity
+off = summary.loc[(summary['eye_ratio'] > ratio_threshold) & (summary['add_ratio'] > ratio_threshold)].index
+vel_th = 30
+th = summary.loc[(summary['eye_velocity'] > vel_th) & (summary['add_velocity'] > vel_th)].index
+head_th = summary.loc[summary['head_velocity'] > 15].index
+# plt.plot(summary.timestamp,summary.eye_velocity/summary.head_velocity,label='eye')
+# plt.plot(summary.timestamp,summary.add_velocity/summary.head_velocity,label='add')
+# plt.ylim(0,3)
+from itertools import groupby
+from operator import itemgetter
+
+plt.plot(holo.timestamp, summary.head_velocity)
+plt.plot(summary.timestamp, summary.add_velocity, alpha=0.5)
+plt.scatter(holo.timestamp[off], summary.head_velocity[off], marker='x')
+plt.scatter(holo.timestamp[th], summary.head_velocity[th], marker='o', color='red')
+plt.scatter(holo.timestamp[head_th], summary.head_velocity[head_th], marker='.')
+plt.show()
+plt.plot(holo.timestamp, holo.filtered_head_rotation_y)
+plt.scatter(holo.timestamp[th], holo.filtered_head_rotation_y[th], marker='o', color='red')
+plt.scatter(holo.timestamp[head_th], holo.filtered_head_rotation_y[head_th], marker='.', color='orange')
+plt.plot(holo.timestamp, holo.filtered_head_rotation_x)
+plt.scatter(holo.timestamp[th], holo.filtered_head_rotation_x[th], marker='o', color='red')
+plt.scatter(holo.timestamp[head_th], holo.filtered_head_rotation_x[head_th], marker='.', color='orange')
+plt.axvline(initial_contact_time)
+plt.show()
+# plt.plot(holo.timestamp, holo.head_rotation_x)
+# plt.plot(imu.timestamp, imu.rotationX)
+# plt.plot(eye.timestamp, eye.median_theta)
+# plt.plot(eye.timestamp,holo.head_rotation_x-eye.median_theta,alpha=0.5)
+# plt.plot(eye.timestamp,imu.rotationX-eye.median_theta)
+# plt.show()
+# plt.plot(holo.timestamp, holo.head_rotation_y)
+# plt.plot(imu.timestamp, imu.rotationZ)
+# plt.plot(eye.timestamp, -eye.median_phi)
+# plt.plot(eye.timestamp,holo.head_rotation_y+eye.median_phi,alpha=0.5)
+# plt.plot(eye.timestamp,imu.rotationZ+eye.median_phi)
+# plt.show()
+# angles = get_angle_between_vectors(eye['median_phi'],imu['rotationZ'],-eye['median_theta'],imu['rotationX'])
+# angles = get_angle_between_vectors(eye['median_phi_filtered'].diff(1), holo['filtered_head_rotation_y'].diff(1),
+#                                    -eye['median_theta_filtered'].diff(1), holo['filtered_head_rotation_x'].diff(1))
+# plt.scatter(holo.timestamp[head_th], angles.angle[head_th],marker='.',color='red')
+# plt.plot(holo.timestamp, angles.angle)
 # plt.show()
 
+# plt.plot(summary['H_eye_velocity']*summary['H_head_velocity'] + summary['V_eye_velocity']*summary['V_head_velocity'])
+# plt.show()
 print('contact time', initial_contact_time, 'contact frame', len(eye.timestamp[eye.timestamp <= initial_contact_time]))
 
 """
@@ -172,6 +208,109 @@ print('contact time', initial_contact_time, 'contact frame', len(eye.timestamp[e
 # env = 'U'
 # target = 3
 # block = 3
+# %%
+subject = 2
+env = 'U'
+target = 3
+block = 3
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+                                                       subject=subject, study_num=3)
+eye = eye[eye.confidence > 0.8]
+fc = 10
+plt.plot(holo.timestamp, lerp(holo.head_rotation_y, 0.03))
+plt.plot(holo.timestamp, holo.head_rotation_y, '--')
+plt.plot(holo.timestamp, holo.Phi, '--')
+holo = interpolate_dataframe(holo)
+eye = interpolate_dataframe(eye)
+imu = interpolate_dataframe(imu)
+imu['rotationX'] = imu['rotationX'] - imu['rotationX'][0]
+imu['rotationZ'] = imu['rotationZ'] - imu['rotationZ'][0]
+imu['rotationY'] = imu['rotationY'] - imu['rotationY'][0]
+# fc=20
+
+fcmin = 5
+eye.phi = one_euro(eye.phi, eye.timestamp, 200, fcmin, 0.1)
+eye.theta = one_euro(eye.theta, eye.timestamp, 200, fcmin, 0.1)
+imu.rotationZ = one_euro(imu.rotationZ, imu.timestamp, 200, fcmin, 0.1)
+imu.rotationX = one_euro(imu.rotationX, imu.timestamp, 200, fcmin, 0.1)
+# eye.phi = butter_lowpass_filter(eye.phi, fc, 200, 2, True)
+# eye.theta = butter_lowpass_filter(eye.theta, fc, 200, 2, True)
+# imu.rotationZ = butter_lowpass_filter(imu.rotationZ, fc, 200, 2, True)
+# imu.rotationX = butter_lowpass_filter(imu.rotationX, fc, 200, 2, True)
+plt.plot(imu.timestamp, imu.rotationZ)
+# fact = 0.03 ** (200/60)
+# plt.plot(imu.timestamp,lerp(imu.rotationZ,fact))
+plt.plot(eye.timestamp, eye.phi)
+plt.show()
+plt.plot(imu.timestamp, imu.rotationX)
+# plt.plot(imu.timestamp,lerp(imu.rotationX,0.03))
+plt.plot(eye.timestamp, -eye.theta)
+plt.show()
+imu_summary = pd.DataFrame()
+
+imu_summary['H_imu_distance'] = imu.rotationZ.diff(1).apply(math.sin)
+imu_summary['H_imu_velocity'] = imu_summary.H_imu_distance / imu.timestamp.diff(1)
+imu_summary['V_imu_distance'] = imu.rotationX.diff(1).apply(math.sin)
+imu_summary['V_imu_velocity'] = imu_summary.V_imu_distance / imu.timestamp.diff(1)
+imu_summary['imu_velocity'] = (imu_summary.H_imu_distance ** 2 + imu_summary.V_imu_distance ** 2).apply(
+    math.sqrt) / imu.timestamp.diff(1)
+imu_summary['H_eye_distance'] = eye.phi.diff(1).apply(math.sin)
+imu_summary['H_eye_velocity'] = imu_summary.H_eye_distance / eye.timestamp.diff(1)
+imu_summary['V_eye_distance'] = -eye.theta.diff(1).apply(math.sin)
+imu_summary['V_eye_velocity'] = imu_summary.V_eye_distance / eye.timestamp.diff(1)
+imu_summary['eye_velocity'] = (imu_summary.H_eye_distance ** 2 + imu_summary.V_eye_distance ** 2).apply(
+    math.sqrt) / eye.timestamp.diff(1)
+
+imu_summary['H_add_distance'] = imu_summary.H_eye_distance + imu_summary.H_imu_distance
+imu_summary['H_add_velocity'] = imu_summary.H_add_distance / imu.timestamp.diff(1)
+imu_summary['V_add_distance'] = imu_summary.V_eye_distance + imu_summary.V_imu_distance
+imu_summary['V_add_velocity'] = imu_summary.V_add_distance / imu.timestamp.diff(1)
+imu_summary['add_velocity'] = (imu_summary.H_add_distance ** 2 + imu_summary.V_add_distance ** 2).apply(
+    math.sqrt) / imu.timestamp.diff(1)
+ratio_threshold = 1.5
+imu_summary['eye_ratio'] = imu_summary.eye_velocity / imu_summary.imu_velocity
+imu_summary['add_ratio'] = imu_summary.add_velocity / imu_summary.imu_velocity
+# both eye/add is faster than head
+off = imu_summary.loc[(imu_summary['eye_ratio'] > ratio_threshold) & (imu_summary['add_ratio'] > ratio_threshold)].index
+
+vel_th = 30
+th = imu_summary.loc[(imu_summary['eye_velocity'] > vel_th) & (imu_summary['add_velocity'] > vel_th)].index
+head_th = imu_summary.loc[imu_summary['imu_velocity'] > 10].index
+plt.plot(eye.timestamp, imu_summary.imu_velocity, label='imu')
+plt.plot(eye.timestamp, imu_summary.eye_velocity, label='eye', alpha=0.5)
+# plt.plot(eye.timestamp,imu_summary.add_velocity, label='add',alpha=0.5)
+plt.scatter(eye.timestamp[off], imu_summary.imu_velocity[off], marker='x')
+plt.scatter(eye.timestamp[th], imu_summary.imu_velocity[th], marker='o', color='red')
+plt.scatter(eye.timestamp[head_th], imu_summary.imu_velocity[head_th], marker='.', color='orange')
+plt.legend()
+plt.show()
+imu_summary['saccade'] = False
+sac_time_wait = 50
+forward = False
+for i, row in imu_summary.iterrows():
+    if forward==True:
+        
+    else:
+
+    if row['imu_velocity'] < 10:  # normal cursor ( slow head movement )
+        if row['eye_velocity'] > vel_th and row['add_velocity'] > vel_th:
+            # assuming saccade?
+            # imu_summary.set_value(i,'saccade',True)
+            imu_summary.iloc[i, imu_summary.columns.get_loc('saccade')] = True
+        forward = False
+    else:
+        # if row['add_velocity'] < row['imu_velocity']:
+        #     # if added cursor is stable: slow down
+        #     continue
+        if i < sac_time_wait: continue
+        # if there is saccadic eye movement before fast cursor move
+        saccade_prediction = imu_summary['saccade'].iloc[i - sac_time_wait:i]
+        # TODO: verify the movement direction of saccade/head
+        saccade_ratio = saccade_prediction[saccade_prediction == True].count() / sac_time_wait
+        if saccade_ratio > 0.05:
+            forward = True
+            print(i, 'go forward')
+
 # %% Ground Truth calculation
 sample_conditions = [(1, 'U', 3, 3, 51, 55),
                      (2, 'U', 3, 3, 36, 40),
@@ -217,108 +356,3 @@ fig = ff.create_distplot(hist_data, labels)
 fig.show()
 
 # %%
-Nw = 10
-
-window = 120
-
-# def butter_lowpass_filter(data, cutoff_freq, fs, order=3, real_time=False):
-
-# eye.theta =butter_lowpass_filter(eye.theta,5,120)
-# eye.phi =butter_lowpass_filter(eye.phi,5,120)
-# eye_dist = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt)
-# eye_vel = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt) / eye.timestamp.diff(1)
-
-# plt.plot(eye.timestamp, -eye.theta)
-# plt.plot(eye.timestamp, eye.phi)
-# plt.show()
-# eye_vel.plot();
-# plt.show()
-# eye_dist.plot();
-# plt.show()
-
-# Vfix = 2
-# sig_fix = Vfix * 2 / 3
-Vfix = vel_fixs.mean()
-sig_fix = Vfix * 2 / 3
-# sig_fix = vel_fixs.std()
-Vsac = vel_saccs.mean()
-# sig_sac = (Vsac * 2) / 3
-sig_sac = vel_saccs.std()
-print('Vsac', Vsac, 'Ssac', sig_sac, 'Vfix', Vfix)
-
-ris = []
-
-for i in range(len(eye_vel)):
-    we = i
-    ws = we - Nw
-    if ws < 1:
-        ws = 1
-    ri = eye_vel[i - Nw:i]
-
-    ri = ri[(Vfix < ri) & (ri < Vsac)]  # count between two thresholds
-    # ri = ri[(ri > 0) & (ri < Vsac)]
-    ris.append(len(ri) / Nw)
-plt.plot(ris);
-plt.show()
-
-Ppurs = []
-Pfixs = []
-Psacs = []
-result = []
-
-
-def gauss(value, mean, std):
-    import scipy.stats
-    return scipy.stats.norm(mean, std).pdf(value)
-
-
-for i in range(len(eye_vel)):
-    # we=i
-    # ws=we-Nw
-    # if ws<1:
-    #     ws=1
-    pursuitLike = ris[i]
-
-    Ppur = sum(ris[i - Nw:i - 1]) / (Nw - 1)
-    Pfix = (1 - Ppur) / 2
-    Psac = Pfix
-    if eye_vel[i] < Vfix:
-        fixLike = gauss(Vfix, Vfix, sig_fix)
-    else:
-        fixLike = gauss(eye_vel[i], Vfix, sig_fix)
-    if eye_vel[i] < Vsac:
-        sacLike = gauss(eye_vel[i], Vsac, sig_sac)
-    else:
-        sacLike = gauss(Vsac, Vsac, sig_sac)
-    evidence = fixLike * Pfix + sacLike * Psac + pursuitLike * Ppur
-
-    fixPosterior = fixLike * Pfix / evidence
-    sacPosterior = sacLike * Psac / evidence
-    pursuitPosterior = pursuitLike * Ppur / evidence
-    idx = np.argmax([fixPosterior, sacPosterior, pursuitPosterior])
-    Ppurs.append(pursuitPosterior)
-    Pfixs.append(fixPosterior)
-    Psacs.append(sacPosterior)
-    result.append(idx)
-    # if (60 < i < 70):
-    #     print(i, eye_vel[i], sacLike, fixLike)
-plt.plot(Pfixs[:window], label='fix')
-plt.plot(Psacs[:window], label='sac')
-plt.plot(Ppurs[:window], label='pur')
-plt.plot(eye_vel[:window] / eye_vel[:window].max(), label='vel')
-# plt.plot(eye.timestamp[:window], result[:window], label='result')
-# plt.plot(eye.timestamp,Ppurs,label='pursuit');
-plt.axvline(initial_contact_time)
-plt.legend()
-plt.show()
-
-# plt.scatter(range(len(eye_vel)), result)
-# plt.show()
-# result = np.array(result)
-# eye_vel.plot()
-# plt.axhline(Vsac)
-# plt.axhline(Vfix)
-# saccades = np.argwhere(result==1)
-# for i in saccades:
-#     plt.axvline(i)
-# plt.show()
