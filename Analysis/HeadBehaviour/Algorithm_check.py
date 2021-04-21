@@ -1,4 +1,6 @@
 # %%
+import pandas as pd
+
 from AnalysingFunctions import *
 
 from FileHandling import *
@@ -26,6 +28,120 @@ pio.renderers.default = 'browser'
 # eye.theta = double_item_jitter(single_item_jitter(eye.theta))
 # eye.phi = double_item_jitter(single_item_jitter(eye.phi))
 # %% Check stand-condition data
+subject = 3
+env = 'U'
+target = 1
+block = 4
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+                                                       subject=subject, study_num=3)
+eye = eye[eye.confidence > 0.8]
+fc = 10
+
+holo = interpolate_dataframe(holo)
+eye = interpolate_dataframe(eye)
+imu = interpolate_dataframe(imu)
+
+eye.phi = eye.phi - eye.phi[0]
+eye.theta = eye.theta - eye.theta[0]
+eye['median_phi'] = eye.phi.rolling(601, min_periods=1).median()
+eye['median_theta'] = eye.theta.rolling(601, min_periods=1).median()
+eye.phi = eye.phi - eye.median_phi
+eye.theta = eye.theta - eye.median_theta
+eye.phi = one_euro(eye.phi,eye.timestamp,200,10,1.0)
+eye.theta = one_euro(eye.theta,eye.timestamp,200,10,1.0)
+
+holo_contact = holo[holo.timestamp > initial_contact_time]
+eye_contact = eye[eye.timestamp > initial_contact_time]
+
+cursor_x = []
+slow = 0.5
+fast = 0.05
+r = 0.5
+for i in range(len(holo.timestamp)):
+    if i == 0:
+        cursor_x.append(holo.head_rotation_y[0])
+    else:
+        if holo.timestamp[i] < initial_contact_time:
+            r = fast
+        else:
+            r = slow
+        previous_cursor = cursor_x[i - 1]
+        eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
+        estimated_direction = eye_cursor - holo.head_rotation_y[i]
+        # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
+        head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
+        correct_direction = True if head_movement * estimated_direction > 0 else False
+        if correct_direction:  # head is moving towards
+            if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
+                r = fast
+            else:
+                r = slow
+        else:
+            r = slow
+        new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_y[i],
+                                    holo.timestamp[i] - holo.timestamp[i - 1], r)
+        cursor_x.append(new_cursor)
+
+plt.plot(holo.timestamp, holo.head_rotation_y)
+plt.plot(holo.timestamp, cursor_x)
+plt.plot(holo.timestamp, holo.head_rotation_y + eye.phi)
+plt.plot(holo.timestamp, holo.Phi, linestyle=':')
+plt.plot(holo.timestamp, lerp(holo.head_rotation_y, holo.timestamp, slow))
+plt.show()
+
+cursor_y = []
+for i in range(len(holo.timestamp)):
+    if i == 0:
+        cursor_y.append(holo.head_rotation_x[0])
+    else:
+        if holo.timestamp[i] < initial_contact_time:
+            r = fast
+        else:
+            r = slow
+        previous_cursor = cursor_y[i - 1]
+        eye_cursor = holo.head_rotation_x[i] - eye.theta[i]  # estimation
+        estimated_direction = eye_cursor - holo.head_rotation_x[i]
+        # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
+        head_movement = holo.head_rotation_x.diff(1)[i - 10:i].mean()
+        correct_direction = True if head_movement * estimated_direction > 0 else False
+        if correct_direction:  # head is moving towards
+            if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
+                r = fast
+            else:
+                r = slow
+        else:
+            r = slow
+        new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_x[i],
+                                    holo.timestamp[i] - holo.timestamp[i - 1], r)
+        cursor_y.append(new_cursor)
+
+plt.plot(holo.timestamp, holo.head_rotation_x)
+plt.plot(holo.timestamp, cursor_y)
+plt.plot(holo.timestamp, holo.head_rotation_x - eye.theta)
+plt.plot(holo.timestamp, holo.Theta, linestyle=':')
+plt.plot(holo.timestamp, lerp(holo.head_rotation_x, holo.timestamp, slow))
+plt.show()
+
+# %%
+# whole dataset
+subjects = range(1, 17)
+envs = ['U', 'W']
+targets = range(8)
+blocks = range(1, 5)
+final_result = []
+
+t = time.time()
+for subject, env, target, block in itertools.product(
+        subjects, envs, targets, blocks
+):
+    holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+                                                           subject=subject, study_num=3)
+    eye = eye[eye.confidence > 0.8]
+    fc = 10
+    holo = interpolate_dataframe(holo)
+    eye = interpolate_dataframe(eye)
+    imu = interpolate_dataframe(imu)
+# %% Check stand-condition data
 subject = 2
 env = 'U'
 target = 3
@@ -39,11 +155,48 @@ eye = interpolate_dataframe(eye)
 imu = interpolate_dataframe(imu)
 holo['added_yaw'] = holo.head_rotation_y + eye.phi
 holo['added_pitch'] = holo.head_rotation_x - eye.theta
-data = [holo['added_yaw'], holo['added_pitch']]
-eye_tsv = pd.concat(data, axis=1)
-eye_tsv.to_csv('testADD.tsv', sep='\t', header=None, index=False)
 
-# a = remodnav.main(['remodnav', 'testADD.tsv', 'eventsADD.tsv', '1.0', '200'])
+# speed reduction
+# holo = holo[holo.timestamp > 1.0]
+# holo['slow_head_rotation_y'] = (holo.head_rotation_y.diff(1)/5).cumsum()
+# holo['slow_head_rotation_y'] += holo.head_rotation_y.iloc[0]
+
+# imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = fast
+holo['slow_head_rotation_y'] = holo.head_rotation_y
+for i, row in holo.iterrows():
+    if i == 0:
+        continue
+    else:
+        direction = row['added_yaw'] - row['head_rotation_y']
+        cursor_direction = row['added_yaw'] - holo.iloc[i - 1, holo.columns.get_loc('slow_head_rotation_y')]
+        current_move = row['head_rotation_y'] - holo.head_rotation_y[i - 1]
+        if cursor_direction * current_move < 0:  # opposite direction
+            speed = 0.1
+        else:
+            speed = 1
+        holo.iloc[i, holo.columns.get_loc('slow_head_rotation_y')] = holo.iloc[i - 1, holo.columns.get_loc(
+            'slow_head_rotation_y')] + speed * current_move
+plt.plot(holo.timestamp, holo.head_rotation_y)
+plt.plot(holo.timestamp, holo.slow_head_rotation_y)
+plt.plot(holo.timestamp, holo.Phi, alpha=0.3)
+plt.plot(holo.timestamp, holo.added_yaw, alpha=0.3)
+plt.plot(eye.timestamp, eye.phi)
+plt.show()
+plt.plot(eye.timestamp, eye.phi, color='blue')
+from scipy.signal import medfilt
+
+med = medfilt(eye.phi, 601)
+plt.plot(eye.timestamp, eye.phi - pd.Series(med), color='green', alpha=0.5)
+manual_med = []
+for i in range(len(eye)):
+    if i < 601:
+        strip = eye.phi[:i]
+    else:
+        strip = eye.phi[i - 201:i]
+    manual_med.append(np.median(strip))
+plt.plot(eye.timestamp, eye.phi - pd.Series(manual_med), color='red', alpha=0.5)
+plt.plot(holo.timestamp, -holo.TargetHorizontal, color='gray')
+plt.show()
 
 # %% Check Ground Truth
 subject = 16
@@ -141,7 +294,7 @@ summary['eye_ratio'] = summary.eye_velocity / summary.head_velocity
 summary['add_ratio'] = summary.add_velocity / summary.head_velocity
 off = summary.loc[(summary['eye_ratio'] > ratio_threshold) & (summary['add_ratio'] > ratio_threshold)].index
 vel_th = 30
-th = summary.loc[(summary['eye_velocity'] > vel_th) & (summary['add_velocity'] > vel_th)].index
+sac = summary.loc[(summary['eye_velocity'] > vel_th) & (summary['add_velocity'] > vel_th)].index
 head_th = summary.loc[summary['head_velocity'] > 15].index
 # plt.plot(summary.timestamp,summary.eye_velocity/summary.head_velocity,label='eye')
 # plt.plot(summary.timestamp,summary.add_velocity/summary.head_velocity,label='add')
@@ -152,14 +305,14 @@ from operator import itemgetter
 plt.plot(holo.timestamp, summary.head_velocity)
 plt.plot(summary.timestamp, summary.add_velocity, alpha=0.5)
 plt.scatter(holo.timestamp[off], summary.head_velocity[off], marker='x')
-plt.scatter(holo.timestamp[th], summary.head_velocity[th], marker='o', color='red')
+plt.scatter(holo.timestamp[sac], summary.head_velocity[sac], marker='o', color='red')
 plt.scatter(holo.timestamp[head_th], summary.head_velocity[head_th], marker='.')
 plt.show()
 plt.plot(holo.timestamp, holo.filtered_head_rotation_y)
-plt.scatter(holo.timestamp[th], holo.filtered_head_rotation_y[th], marker='o', color='red')
+plt.scatter(holo.timestamp[sac], holo.filtered_head_rotation_y[sac], marker='o', color='red')
 plt.scatter(holo.timestamp[head_th], holo.filtered_head_rotation_y[head_th], marker='.', color='orange')
 plt.plot(holo.timestamp, holo.filtered_head_rotation_x)
-plt.scatter(holo.timestamp[th], holo.filtered_head_rotation_x[th], marker='o', color='red')
+plt.scatter(holo.timestamp[sac], holo.filtered_head_rotation_x[sac], marker='o', color='red')
 plt.scatter(holo.timestamp[head_th], holo.filtered_head_rotation_x[head_th], marker='.', color='orange')
 plt.axvline(initial_contact_time)
 plt.show()
@@ -209,7 +362,7 @@ print('contact time', initial_contact_time, 'contact frame', len(eye.timestamp[e
 # target = 3
 # block = 3
 # %%
-subject = 2
+subject = 5
 env = 'U'
 target = 3
 block = 3
@@ -217,37 +370,55 @@ holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, p
                                                        subject=subject, study_num=3)
 eye = eye[eye.confidence > 0.8]
 fc = 10
-plt.plot(holo.timestamp, lerp(holo.head_rotation_y, 0.03))
-plt.plot(holo.timestamp, holo.head_rotation_y, '--')
-plt.plot(holo.timestamp, holo.Phi, '--')
+# plt.plot(holo.timestamp, lerp(holo.head_rotation_y, 0.1), label='head_lerp')
+# plt.plot(holo.timestamp, lerp(holo.head_rotation_y, holo.timestamp, 1), label='head_lerp')
+# plt.plot(holo.timestamp, holo.head_rotation_y, '--', label='head')
+# plt.plot(holo.timestamp, holo.Phi, '--', label='target')
+original_holo = holo
 holo = interpolate_dataframe(holo)
 eye = interpolate_dataframe(eye)
 imu = interpolate_dataframe(imu)
 imu['rotationX'] = imu['rotationX'] - imu['rotationX'][0]
 imu['rotationZ'] = imu['rotationZ'] - imu['rotationZ'][0]
 imu['rotationY'] = imu['rotationY'] - imu['rotationY'][0]
+eye['phi_dejitter'] = double_item_jitter(single_item_jitter(eye.phi))
 # fc=20
+from scipy.signal import medfilt
+
+for i in [601]:  # median filter
+    Heye_ = eye.phi
+    Veye_ = eye.theta
+    a = medfilt(Heye_, i)
+    b = medfilt(Veye_, i)
+    eye['median_phi'] = eye['phi'] - a
+    eye['median_theta'] = eye['theta'] - b
 
 fcmin = 5
-eye.phi = one_euro(eye.phi, eye.timestamp, 200, fcmin, 0.1)
-eye.theta = one_euro(eye.theta, eye.timestamp, 200, fcmin, 0.1)
+eye.phi = one_euro(eye.median_phi, eye.timestamp, 200, fcmin, 0.1)
+eye.theta = one_euro(eye.median_theta, eye.timestamp, 200, fcmin, 0.1)
 imu.rotationZ = one_euro(imu.rotationZ, imu.timestamp, 200, fcmin, 0.1)
 imu.rotationX = one_euro(imu.rotationX, imu.timestamp, 200, fcmin, 0.1)
-# eye.phi = butter_lowpass_filter(eye.phi, fc, 200, 2, True)
-# eye.theta = butter_lowpass_filter(eye.theta, fc, 200, 2, True)
-# imu.rotationZ = butter_lowpass_filter(imu.rotationZ, fc, 200, 2, True)
-# imu.rotationX = butter_lowpass_filter(imu.rotationX, fc, 200, 2, True)
-plt.plot(imu.timestamp, imu.rotationZ)
-# fact = 0.03 ** (200/60)
-# plt.plot(imu.timestamp,lerp(imu.rotationZ,fact))
-plt.plot(eye.timestamp, eye.phi)
-plt.show()
-plt.plot(imu.timestamp, imu.rotationX)
-# plt.plot(imu.timestamp,lerp(imu.rotationX,0.03))
-plt.plot(eye.timestamp, -eye.theta)
-plt.show()
-imu_summary = pd.DataFrame()
 
+# plt.plot(imu.timestamp, imu.rotationZ, label='imu')
+# plt.plot(eye.timestamp, eye.phi, label='eye')
+# plt.plot(eye.timestamp, imu.rotationZ + eye.phi, label='estimation')
+# plt.legend()
+# plt.show()
+# plt.plot(imu.timestamp, imu.rotationX, label='imu')
+# plt.plot(eye.timestamp, -eye.theta, label='eye')
+# plt.plot(eye.timestamp, imu.rotationX - eye.theta, label='estimation')
+# plt.legend()
+# plt.show()
+
+imu_summary = pd.DataFrame()
+imu_summary['estimation_H'] = imu.rotationZ + eye.phi
+imu_summary['estimation_V'] = imu.rotationX - eye.theta
+imu_summary['imu_H'] = imu.rotationZ
+imu_summary['imu_V'] = imu.rotationX
+imu_summary['timestamp'] = imu.timestamp
+slow = 200
+fast = 10
+imu_summary['lerp_factor'] = fast
 imu_summary['H_imu_distance'] = imu.rotationZ.diff(1).apply(math.sin)
 imu_summary['H_imu_velocity'] = imu_summary.H_imu_distance / imu.timestamp.diff(1)
 imu_summary['V_imu_distance'] = imu.rotationX.diff(1).apply(math.sin)
@@ -270,46 +441,138 @@ imu_summary['add_velocity'] = (imu_summary.H_add_distance ** 2 + imu_summary.V_a
 ratio_threshold = 1.5
 imu_summary['eye_ratio'] = imu_summary.eye_velocity / imu_summary.imu_velocity
 imu_summary['add_ratio'] = imu_summary.add_velocity / imu_summary.imu_velocity
-# both eye/add is faster than head
-off = imu_summary.loc[(imu_summary['eye_ratio'] > ratio_threshold) & (imu_summary['add_ratio'] > ratio_threshold)].index
 
+# both eye/add is faster than head
+off = imu_summary.loc[(imu_summary['eye_ratio'] < ratio_threshold) & (imu_summary['add_ratio'] < ratio_threshold)].index
 vel_th = 30
-th = imu_summary.loc[(imu_summary['eye_velocity'] > vel_th) & (imu_summary['add_velocity'] > vel_th)].index
-head_th = imu_summary.loc[imu_summary['imu_velocity'] > 10].index
+sac = imu_summary.loc[(imu_summary['eye_velocity'] > vel_th) & (imu_summary['add_velocity'] > vel_th)].index
+head_vel_th = 5
+head_th = imu_summary.loc[imu_summary['imu_velocity'] > head_vel_th].index
+
+# finding head-following saccade
+for i, row in imu_summary.iterrows():
+    if len(sac[(i - 50 < sac) & (sac < i)]) > 3:  # if there was saccade before 250 ms
+        if row['imu_velocity'] > head_vel_th:
+            est_vector = [row['estimation_H'] - row['imu_H'],
+                          row['estimation_V'] - row['imu_V']]
+            movement_vector = [row['H_imu_velocity'], row['V_imu_velocity']]
+            if est_vector[0] * movement_vector[0] + est_vector[1] * movement_vector[1] > 0:
+                imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = fast
+        else:
+            imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = slow
+    if row['imu_velocity'] > head_vel_th:
+        imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = fast
+        est_vector = [row['estimation_H'] - row['imu_H'],
+                      row['estimation_V'] - row['imu_V']]
+        movement_vector = [row['H_imu_velocity'], row['V_imu_velocity']]
+        if est_vector[0] * movement_vector[0] + est_vector[1] * movement_vector[1] > 0:  # go to estimation
+            if imu_summary.iloc[i - 1, imu_summary.columns.get_loc('lerp_factor')] == fast:
+                imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = fast
+        else:
+            imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = slow
+    else:
+        imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = fast
+
+# for i, row in imu_summary.iterrows():
+#     if i == 0: continue
+#     closer = abs(imu_summary.estimation_H[i - 1] - imu_summary.imu_H[i - 1]) > abs(
+#         imu_summary.estimation_H[i] - imu_summary.imu_H[i])
+#     if closer:
+#         imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = fast
+#     else:
+#         imu_summary.iloc[i, imu_summary.columns.get_loc('lerp_factor')] = slow
+#
+# current_cursor = []
+# for i in range(len(imu_summary)):
+#     if i == 0:
+#         current_cursor.append(holo.head_rotation_y[0])
+#     else:
+#         # dist = current_cursor[i - 1] + (holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]) /3
+#         dist = holo.head_rotation_y[i] * imu_summary.lerp_factor[i]
+#         current_cursor.append(dist)
+imu_summary['current_cursor'] = holo.head_rotation_y
+# s = 0.8
+dirs = []
+head_movement_vectors = []
+for i in range(len(imu_summary)):
+    if i == 0:
+        imu_summary.iloc[i, imu_summary.columns.get_loc('current_cursor')] = holo.head_rotation_y[0]
+    else:
+        a = holo.head_rotation_y[i]
+        previous_cursor = imu_summary.iloc[i - 1]['current_cursor']
+        # head_movement_vector = a - previous_cursor
+        head_movement_vector = a - holo.head_rotation_y[i - 1]
+        eye_movement_vector = eye['phi'][i] - eye['phi'][i - 1]
+        dir = eye['phi'][i] + a - previous_cursor
+        s = imu_summary.lerp_factor[i]
+        # new_cursor = imu_summary.iloc[i - 1]['current_cursor'] + dir * s + head_movement_vector * (1 - s)
+        if dir * head_movement_vector >= 0:
+            s = 1
+        else:
+            s = 0.01
+        dirs.append(dir)
+        head_movement_vectors.append(head_movement_vector)
+        new_cursor = previous_cursor + head_movement_vector * s
+        imu_summary.iloc[i, imu_summary.columns.get_loc('current_cursor')] = new_cursor
+
+plt.plot(holo.timestamp, holo.head_rotation_y)
+plt.plot(holo.timestamp, holo.Phi, '--')
+plt.plot(holo.timestamp, holo.head_rotation_y + eye.median_phi)
+plt.plot(imu_summary.timestamp, imu_summary.current_cursor)
+plt.title(str(s))
+plt.show()
+
+plt.plot(head_movement_vectors)
+plt.plot(dirs)
+plt.plot(pd.Series(head_movement_vectors) * pd.Series(dirs))
+plt.show()
+
 plt.plot(eye.timestamp, imu_summary.imu_velocity, label='imu')
-plt.plot(eye.timestamp, imu_summary.eye_velocity, label='eye', alpha=0.5)
+# plt.plot(eye.timestamp, imu_summary.eye_velocity, label='eye', alpha=0.5)
+plt.axhline(head_vel_th)
 # plt.plot(eye.timestamp,imu_summary.add_velocity, label='add',alpha=0.5)
-plt.scatter(eye.timestamp[off], imu_summary.imu_velocity[off], marker='x')
-plt.scatter(eye.timestamp[th], imu_summary.imu_velocity[th], marker='o', color='red')
-plt.scatter(eye.timestamp[head_th], imu_summary.imu_velocity[head_th], marker='.', color='orange')
+off = imu_summary.loc[(imu_summary['add_ratio'] < ratio_threshold)].index
+plt.scatter(eye.timestamp[off], imu_summary.imu_velocity[off], marker='x', color='blue')
+plt.scatter(eye.timestamp[sac], imu_summary.imu_velocity[sac], marker='o', color='red')
+# plt.scatter(eye.timestamp[head_th], imu_summary.imu_velocity[head_th], marker='.', color='orange')
+plt.ylim(0, 50)
 plt.legend()
 plt.show()
-imu_summary['saccade'] = False
-sac_time_wait = 50
-forward = False
-for i, row in imu_summary.iterrows():
-    if forward==True:
-        
-    else:
 
-    if row['imu_velocity'] < 10:  # normal cursor ( slow head movement )
-        if row['eye_velocity'] > vel_th and row['add_velocity'] > vel_th:
-            # assuming saccade?
-            # imu_summary.set_value(i,'saccade',True)
-            imu_summary.iloc[i, imu_summary.columns.get_loc('saccade')] = True
-        forward = False
-    else:
-        # if row['add_velocity'] < row['imu_velocity']:
-        #     # if added cursor is stable: slow down
-        #     continue
-        if i < sac_time_wait: continue
-        # if there is saccadic eye movement before fast cursor move
-        saccade_prediction = imu_summary['saccade'].iloc[i - sac_time_wait:i]
-        # TODO: verify the movement direction of saccade/head
-        saccade_ratio = saccade_prediction[saccade_prediction == True].count() / sac_time_wait
-        if saccade_ratio > 0.05:
-            forward = True
-            print(i, 'go forward')
+# Ve = eye.phi.diff(1) / eye.timestamp.diff(1)
+# Vh = imu.rotationZ.diff(1) / imu.timestamp.diff(1)
+# plt.plot(Ve, color='red')
+# plt.plot(Vh, color='blue')
+# plt.plot(Vh + Ve, color='gray')
+# plt.show()
+
+# %% algorithm
+imu_summary['saccade'] = False
+sac_time_wait = 50  # 50/200 = 250 ms
+forward = False
+# for i, row in imu_summary.iterrows():
+#     # if forward==True:
+#     #
+#     # else:
+#
+#     if row['imu_velocity'] < 10:  # normal cursor ( slow head movement )
+#         if row['eye_velocity'] > vel_th and row['add_velocity'] > vel_th:
+#             # assuming saccade?
+#             # imu_summary.set_value(i,'saccade',True)
+#             imu_summary.iloc[i, imu_summary.columns.get_loc('saccade')] = True
+#         forward = False
+#     else:
+#         # if row['add_velocity'] < row['imu_velocity']:
+#         #     # if added cursor is stable: slow down
+#         #     continue
+#         if i < sac_time_wait: continue
+#         # if there is saccadic eye movement before fast cursor move
+#         saccade_prediction = imu_summary['saccade'].iloc[i - sac_time_wait:i]
+#         # TODO: verify the movement direction of saccade/head
+#         saccade_ratio = saccade_prediction[saccade_prediction == True].count() / sac_time_wait
+#         if saccade_ratio > 0.05:
+#             forward = True
+#             print(i, 'go forward')
 
 # %% Ground Truth calculation
 sample_conditions = [(1, 'U', 3, 3, 51, 55),
@@ -334,16 +597,16 @@ vel_purs = []
 for condition in sample_conditions:
     holo, eye, imu, initial_contact_time = bring_one_trial(target=condition[2], env=condition[1], posture='W',
                                                            block=condition[3], subject=condition[0])
-    eye = eye[eye.confidence > 0.8]
-    ete_index = len(eye.timestamp[eye.timestamp <= initial_contact_time])
-    eye_dist = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt)
-    eye_vel = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt) / eye.timestamp.diff(1)
-    vel_fix = eye_vel[1:condition[4]]
-    vel_sacc = eye_vel[condition[4]:condition[5]]
-    vel_pur = eye_vel[ete_index:]
-    vel_fixs += list(vel_fix)
-    vel_saccs += list(vel_sacc)
-    vel_purs += list(vel_pur)
+eye = eye[eye.confidence > 0.8]
+ete_index = len(eye.timestamp[eye.timestamp <= initial_contact_time])
+eye_dist = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt)
+eye_vel = (eye.theta.diff(1) ** 2 + eye.phi.diff(1) ** 2).apply(math.sqrt) / eye.timestamp.diff(1)
+vel_fix = eye_vel[1:condition[4]]
+vel_sacc = eye_vel[condition[4]:condition[5]]
+vel_pur = eye_vel[ete_index:]
+vel_fixs += list(vel_fix)
+vel_saccs += list(vel_sacc)
+vel_purs += list(vel_pur)
 
 import plotly.figure_factory as ff
 

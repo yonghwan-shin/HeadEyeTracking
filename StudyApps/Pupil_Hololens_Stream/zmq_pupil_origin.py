@@ -8,6 +8,8 @@ import os
 import numpy as np
 import csv
 import pandas as pd
+import socket
+import math
 
 # Initial Pupil-remote variables
 from Naming import *
@@ -60,7 +62,7 @@ def ZMQ_connect():
 
         subscriber = ctx.socket(zmq.SUB)
         subscriber.connect(f"tcp://{ip}:{sub_port}")
-        subscriber.subscribe("pupil.1.3d")
+        subscriber.subscribe("pupil.0.3d")
     except KeyboardInterrupt:
         pass
     print("ZMQ start receiving")
@@ -74,7 +76,7 @@ class ZMQ_listener(threading.Thread):
             self.join()
         print("ZMQ thread dead")
 
-    def __init__(self, args, name="Pupil Listener"):
+    def __init__(self, args, q, name="Pupil Listener"):
         threading.Thread.__init__(self)
         threading.Thread.daemon = True
         # freq, mincutoff = 1.0, beta = 0.0, dcutoff = 1.0):
@@ -87,14 +89,17 @@ class ZMQ_listener(threading.Thread):
 
         self.name = name
         self.args = args
+        self.q = q
         self.stored_data = []
         self.holodata = ["#START"]
         self.filenames = []
         self.curr_file = ""
         self.buffer = ""
         self.timer = 0
-        self.delay_timer=0
-
+        self.delay_timer = 0
+        self.median_filter_window = 601
+        self.median_phi_list = []
+        self.median_theta_list = []
         self.Holo = find_holo_serial_port("/dev/cu.Bluetooth")
 
     def run(self):
@@ -106,7 +111,18 @@ class ZMQ_listener(threading.Thread):
         sleep(1)  # wait a second before hearing pupil-data
 
         import msgpack
-
+        # ip = socket.gethostbyname_ex(socket.gethostname())[-1][-1]
+        # print(ip)
+        # remote_ip = "192.168.0.9"
+        # send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # destination = (remote_ip, 5005)
+        # receive_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # recv_address = ('0.0.0.0', 3000)
+        # receive_sock.bind(recv_address)
+        # receive_sock.settimeout(3)
+        data_size = 5000
+        cnt = 0
+        t = time.time()
         while self.args[0]:
             try:
 
@@ -114,6 +130,68 @@ class ZMQ_listener(threading.Thread):
 
                 message = msgpack.unpackb(payload)
                 pos = message['norm_pos']
+                confidence = message['confidence']
+                phi = message['phi']
+                theta = message['theta']
+
+                # median filtering
+                if len(self.median_phi_list) >= self.median_filter_window:
+                    self.median_phi_list.pop(0)
+                if len(self.median_theta_list) >= self.median_filter_window:
+                    self.median_theta_list.pop(0)
+                if confidence > 0.6:
+                    self.median_phi_list.append(phi)
+                    self.median_theta_list.append(theta)
+                else:
+                    self.median_phi_list.append(None)
+                    self.median_theta_list.append(None)
+                try:
+                    median_phi = np.median(list(filter(None, self.median_phi_list)))
+                    median_theta = np.median(list(filter(None, self.median_theta_list)))
+                except:
+                    median_phi=0
+                    median_theta=0
+                # print(median_theta)
+                phi -= median_phi
+                theta -= median_theta
+                phi = phi * 180 / math.pi
+                theta = theta * 180 / math.pi
+
+                eye_msg = {'confidence': confidence, 'phi': phi, 'theta': theta}
+
+                evt = threading.Event()
+                self.q.put((eye_msg, evt))
+                evt.wait()
+                # print(phi,theta)
+                # conf_str = "{:.1f}".format(confidence)
+                # phi_str = "{:.2f}".format(phi)
+                # theta_str = "{:.2f}".format(theta)
+
+                # message length: prefix 1 + confidence 1 + delimiter 1 + postfix 1 + data 6*2 = 16
+                # prefix = 1
+                # confidence = int(confidence * 7)
+                # x = int(phi * 10 ** 2)
+                # y = int(theta * 10 ** 2)
+                #
+                # x_sign = 0 if x >= 0 else 1
+                # y_sign = 0 if y >= 0 else 1
+                # x = abs(x)
+                # y = abs(y)
+                #
+                # # Actual message with 32-bit array
+                # send_binary = np.binary_repr(prefix, width=1) \
+                #               + np.binary_repr(confidence, width=3) \
+                #               + np.binary_repr(x_sign, width=1) \
+                #               + np.binary_repr(x, width=13) \
+                #               + np.binary_repr(y_sign, width=1) \
+                #               + np.binary_repr(y, width=13)
+                # # Unsigned 32 bit int ( UInt32 on C#)
+                # send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
+
+                # msg = bytes(conf_str+","+phi_str + "," + theta_str, 'utf-8')
+
+                # send_time = time.time()
+                # send_sock.sendto(send_uint32, destination)
                 # undefined error (might be msgpack version conflict) , originally -> message = msgpack.unpackb(
                 # payload, encoding='utf-8')
 
@@ -156,13 +234,13 @@ class ZMQ_listener(threading.Thread):
                 # # Unsigned 32 bit int ( UInt32 on C#)
                 # send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
 
-                self.Holo.write(send_uint32)
+                # self.Holo.write(send_uint32)
                 if self.recording:
                     self.stored_data.append([str(time.time()), str(message)])
 
             # except KeyboardInterrupt:
             except Exception as e:
-                print(e)
+                print('error in reading pupil-labs', e)
                 # break
 
         sleep(0.1)
@@ -222,7 +300,7 @@ class ZMQ_listener(threading.Thread):
     def Holo_START(self):
         if self.holodata[-1] == "#START":
             self.send_subject_to_hololens()
-            print('sending sub',self.sub_num)
+            print('sending sub', self.sub_num)
             # self.send_to_hololens("#SUB" + str(self.sub_num))
             sleep(2)
 

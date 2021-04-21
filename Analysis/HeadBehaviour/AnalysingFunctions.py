@@ -573,7 +573,7 @@ def single_item_jitter(data, print_debug=False):
             print(x2, x1, x)
         if (x1 < x and x1 < x2) or (x2 < x1 and x < x1):
             if print_debug:
-                print('jitter')
+                print('jitter detected at', i)
             if abs(x2 - x2) < abs(x - x1):
                 g = x2
             else:
@@ -610,10 +610,25 @@ def double_item_jitter(data, print_debug=False):
 
     return output
 
-def lerp(data,coef):
-    output=[]
+
+def clamp(num, min_value, max_value):
+    return max(min(num, max_value), min_value)
+
+
+def lerp(data, timestamp, coef):
+    output = []
+    data = list(data)
+    timestamp = list(timestamp)
     output.append(data[0])
-    for i in range(1,len(data)):
-        cursor = (1-coef)*output[i-1] + coef*data[i]
+    for i in range(1, len(data)):
+        time_difference = timestamp[i] - timestamp[i - 1]
+        current_coef = clamp(time_difference / coef, 0, 1)
+        cursor = (1 - current_coef) * output[i - 1] + current_coef * data[i]
         output.append(cursor)
+    return output
+
+
+def lerp_one_frame(start, end, time_diff, coef):
+    current_coef = clamp(time_diff / coef, 0, 1)
+    output = (1 - current_coef) * start + current_coef * end
     return output
