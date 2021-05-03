@@ -25,9 +25,9 @@ fc = 10
 holo = interpolate_dataframe(holo, framerate=60)
 eye = interpolate_dataframe(eye, framerate=60)
 imu = interpolate_dataframe(imu, framerate=60)
-plt.plot(eye.phi)
-plt.plot(double_item_jitter(eye.phi,True))
-plt.show()
+# plt.plot(eye.phi)
+# plt.plot(single_item_jitter(eye.phi,True))
+# plt.show()
 eye.phi = eye.phi - eye.phi[0]
 eye.theta = eye.theta - eye.theta[0]
 eye['median_phi'] = eye.phi.rolling(601, min_periods=1).median()
@@ -37,41 +37,42 @@ eye.theta = eye.theta - eye.median_theta
 # eye.phi = one_euro(eye.phi, eye.timestamp, 200, 10, 1.0)
 # eye.theta = one_euro(eye.theta, eye.timestamp, 200, 10, 1.0)
 
-holo_contact = holo[holo.timestamp > initial_contact_time]
-eye_contact = eye[eye.timestamp > initial_contact_time]
-
-holo = holo[holo.timestamp > initial_contact_time]
-eye = eye[eye.timestamp > initial_contact_time]
+# holo_contact = holo[holo.timestamp > initial_contact_time]
+# eye_contact = eye[eye.timestamp > initial_contact_time]
+#
+# holo = holo[holo.timestamp > initial_contact_time]
+# eye = eye[eye.timestamp > initial_contact_time]
 
 cursor_x = []
 # slow = 0.03
-slow = 0.02
-fast = 0.3
+slow = 0.05
+fast = 0.5
 r = 0.5
-# for i in range(len(holo.timestamp)):
-#     if i == 0:
-#         cursor_x.append(holo.head_rotation_y[0])
-#     else:
-#         if holo.timestamp[i] < initial_contact_time:
-#             r = fast
-#         else:
-#             r = slow
-#         previous_cursor = cursor_x[i - 1]
-#         eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
-#         estimated_direction = eye_cursor - holo.head_rotation_y[i]
-#         # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
-#         head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
-#         correct_direction = True if head_movement * estimated_direction > 0 else False
-#         if correct_direction:  # head is moving towards
-#             if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
-#                 r = fast
-#             else:
-#                 r = slow
-#         else:
-#             r = slow
-#         new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_y[i],
-#                                     holo.timestamp[i] - holo.timestamp[i - 1], r)
-#         cursor_x.append(new_cursor)
+for i in range(len(holo.timestamp)):
+    if i == 0:
+        cursor_x.append(holo.head_rotation_y[0])
+    else:
+        if holo.timestamp[i] < initial_contact_time:
+            r = fast
+        else:
+            r = slow
+        previous_cursor = cursor_x[i - 1]
+        eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
+        estimated_direction = eye_cursor - holo.head_rotation_y[i]
+        # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
+        head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
+        correct_direction = True if head_movement * estimated_direction > 0 else False
+        if correct_direction:  # head is moving towards
+            if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
+                r = fast
+            else:
+                r = slow
+        else:
+            r = slow
+        # new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_y[i],
+        #                             holo.timestamp[i] - holo.timestamp[i - 1], r)
+        new_cursor = previous_cursor * (1-r) + r* holo.head_rotation_y[i]
+        cursor_x.append(new_cursor)
 #
 # gain_cursor = []
 # head_vel_H = list(holo.head_rotation_y.diff(1) / holo.timestamp.diff(1))
@@ -95,15 +96,17 @@ r = 0.5
 #         gain_cursor.append(previous_cursor + head_vel_H[i] *  holo.timestamp.diff(1)[i]*gain)
 
 plt.plot(holo.timestamp, holo.head_rotation_y)
-gain = holo.head_rotation_y.diff(1) * 0.3
-gain = np.cumsum(gain)
-gain = gain + holo.head_rotation_y.iloc[0]
-plt.plot(holo.timestamp, gain)
-# plt.plot(holo.timestamp, cursor_x)
-# plt.plot(holo.timestamp, holo.head_rotation_y + eye.phi)
+
+# gain = holo.head_rotation_y.diff(1) * 0.3
+
+# gain = np.cumsum(gain)
+# gain = gain + holo.head_rotation_y.iloc[0]
+# plt.plot(holo.timestamp, gain)
+plt.plot(holo.timestamp, cursor_x)
+plt.plot(holo.timestamp, holo.head_rotation_y + eye.phi)
 # plt.plot(holo.timestamp,ease_in_expo(holo.head_rotation_y,holo.timestamp,0.3))
 plt.plot(holo.timestamp, holo.Phi, linestyle=':')
-plt.plot(holo.timestamp, easing_linear(holo.head_rotation_y, holo.timestamp, 0.1))
+# plt.plot(holo.timestamp, easing_linear(holo.head_rotation_y, holo.timestamp, 0.1))
 # plt.plot(holo.timestamp, ease_in_expo(holo.head_rotation_y, holo.timestamp, slow))
 # plt.plot(holo.timestamp, easing_linear(holo.head_rotation_y, holo.timestamp, fast))
 # plt.plot(holo.timestamp, gain_cursor)/
@@ -137,7 +140,7 @@ plt.show()
 
 plt.plot(holo.timestamp, holo.head_rotation_x)
 # plt.plot(holo.timestamp, cursor_y)
-# plt.plot(holo.timestamp, holo.head_rotation_x - eye.theta)
+# plt.plot(holo.timestamp, holo.head_ro tation_x - eye.theta)
 plt.plot(holo.timestamp, holo.Theta, linestyle=':')
 plt.plot(holo.timestamp, easing_linear(holo.head_rotation_x, holo.timestamp, slow))
 plt.plot(holo.timestamp, easing_linear(holo.head_rotation_x, holo.timestamp, fast))
