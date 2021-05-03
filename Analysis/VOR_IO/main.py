@@ -83,7 +83,7 @@ for i in range(len(holo.timestamp)):
         eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
         estimated_direction = eye_cursor - holo.head_rotation_y[i]
         # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
-        head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
+        head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean() #
         correct_direction = True if head_movement * estimated_direction > 0 else False
         if correct_direction:  # head is moving towards
             if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
@@ -92,10 +92,12 @@ for i in range(len(holo.timestamp)):
                 r = slow
         else:
             r = slow
-        # new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_y[i],
-        #                             holo.timestamp[i] - holo.timestamp[i - 1], r)
         new_cursor = previous_cursor * (1-r) + r* holo.head_rotation_y[i]
         cursor_x.append(new_cursor)
+
+plt.plot(holo.timestamp,cursor_x)
+plt.plot(holo.timestamp, holo.head_rotation_y, label='head yaw')
+plt.show()
 
 """
 To iterate along whole trials,
