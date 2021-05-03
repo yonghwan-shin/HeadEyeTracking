@@ -34,7 +34,7 @@ class UDP_listener(threading.Thread):
                 # self.q.put((msg, evt))
                 # evt.wait()
             except Exception as e:
-                print('error in receiving udp message',e)
+                print('error in receiving udp message', e)
 
     def decode_message(self, msg):
         print(msg)
@@ -80,18 +80,23 @@ class UDP_sender(threading.Thread):
             Uint32_msg = self.encode_message(confidence, x, y)
             self.send_sock.sendto(Uint32_msg, self.destination)
         except Exception as e:
-            print('error in sending udp message :',e)
+            print('error in sending udp message :', e)
 
     def encode_message(self, confidence, x, y):
 
         prefix = 1
         confidence = int(confidence * 7)
+
         x = int(x * 100)
         y = int(y * 100)
         x_sign = 0 if x >= 0 else 1
         y_sign = 0 if y >= 0 else 1
         x = abs(x)
         y = abs(y)
+        if x > 8000:
+            x = 8000
+        if y > 8000:
+            y = 8000
 
         # Actual message with 32-bit array
         send_binary = np.binary_repr(prefix, width=1) \

@@ -615,6 +615,33 @@ def clamp(num, min_value, max_value):
     return max(min(num, max_value), min_value)
 
 
+def ease_in_expo(data, timestamp, coef):
+    output = []
+    data = list(data)
+    timestamp = list(timestamp)
+    output.append(data[0])
+    for i in range(1, len(data)):
+        end = data[i]
+        start = output[i - 1]
+        end -= start
+        cursor = end * math.pow(2, 10 * (coef - 1)) + start
+        output.append(cursor)
+    return output
+
+def ease_out_expo(data, timestamp, coef):
+    output = []
+    data = list(data)
+    timestamp = list(timestamp)
+    output.append(data[0])
+    for i in range(1, len(data)):
+        end = data[i]
+        start = output[i - 1]
+        end -= start
+        cursor = end * (- math.pow(2, -10 * coef) +1) + start
+        # return end * (-Mathf.Pow(2, -10 * value) + 1) + start;
+        output.append(cursor)
+    return output
+
 def lerp(data, timestamp, coef):
     output = []
     data = list(data)
@@ -623,6 +650,20 @@ def lerp(data, timestamp, coef):
     for i in range(1, len(data)):
         time_difference = timestamp[i] - timestamp[i - 1]
         current_coef = clamp(time_difference / coef, 0, 1)
+        cursor = (1 - current_coef) * output[i - 1] + current_coef * data[i]
+        output.append(cursor)
+    return output
+
+
+def easing_linear(data, timestamp, coef):
+    output = []
+    data = list(data)
+    timestamp = list(timestamp)
+    output.append(data[0])
+    for i in range(1, len(data)):
+        # time_difference = timestamp[i] - timestamp[i - 1]
+        # current_coef = clamp(time_difference / coef, 0, 1)
+        current_coef = coef
         cursor = (1 - current_coef) * output[i - 1] + current_coef * data[i]
         output.append(cursor)
     return output

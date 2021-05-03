@@ -97,10 +97,36 @@ class ZMQ_listener(threading.Thread):
         self.buffer = ""
         self.timer = 0
         self.delay_timer = 0
-        self.median_filter_window = 601
+        self.median_filter_window = 181
         self.median_phi_list = []
         self.median_theta_list = []
+        self.phi1 = 0
+        self.phi2 = 0
+        self.theta1 = 0
+        self.theta2 = 0
         self.Holo = find_holo_serial_port("/dev/cu.Bluetooth")
+        self.online = True
+
+    def dejitter_single(self, second_previous, previous, new):
+        p = previous
+        if (previous < new and previous < second_previous) or (second_previous < previous and new < previous):
+            if abs(second_previous - new) < abs(new - previous):
+                p = second_previous
+            else:
+                p = new
+        return p, new
+
+    def dejitter_double(self, x3, x2, x1, x):
+        g1 = x1
+        g2 = x2
+        if (x2 == x1) and not (x == x1 or x2 == x3):
+            if abs(x1 - x) < abs(x1 - x3):
+                g1 = x
+                g2 = x
+            else:
+                g1 = x3
+                g2 = x3
+        return g2, g1, x
 
     def run(self):
         print(threading.currentThread().getName(), "is started")
@@ -149,19 +175,21 @@ class ZMQ_listener(threading.Thread):
                     median_phi = np.median(list(filter(None, self.median_phi_list)))
                     median_theta = np.median(list(filter(None, self.median_theta_list)))
                 except:
-                    median_phi=0
-                    median_theta=0
+                    median_phi = 0
+                    median_theta = 0
                 # print(median_theta)
                 phi -= median_phi
                 theta -= median_theta
                 phi = phi * 180 / math.pi
                 theta = theta * 180 / math.pi
+                self.phi1 = self.single_item_jitter(self.phi2, self.phi1, phi)
+                self.theta1 = self.single_item_jitter(self.theta2, self.theta1, theta)
 
-                eye_msg = {'confidence': confidence, 'phi': phi, 'theta': theta}
-
-                evt = threading.Event()
-                self.q.put((eye_msg, evt))
-                evt.wait()
+                eye_msg = {'confidence': confidence, 'phi': self.phi1, 'theta': self.theta1}
+                if self.online:
+                    evt = threading.Event()
+                    self.q.put((eye_msg, evt))
+                    evt.wait()
                 # print(phi,theta)
                 # conf_str = "{:.1f}".format(confidence)
                 # phi_str = "{:.2f}".format(phi)
@@ -235,6 +263,11 @@ class ZMQ_listener(threading.Thread):
                 # send_uint32 = (int(send_binary, 2)).to_bytes(4, 'big', signed=False)
 
                 # self.Holo.write(send_uint32)
+                self.phi2 = self.phi1
+                self.phi1 = phi
+                self.theta2 = self.theta1
+                self.theta1 = theta
+
                 if self.recording:
                     self.stored_data.append([str(time.time()), str(message)])
 
@@ -246,6 +279,30 @@ class ZMQ_listener(threading.Thread):
         sleep(0.1)
         self.join()
         return
+
+    def single_item_jitter(self, x2, x1, x):
+        g = x1
+        if (x1 < x and x1 < x2) or (x2 < x1 and x < x1):
+            if abs(x2 - x) < abs(x - x1):
+                g = x2
+            else:
+                g = x
+        x1 = g
+        return x1
+
+    def double_item_jitter(self, x3, x2, x1, x):
+        g1 = x1
+        g2 = x2
+        if (x2 == x1) and not (x == x1 or x2 == x3):
+            if abs(x1 - x) < abs(x1 - x3):
+                g1 = x
+                g2 = x
+            else:
+                g1 = x3
+                g2 = x3
+        x1 = g1
+        x2 = g2
+        return x2, x1
 
     def send_to_hololens(self, msg: str):
         """
