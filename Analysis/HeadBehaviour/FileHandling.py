@@ -1,5 +1,7 @@
 # %%
 from pathlib import Path
+
+import demjson as demjson
 import pandas as pd
 import json
 import itertools
@@ -21,31 +23,42 @@ def interpolate_dataframe(df, startTime=0, endTime=6.5, framerate=200):
             interpolated_data = interpolation_function(T)
             data[str(col)] = interpolated_data
         except Exception as e:
-            pass;# print(col, e)
+            pass;  # print(col, e)
     return pd.DataFrame(data=data)
 
 
-def bring_one_trial(target, env, posture, block, subject, study_num=3):
+def bring_one_trial(target, env, posture, block, subject, study_num,debug_print=False):
     try:
-        output = read_hololens_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                                    study_num=3)
+        if study_num == 3:
+            posture = 'W'
 
-        eye = read_eye_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                            study_num=3)
-        print('mean eye confidence:',eye.confidence.mean())
+        holo = read_hololens_data(target=target, environment=env, posture=posture, block=block, subject=subject,
+                                  study_num=study_num)
+
+        eye = read_eye_data(target=target, environment=env, posture=posture, block=block, subject=subject,
+                            study_num=study_num)
+        if debug_print:
+            print(target, env, posture, block, subject, study_num,'mean eye confidence:', eye.confidence.mean())
         # eye = eye[eye['confidence'] > 0.8]
-        imu = read_imu_data(target=target, environment=env, posture='W', block=block, subject=subject,
-                            study_num=3)
-        shift, corr, shift_time = synchronise_timestamp(imu, output, show_plot=False)
+        imu = read_imu_data(target=target, environment=env, posture=posture, block=block, subject=subject,
+                            study_num=study_num)
+
+        shift, corr, shift_time = synchronise_timestamp(imu, holo, show_plot=False)
         eye.timestamp = eye.timestamp - shift_time
         imu.timestamp = imu.timestamp - shift_time
         if env == 'W':
             r = 0.3 / 2
         else:
             r = 0.3 / 2
+        if study_num == 2:
+            if env == 'W':
+                r = 0.5 / 2
+            else:
+                r = 0.1 / 2
         apply = 'angular_distance'
-        output['MaximumTargetAngle'] = (r * 1 / output.Distance).apply(math.asin) * 180 / math.pi
-        initial_contact_time_data = output[output[apply] < output['MaximumTargetAngle']]
+
+        holo['MaximumTargetAngle'] = (r * 1 / holo.Distance).apply(math.asin) * 180 / math.pi
+        initial_contact_time_data = holo[holo[apply] < holo['MaximumTargetAngle']]
         if len(initial_contact_time_data) <= 0:
             print('no contact');
             return
@@ -56,9 +69,9 @@ def bring_one_trial(target, env, posture, block, subject, study_num=3):
         eye.theta = (eye.theta - eye.theta[0]) * 360 / (2 * math.pi)
         eye.phi = (eye.phi - eye.phi[0]) * 360 / (2 * math.pi)
     except Exception as e:
-        print(e)
+        print('error while bring dataset:', e)
         return
-    return output, eye, imu, initial_contact_time
+    return holo, eye, imu, initial_contact_time
     # eye.theta = double_item_jitter(single_item_jitter(eye.theta))
     # eye.phi = double_item_jitter(single_item_jitter(eye.phi))
 
@@ -162,6 +175,41 @@ def synchronise_timestamp(imu, holo, show_plot=False):
     return shift, coef, shift_time
 
 
+def manipulate_eye(_eye_dataframe: pd.DataFrame):
+    """[summary]
+
+    Args:
+        _eye_dataframe (pd.DataFrame): pandas dataframe of raw eye-data
+
+    Raises:
+        ValueError: If there is an error while handling eye data, raises error
+
+    Returns:
+        [pd.DataFrame]: 1) reset timestamp to 0, 2) make json list to dataframe
+    """
+    try:
+        eye_list = []
+        for row in _eye_dataframe.itertuples(index=False):
+            python_timestamp = row[0]
+            pupil_data = row[1]
+            json_dict = demjson.decode(pupil_data)
+            json_dict["python_timestamp"] = python_timestamp
+            json_dict["timestamp"] = float(json_dict["timestamp"])
+            json_dict["confidence"] = float(json_dict["confidence"])
+            json_dict["theta"] = float(json_dict["theta"])
+            json_dict["phi"] = float(json_dict["phi"])
+            eye_list.append(json_dict)
+        output = pd.DataFrame(eye_list)
+        output.timestamp = output.timestamp - output.timestamp[0]
+        output[["norm_x",
+                "norm_y"]] = pd.DataFrame(output.norm_pos.tolist(),
+                                          index=output.index)
+        return output
+    except Exception as e:
+        raise Exception(e.args, "failed in eye manipulation")
+        # raise ValueError("fail in EYE manipulation")
+
+
 def manipulate_imu(_imu_dataframe: pd.DataFrame):
     """convert raw imu data (quaternion) to euler angles, and set timestamp unit into second.
 
@@ -187,9 +235,9 @@ def manipulate_imu(_imu_dataframe: pd.DataFrame):
                  (-euler_angle[2] - 180 > -180) else -euler_angle[2] + 180)
 
             euler_angle = (x, y, z)
-            output = (int(row[0][1:]),) + euler_angle
-
-            angle_list.append(output)
+            # converted_angle = ((row[0]),) + euler_angle
+            converted_angle = (int(row[0][1:]),) + euler_angle
+            angle_list.append(converted_angle)
         output = pd.DataFrame(
             data=angle_list,
             columns=["IMUtimestamp", "rotationX", "rotationY", "rotationZ"],
@@ -206,8 +254,22 @@ def read_imu_data(target, environment, posture, block, subject, study_num) -> pd
     root = Path(__file__).resolve().parent.parent.parent / 'Datasets'
     if study_num == 2:  # FIXME : didn't applied on 2nd dta
         subject += 200
-        data_root = root / '2ndData' / 'hololens_data' / ('compressed_sub' + str(subject))
+        data_root = root / '2ndData' / str(subject)
         trial_detail = "T" + str(target) + "_E" + environment + "_P" + posture + "_B" + str(block)
+        try:
+            pickled_files = data_root.rglob('IMU*' + trial_detail + '*.pkl')
+            for file in pickled_files:
+                if trial_detail in file.name:
+                    return pd.read_pickle(file)
+            whole_files = data_root.rglob('IMU*' + trial_detail + '*.csv')
+            for file in whole_files:
+                if trial_detail in file.name:
+                    with open(file) as f:
+                        third_output = pd.read_csv(f, header=1)
+                        output = manipulate_imu(third_output)
+                        output = output.rename(columns={"IMUtimestamp": "timestamp"})
+        except Exception as e:
+            raise Exception('----Finding IMU error-----\n', e.args)
     elif study_num == 3:
         subject += 300
         data_root = root / '3rdData' / (str(subject))
@@ -236,8 +298,44 @@ def read_eye_data(target, environment, posture, block, subject, study_num):
     root = Path(__file__).resolve().parent.parent.parent / 'Datasets'
     if study_num == 2:  # FIXME : didn't applied on 2nd dta
         subject += 200
-        data_root = root / '2ndData' / 'hololens_data' / ('compressed_sub' + str(subject))
+        data_root = root / '2ndData' / str(subject)
         trial_detail = "T" + str(target) + "_E" + environment + "_P" + posture + "_B" + str(block)
+        try:
+            pickled_files = data_root.rglob('EYE*' + trial_detail + '*.pkl')
+            for file in pickled_files:
+                if trial_detail in file.name:
+                    third_output = pd.read_pickle(file)
+                    third_output.timestamp = third_output.timestamp - third_output.timestamp[0]
+                    third_output.python_timestamp = third_output.python_timestamp - third_output.python_timestamp[0]
+                    third_output = third_output.astype({
+                        'theta': float,
+                        'phi': float,
+                        'norm_x': float,
+                        'norm_y': float
+                    })
+                    output = third_output
+                    return output
+            whole_files = data_root.rglob('EYE*' + trial_detail + '*.csv')
+            for file in whole_files:
+                if trial_detail in file.name:
+                    with open(file) as f:
+                        third_output = pd.read_csv(f, header=1)
+                        third_output = manipulate_eye(third_output)
+                        third_output.timestamp = third_output.timestamp - third_output.timestamp[0]
+                        third_output.python_timestamp = third_output.python_timestamp - third_output.python_timestamp[0]
+                        third_output = third_output.astype({
+                            'theta': float,
+                            'phi': float,
+                            'norm_x': float,
+                            'norm_y': float
+                        })
+                        third_output.norm_x = third_output.norm_x.astype(float)
+                        third_output.norm_y = third_output.norm_y.astype(float)
+                        output = third_output
+                        print("First time to reach this file... making pkl file")
+                        output.to_pickle(data_root / (file.name.split(".")[0] + ".pkl"))
+        except Exception as e:
+            raise Exception('----Finding EYE error-----', e.args)
     elif study_num == 3:
         subject += 300
         data_root = root / '3rdData' / (str(subject))
@@ -262,7 +360,7 @@ def read_eye_data(target, environment, posture, block, subject, study_num):
                 if trial_detail in file.name:
                     with open(file) as f:
                         third_output = pd.DataFrame(f, header=1)
-                        third_output.timestamp = third_output.timestamp - third_output.python_timestamp[0]
+                        third_output.timestamp = third_output.timestamp - third_output.timestamp[0]
                         third_output.python_timestamp = third_output.python_timestamp - third_output.python_timestamp[0]
                         third_output = third_output.astype({
                             'theta': float,
@@ -274,7 +372,7 @@ def read_eye_data(target, environment, posture, block, subject, study_num):
                         third_output.norm_y = third_output.norm_y.astype(float)
                         output = third_output
         except Exception as e:
-            raise Exception('----Finding EYE error-----\n', e.args)
+            raise Exception('----Finding EYE error-----', e.args)
     else:
         print('study_num should be 2 or 3, input was ', study_num)
     return output
@@ -383,6 +481,12 @@ def read_hololens_data(target, environment, posture, block, subject, study_num):
     output['MaximumTargetSize'] = maxTargetsizes
     output.to_pickle(data_root / (str(trial_detail) + '.pkl'))
     return output
+
+
+def calculate_anglular_distance(x, y):
+    x = pd.Series(x)
+    y = pd.Series(y)
+    return (x ** 2 + y ** 2).apply(math.sqrt)
 
 
 if __name__ == '__main__':

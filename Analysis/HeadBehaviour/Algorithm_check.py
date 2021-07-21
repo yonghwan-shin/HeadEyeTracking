@@ -3,129 +3,231 @@ import pandas as pd
 from AnalysingFunctions import *
 from FileHandling import *
 import time
+
 """
 NOTE: vertical/horizontal parameters
 Vertical:     imu-x/head-rotation-x/holo-the/eye-y/eye-the
 Horizontal:   imu-z/head-rotation-y/holo-phi/eye-x/eye-phi
+
+'timestamp', 'target_entered', 'angular_distance', 'head_position_x',
+       'head_position_y', 'head_position_z', 'head_rotation_x',
+       'head_rotation_y', 'head_rotation_z', 'head_forward_x',
+       'head_forward_y', 'head_forward_z', 'target_position_x',
+       'target_position_y', 'target_position_z', 'head_forward_x_next',
+       'head_forward_y_next', 'head_forward_z_next', 'time_interval',
+       'angle_speed', 'Distance', 'Theta', 'Phi', 'TargetVertical',
+       'TargetHorizontal', 'MaximumTargetSize', 'MaximumTargetAngle'
+       
+       'timestamp', 'target_entered', 'angular_distance', 'head_position_x',
+       'head_position_y', 'head_position_z', 'head_rotation_x',
+       'head_rotation_y', 'head_rotation_z', 'head_forward_x',
+       'head_forward_y', 'head_forward_z', 'target_position_x',
+       'target_position_y', 'target_position_z', 'head_forward_x_next',
+       'head_forward_y_next', 'head_forward_z_next', 'time_interval',
+       'angle_speed', 'Distance', 'Theta', 'Phi', 'TargetVertical',
+       'TargetHorizontal', 'MaximumTargetSize', 'MaximumTargetAngle
 """
 
 
+# %%
 
 
-# %% Check stand-condition data
-subject = 3
+#%%
+subject = 1
 env = 'U'
-target = 5
+target = 1
+block = 2
+posture = 'W'
+trial_info = dict(target=target, env=env, posture=posture, block=block,
+                  subject=subject, study_num=3)
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture=posture, block=block,
+                                                       subject=subject, study_num=3)
+eye = eye[eye.confidence > 0.8]
+fc = 10
+
+holo = interpolate_dataframe(holo, framerate=120)
+eye = interpolate_dataframe(eye, framerate=120)
+eye['median_phi'] = eye.phi.rolling(601, min_periods=1).median()
+eye['median_theta'] = eye.theta.rolling(601, min_periods=1).median()
+eye.phi = eye.phi - eye.median_phi
+eye.theta = eye.theta - eye.median_theta
+# imu = interpolate_dataframe(imu, framerate=60)
+
+import scipy.signal
+
+eye['xhat'] = scipy.signal.savgol_filter(eye.phi,5,2)
+eye['yhat'] = scipy.signal.savgol_filter(eye.theta,5,2)
+eye['xvel'] = eye.xhat.diff(1)/eye.timestamp.diff(1)
+eye['yvel'] = eye.yhat.diff(1)/eye.timestamp.diff(1)
+holo['xadd'] = holo.head_rotation_y + eye.xhat
+holo['yadd'] = holo.head_rotation_x - eye.yhat
+holo['xvel'] = holo.xadd.diff(1) / holo.timestamp.diff(1)
+holo['yvel'] = holo.yadd.diff(1) / holo.timestamp.diff(1)
+holo['vel'] = (holo.xvel**2+holo.yvel**2).apply(math.sqrt)
+plt.plot(holo.xadd)
+plt.plot(holo.Phi)
+plt.plot(eye.xhat)
+
+plt.show()
+plt.plot(holo.yadd)
+plt.plot(holo.Theta)
+plt.plot(eye.yhat)
+plt.show()
+eye['vel'] = (eye.xvel**2 + eye.yvel**2).apply(math.sqrt)
+plt.plot(eye.vel)
+plt.plot(holo.vel,alpha=0.5)
+plt.show()
+from sklearn.mixture import GaussianMixture
+training = eye.vel[1:].to_numpy().reshape(-1,1)
+gmm =GaussianMixture(n_components=2).fit(training)
+
+print(gmm.means_)
+plt.plot(eye.vel)
+plt.plot(gmm.predict(training)*50)
+plt.show()
+
+# %% Test
+subject = 1
+env = 'U'
+target = 0
 block = 4
-holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+posture = 'W'
+trial_info = dict(target=target, env=env, posture=posture, block=block,
+                  subject=subject, study_num=3)
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture=posture, block=block,
                                                        subject=subject, study_num=3)
 # eye = eye[eye.confidence > 0.8]
 fc = 10
 
 holo = interpolate_dataframe(holo, framerate=60)
+# eye = interpolate_dataframe(eye, framerate=60)
+# imu = interpolate_dataframe(imu, framerate=60)
+holo['changed_add_angle'] = calculate_anglular_distance(easing_linear(holo.head_rotation_y, 0.08) - holo.Phi,
+                                                        easing_linear(holo.head_rotation_x, 0.07) - holo.Theta)
+initial_contact_index = holo[holo.timestamp > initial_contact_time].index[0]
+changed_initial_contact_time = holo[holo.changed_add_angle < holo.MaximumTargetAngle].timestamp.values[0]
+changed_initial_contact_index = holo[holo.timestamp > changed_initial_contact_time].index[0]
+plt.plot(holo.timestamp, holo.MaximumTargetAngle)
+plt.plot(holo.timestamp, holo.angular_distance, color='red')
+plt.plot(holo.timestamp, holo['changed_add_angle'], linestyle='--', color='green')
+plt.axvline(initial_contact_time)
+plt.show()
+
+# %%
+subject = 1
+env = 'W'
+target = 1
+block = 3
+holo, eye, imu, initial_contact_time = bring_one_trial(target=target, env=env, posture='W', block=block,
+                                                       subject=subject, study_num=2)
+eye = eye[eye.confidence > 0.8]
+fc = 10
+
+holo = interpolate_dataframe(holo, framerate=60)
 eye = interpolate_dataframe(eye, framerate=60)
 imu = interpolate_dataframe(imu, framerate=60)
-# plt.plot(eye.phi)
-# plt.plot(single_item_jitter(eye.phi,True))
-# plt.show()
+
 eye.phi = eye.phi - eye.phi[0]
 eye.theta = eye.theta - eye.theta[0]
 eye['median_phi'] = eye.phi.rolling(601, min_periods=1).median()
 eye['median_theta'] = eye.theta.rolling(601, min_periods=1).median()
 eye.phi = eye.phi - eye.median_phi
 eye.theta = eye.theta - eye.median_theta
-# eye.phi = one_euro(eye.phi, eye.timestamp, 200, 10, 1.0)
-# eye.theta = one_euro(eye.theta, eye.timestamp, 200, 10, 1.0)
+eye.phi = one_euro(eye.phi, eye.timestamp, 200, 10, 1.0)
+eye.theta = one_euro(eye.theta, eye.timestamp, 200, 10, 1.0)
 
-# holo_contact = holo[holo.timestamp > initial_contact_time]
-# eye_contact = eye[eye.timestamp > initial_contact_time]
-#
-# holo = holo[holo.timestamp > initial_contact_time]
-# eye = eye[eye.timestamp > initial_contact_time]
+Vmin = 1
+Vmax = 20
+Dmin = 0.1
+Dmax = 1.0
+Wmin = 0.005
+Wmax = 0.05
+Gmin = 0.032
+Gmax = 1.055
+window = 6
 
-cursor_x = []
-# slow = 0.03
-slow = 0.05
-fast = 0.5
-r = 0.5
-for i in range(len(holo.timestamp)):
-    if i == 0:
-        cursor_x.append(holo.head_rotation_y[0])
+
+def vhat(v, vmin, vmax):
+    if v > vmax:
+        return 1
+    elif v < vmin:
+        return 0
     else:
-        if holo.timestamp[i] < initial_contact_time:
-            r = fast
+        return (v - vmin) / (vmax - vmin)
+
+
+def dhat(d, dmin, dmax):
+    if abs(d) > dmax:
+        return 1
+    elif abs(d) < dmin:
+        return 0
+    else:
+        return (abs(d) - dmin) / (dmax - dmin)
+
+
+def what(w, wmin, wmax):
+    if w > wmax:
+        return 1
+    elif w < wmin:
+        return 0
+    else:
+        return (w - wmin) / (wmax - wmin)
+
+
+adaptive_cursor = []
+main_data = holo.head_rotation_y
+for i in range(len(holo.timestamp)):
+    if i <= window:
+        adaptive_cursor.append(main_data[i])
+    else:
+        Vx = (main_data[i] - main_data[i - 1]) / holo.timestamp.diff(1)[i]
+        Dx = main_data[i] - adaptive_cursor[i - 1]
+        Wx = sum([abs(main_data[i] - main_data[i - x]) for x in range(1, window)]) / window
+
+        Vx_hat = vhat(Vx, Vmin, Vmax)
+        Dx_hat = dhat(Dx, Dmin, Dmax)
+        Wx_hat = what(Wx, Wmin, Wmax)
+        Mx = Wx_hat * (max(Vx_hat, Dx_hat))
+        Gx = Gmin + 0.5 * (math.sin(Mx * math.pi - math.pi * 0.5) + 1) * (Gmax - Gmin)
+        Sx = main_data[i] - main_data[i - 1]
+        if Gx > 1 and Dx > 0 and Sx < 0:
+            Gx_hat = 1 - (Gx - 1)
+        elif Gx > 1 and Dx < 0 and Sx > 0:
+            Gx_hat = 1 - (Gx - 1)
         else:
-            r = slow
-        previous_cursor = cursor_x[i - 1]
-        eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
-        estimated_direction = eye_cursor - holo.head_rotation_y[i]
-        # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
-        head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
-        correct_direction = True if head_movement * estimated_direction > 0 else False
-        if correct_direction:  # head is moving towards
-            if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
-                r = fast
-            else:
-                r = slow
-        else:
-            r = slow
-        # new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_y[i],
-        #                             holo.timestamp[i] - holo.timestamp[i - 1], r)
-        new_cursor = previous_cursor * (1-r) + r* holo.head_rotation_y[i]
-        cursor_x.append(new_cursor)
-#
-# gain_cursor = []
-# head_vel_H = list(holo.head_rotation_y.diff(1) / holo.timestamp.diff(1))
-# for i in range(len(holo.timestamp)):
-#     if i == 0:
-#         gain_cursor.append(holo.head_rotation_y[0])
-#     else:
-#         gain = 0.1
-#         previous_cursor = gain_cursor[i - 1]
-#         eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
-#         # estimated_direction = eye_cursor - holo.head_rotation_y[i]
-#         estimated_direction = eye_cursor - previous_cursor
-#         # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
-#         head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
-#         correct_direction = True if head_movement * estimated_direction > 0 else False
-#         if abs(head_vel_H[i]) >10:
-#             gain = 0.1
-#         else:
-#             gain=1
-#
-#         gain_cursor.append(previous_cursor + head_vel_H[i] *  holo.timestamp.diff(1)[i]*gain)
+            Gx_hat = Gx
+        # print(Vx_hat,Dx_hat,Wx_hat,Mx,Gx_hat)
+        # if holo.timestamp[i] > initial_contact_time:
+        #     Gx_hat = 1-Gx_hat
+        new_cursor = adaptive_cursor[i - 1] + Gx_hat * Sx
+        adaptive_cursor.append(new_cursor)
 
 plt.plot(holo.timestamp, holo.head_rotation_y)
 
-# gain = holo.head_rotation_y.diff(1) * 0.3
-
-# gain = np.cumsum(gain)
-# gain = gain + holo.head_rotation_y.iloc[0]
-# plt.plot(holo.timestamp, gain)
-plt.plot(holo.timestamp, cursor_x)
-plt.plot(holo.timestamp, holo.head_rotation_y + eye.phi)
-# plt.plot(holo.timestamp,ease_in_expo(holo.head_rotation_y,holo.timestamp,0.3))
-plt.plot(holo.timestamp, holo.Phi, linestyle=':')
-# plt.plot(holo.timestamp, easing_linear(holo.head_rotation_y, holo.timestamp, 0.1))
-# plt.plot(holo.timestamp, ease_in_expo(holo.head_rotation_y, holo.timestamp, slow))
-# plt.plot(holo.timestamp, easing_linear(holo.head_rotation_y, holo.timestamp, fast))
-# plt.plot(holo.timestamp, gain_cursor)/
+# plt.plot(holo.timestamp, holo.head_rotation_x)
+plt.plot(holo.timestamp, adaptive_cursor)
+plt.plot(holo.timestamp, holo.Phi, linestyle='--')
+plt.axvline(initial_contact_time)
 plt.show()
 
-# cursor_y = []
+# cursor_x = []
+#
+# slow = 0.05
+# fast = 0.5
+# r = 0.5
 # for i in range(len(holo.timestamp)):
 #     if i == 0:
-#         cursor_y.append(holo.head_rotation_x[0])
+#         cursor_x.append(holo.head_rotation_y[0])
 #     else:
 #         if holo.timestamp[i] < initial_contact_time:
 #             r = fast
 #         else:
 #             r = slow
-#         previous_cursor = cursor_y[i - 1]
-#         eye_cursor = holo.head_rotation_x[i] - eye.theta[i]  # estimation
-#         estimated_direction = eye_cursor - holo.head_rotation_x[i]
+#         previous_cursor = cursor_x[i - 1]
+#         eye_cursor = holo.head_rotation_y[i] + eye.phi[i]  # estimation
+#         estimated_direction = eye_cursor - holo.head_rotation_y[i]
 #         # head_movement = holo.head_rotation_y[i] - holo.head_rotation_y[i - 1]  # head movement
-#         head_movement = holo.head_rotation_x.diff(1)[i - 10:i].mean()
+#         head_movement = holo.head_rotation_y.diff(1)[i - 10:i].mean()
 #         correct_direction = True if head_movement * estimated_direction > 0 else False
 #         if correct_direction:  # head is moving towards
 #             if abs(estimated_direction) < abs(eye_cursor - previous_cursor):  # if actual Head is closer than cursor
@@ -134,17 +236,11 @@ plt.show()
 #                 r = slow
 #         else:
 #             r = slow
-#         new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_x[i],
-#                                     holo.timestamp[i] - holo.timestamp[i - 1], r)
-#         cursor_y.append(new_cursor)
+#         # new_cursor = lerp_one_frame(previous_cursor, holo.head_rotation_y[i],
+#         #                             holo.timestamp[i] - holo.timestamp[i - 1], r)
+#         new_cursor = previous_cursor * (1-r) + r* holo.head_rotation_y[i]
+#         cursor_x.append(new_cursor)
 
-plt.plot(holo.timestamp, holo.head_rotation_x)
-# plt.plot(holo.timestamp, cursor_y)
-# plt.plot(holo.timestamp, holo.head_ro tation_x - eye.theta)
-plt.plot(holo.timestamp, holo.Theta, linestyle=':')
-plt.plot(holo.timestamp, easing_linear(holo.head_rotation_x, holo.timestamp, slow))
-plt.plot(holo.timestamp, easing_linear(holo.head_rotation_x, holo.timestamp, fast))
-plt.show()
 
 # %%
 # whole dataset

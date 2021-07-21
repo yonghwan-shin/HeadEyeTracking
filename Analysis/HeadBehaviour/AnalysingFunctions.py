@@ -1,5 +1,5 @@
 from scipy import signal
-from EyeBehaviourDetection import *
+# from EyeBehaviourDetection import *
 import numpy as np
 import math
 import vg
@@ -655,10 +655,9 @@ def lerp(data, timestamp, coef):
     return output
 
 
-def easing_linear(data, timestamp, coef):
+def easing_linear(data, coef):
     output = []
     data = list(data)
-    timestamp = list(timestamp)
     output.append(data[0])
     for i in range(1, len(data)):
         # time_difference = timestamp[i] - timestamp[i - 1]
@@ -666,7 +665,7 @@ def easing_linear(data, timestamp, coef):
         current_coef = coef
         cursor = (1 - current_coef) * output[i - 1] + current_coef * data[i]
         output.append(cursor)
-    return output
+    return pd.Series(output)
 
 
 def lerp_one_frame(start, end, time_diff, coef):
