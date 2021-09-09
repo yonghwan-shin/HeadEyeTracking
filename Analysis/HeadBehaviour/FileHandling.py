@@ -396,7 +396,7 @@ def read_hololens_data(target, environment, posture, block, subject, study_num):
                     second_output = second_output.rename(columns={
                         'Timestamp': 'timestamp',
                         'HeadPositionX': 'head_position_x',
-                        'HeadPositionY': 'head_position_y',
+                        'HeadPositionzY': 'head_position_y',
                         "HeadPositionZ": 'head_position_z',
                         'HeadRotationX': 'head_rotation_x',
                         'HeadRotationY': 'head_rotation_y',

@@ -35,7 +35,7 @@ Horizontal:   imu-z/head-rotation-y/holo-phi/eye-x/eye-phi
 #%%
 subject = 1
 env = 'U'
-target = 1
+target = 0
 block = 2
 posture = 'W'
 trial_info = dict(target=target, env=env, posture=posture, block=block,
@@ -51,6 +51,11 @@ eye['median_phi'] = eye.phi.rolling(601, min_periods=1).median()
 eye['median_theta'] = eye.theta.rolling(601, min_periods=1).median()
 eye.phi = eye.phi - eye.median_phi
 eye.theta = eye.theta - eye.median_theta
+plt.plot(holo.head_position_x,holo.head_position_z)
+plt.show()
+from filterpy.kalman import KalmanFilter
+
+#%%
 # imu = interpolate_dataframe(imu, framerate=60)
 
 import scipy.signal
