@@ -22,8 +22,19 @@ def read_hololens_data(subject, posture, cursor_type, repetition):
     except Exception as e:
         print(e.args)
 
+
 def split_target(data):
     output = []
+    first_end_num = data['end_num'].values[0]
+    for i in range(len(data) - 1):
+        if data['end_num'].values[i] == first_end_num:
+            pass
+            # data = data.drop(i)
+            # print(first_end_num, 'drop', i, len(data))
+        else:
+            # print(i, data['timestamp'].values[i],data['end_num'].values[i],first_end_num)
+            data=data.drop([x for x in range(i)])
+            break
     for target_num in range(9):
         output.append(data[data['end_num'] == target_num])
     return output
