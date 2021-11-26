@@ -1,7 +1,12 @@
+import itertools
+
 import pandas as pd
 from pathlib import Path
 import json
 import math
+import numpy as np
+import numpy.linalg as LA
+import os
 
 
 def get_one_trial(subject, posture, cursor_type, repetition, end_num):
@@ -10,25 +15,56 @@ def get_one_trial(subject, posture, cursor_type, repetition, end_num):
     temp_data = splited_data[end_num]
     temp_data.reset_index(inplace=True)
     temp_data.timestamp -= temp_data.timestamp.values[0]
-    initial_contact_time = temp_data[temp_data.target_name == "Target_" + str(end_num)].timestamp.values[
-        0]
-    dwell_temp = temp_data[temp_data.timestamp > initial_contact_time]
-    dwell_temp['cursor_rotation'] = dwell_temp.apply(
-        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
-    dwell_temp['target_rotation'] = dwell_temp.apply(
-        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
-                              x.target_position_z - x.origin_z), axis=1)
-    dwell_temp['offset_horizontal'] = dwell_temp.apply(
-        lambda x: x.cursor_rotation[1] - x.target_rotation[1], axis=1)
-    dwell_temp['offset_vertical'] = dwell_temp.apply(
-        lambda x: x.cursor_rotation[0] - x.target_rotation[0], axis=1)
-    return dwell_temp
+    # initial_contact_time = temp_data[temp_data.target_name == "Target_" + str(end_num)].timestamp.values[
+    #     0]
+    # dwell_temp = temp_data[temp_data.timestamp > initial_contact_time]
+    # dwell_temp['cursor_rotation'] = dwell_temp.apply(
+    #     lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+    # dwell_temp['target_rotation'] = dwell_temp.apply(
+    #     lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+    #                           x.target_position_z - x.origin_z), axis=1)
+    # dwell_temp['offset_horizontal'] = dwell_temp.apply(
+    #     lambda x: x.cursor_rotation[1] - x.target_rotation[1], axis=1)
+    # dwell_temp['offset_vertical'] = dwell_temp.apply(
+    #     lambda x: x.cursor_rotation[0] - x.target_rotation[0], axis=1)
+    return temp_data
 
 
-def read_hololens_data(subject, posture, cursor_type, repetition):
+def validate_trial_data(data):
+    # if there is a sudden target-shift occurs
+
+    drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
+            data['direction_z'] == 0)].index
+    if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
+        # if len(drop_index) > 0 and len(drop_index) > 0:
+        return False, 'loss'
+
+    outlier = data[(data.target_horizontal_velocity > 10*57.296) | (data.target_horizontal_velocity < -10*57.296)][5:]
+    if len(outlier.timestamp.values) > 1:
+        # in this data, sudden target movement happened.
+        return False, 'jump'
+    return True, 'None'
+    # print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
+
+
+def read_hololens_data(subject, posture, cursor_type, repetition, reset=False):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
     trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'
     files = root.rglob(trial_detail + '*.json')
+    pickled_files = root.rglob(trial_detail + "*.pkl")
+    try:  # for faster data import -> make/bring compressed version
+        for pickled_file in pickled_files:
+            if trial_detail in pickled_file.name:
+                output = pd.read_pickle(pickled_file)
+                if reset:
+                    os.remove(pickled_file.absolute())
+                    print('remove file and re-made', pickled_file.name)
+                    output = read_hololens_data(subject, posture, cursor_type, repetition)
+                # print('found pickled file!')
+                return output
+    except Exception as e:
+        print('Error in reading pickled files', e.args)
+
     try:
         for file in files:
             if trial_detail in file.name:
@@ -41,6 +77,43 @@ def read_hololens_data(subject, posture, cursor_type, repetition):
                     cursor = pd.json_normalize(output.cursorData, sep='_')
                     output.drop(['target_position', 'headData', 'cursorData'], axis='columns', inplace=True)
                     output = pd.concat([output, target_position, head, cursor], axis=1)
+                    output['cursor_rotation'] = output.apply(
+                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                    output['target_rotation'] = output.apply(
+                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+                                              x.target_position_z - x.origin_z), axis=1)
+
+                    output['cursor_rotation'] = output.apply(
+                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                    output['target_rotation'] = output.apply(
+                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+                                              x.target_position_z - x.origin_z), axis=1)
+                    output['cursor_horizontal_angle'] = output.apply(
+                        lambda x: x.cursor_rotation[1], axis=1
+                    )
+                    output['cursor_vertical_angle'] = output.apply(
+                        lambda x: x.cursor_rotation[0], axis=1
+                    )
+                    output['target_horizontal_angle'] = output.apply(
+                        lambda x: x.target_rotation[1], axis=1
+                    )
+                    output['target_vertical_angle'] = output.apply(
+                        lambda x: x.target_rotation[0], axis=1
+                    )
+                    output['horizontal_offset'] = output.apply(
+                        lambda x: math.degrees(math.sin(
+                            math.radians(x.target_horizontal_angle - x.cursor_horizontal_angle))), axis=1
+                    )
+                    output['vertical_offset'] = output.apply(
+                        lambda x: math.degrees(math.sin(
+                            math.radians(x.target_vertical_angle - x.cursor_vertical_angle))), axis=1
+                    )
+                    output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
+                    output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
+                    output['target_horizontal_velocity'] = (
+                            output['target_horizontal_angle'].diff(1) / output['timestamp'].diff(1))
+                    # print(str(root / (file.name.split('.')[0] + ".pkl")))
+                    output.to_pickle(path=str(root / (file.name.split('.')[0] + ".pkl")))
                     return output
     except Exception as e:
         print(e.args)
@@ -63,6 +136,7 @@ def split_target(data):
         output.append(data[data['end_num'] == target_num])
     return output
 
+
 #
 # def change_angle(a):
 #     if abs(a)>
@@ -73,6 +147,65 @@ def asSpherical(x, y, z):
     r = math.sqrt(x * x + y * y + z * z)
     if r == 0:
         return [0, 0]
-    theta = math.acos(z / r) * 180 / math.pi
-    phi = math.atan2(y, x) * 180 / math.pi
+    theta = math.degrees(math.acos(y / r))
+    # phi  = math.degrees(math.atan(y/x))
+    phi = math.degrees(math.atan2(x, z))
     return [theta, phi]
+
+
+# def position_speed(x,z):
+
+
+def euler(R):
+    if math.isclose(R[0][2], -1.0):
+        x = 0
+        y = math.pi / 2
+        z = x + math.atan2(R[1][0], R[2][0])
+    elif math.isclose(R[0][2], 1.0):
+        x = 0
+        y = -math.pi / 2
+        z = -x + math.atan2(-R[1][0], -R[2][0])
+    else:
+        x1 = -math.asin(R[0][2])
+        x2 = math.pi - x1
+        y1 = math.atan2(R[1][2] / math.cos(x1), R[2][2] / math.cos(x1))
+        y2 = math.atan2(R[1][2] / math.cos(x2), R[2][2] / math.cos(x2))
+
+        z1 = math.atan2(R[0][1] / math.cos(x1), R[0][0] / math.cos(x1))
+        z2 = math.atan2(R[0][1] / math.cos(x2), R[0][0] / math.cos(x2))
+    if abs(x1) + abs(y1) + abs(z1) <= abs(x2) + abs(y2) + abs(z2):
+        return [x1, y1, z1]
+    else:
+        return [x2, y2, z2]
+
+
+def angle_between(a, b):
+    inner = np.inner(a, b)
+    norms = LA.norm(a) * LA.norm(b)
+    cos = inner / norms
+    rad = np.arccos(np.clip(cos, -1.0, 1.0))
+    deg = np.rad2deg(rad)
+    return deg
+
+
+def rotation_matrix_from_vectors(vec1, vec2):
+    """ Find the rotation matrix that aligns vec1 to vec2
+    :param vec1: A 3d "source" vector
+    :param vec2: A 3d "destination" vector
+    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    """
+    a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    s = np.linalg.norm(v)
+    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
+    return rotation_matrix
+
+
+def change_angle(a):
+    if a < -180:
+        a = a + 360
+    if a > 180:
+        a = a - 360
+    return a
