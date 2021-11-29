@@ -39,7 +39,8 @@ def validate_trial_data(data):
         # if len(drop_index) > 0 and len(drop_index) > 0:
         return False, 'loss'
 
-    outlier = data[(data.target_horizontal_velocity > 10*57.296) | (data.target_horizontal_velocity < -10*57.296)][5:]
+    outlier = data[(data.target_horizontal_velocity > 10 * 57.296) | (data.target_horizontal_velocity < -10 * 57.296)][
+              5:]
     if len(outlier.timestamp.values) > 1:
         # in this data, sudden target movement happened.
         return False, 'jump'
@@ -47,8 +48,71 @@ def validate_trial_data(data):
     # print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
 
 
-def read_hololens_data(subject, posture, cursor_type, repetition, reset=False):
+def without_cursor_file(subject, posture, cursor_type, repetition):
+    root = Path(__file__).resolve().parent / 'data' / (str(subject) + '_nocursor')
+    # subject = 0
+    # posture = 'WALK'
+    # cursor_type = 'EYE'
+    trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'
+    files = root.rglob(trial_detail + '*.json')
+    try:
+        for file in files:
+            if trial_detail in file.name:
+                with open(file) as f:  # found exact file
+                    # output = pd.DataFrame(json.load(f))
+                    output = pd.read_json(f)
+                    target_position = pd.json_normalize(output.target_position, sep='_').rename(
+                        columns={'x': 'target_position_x', 'y': 'target_position_y', 'z': 'target_position_z'})
+                    head = pd.json_normalize(output.headData, sep='_')
+                    cursor = pd.json_normalize(output.cursorData, sep='_')
+                    output.drop(['target_position', 'headData', 'cursorData'], axis='columns', inplace=True)
+                    output = pd.concat([output, target_position, head, cursor], axis=1)
+                    output['cursor_rotation'] = output.apply(
+                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                    output['target_rotation'] = output.apply(
+                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+                                              x.target_position_z - x.origin_z), axis=1)
+
+                    output['cursor_rotation'] = output.apply(
+                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                    output['target_rotation'] = output.apply(
+                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+                                              x.target_position_z - x.origin_z), axis=1)
+                    output['cursor_horizontal_angle'] = output.apply(
+                        lambda x: x.cursor_rotation[1], axis=1
+                    )
+                    output['cursor_vertical_angle'] = output.apply(
+                        lambda x: x.cursor_rotation[0], axis=1
+                    )
+                    output['target_horizontal_angle'] = output.apply(
+                        lambda x: x.target_rotation[1], axis=1
+                    )
+                    output['target_vertical_angle'] = output.apply(
+                        lambda x: x.target_rotation[0], axis=1
+                    )
+                    output['horizontal_offset'] = output.apply(
+                        lambda x: math.degrees(math.sin(
+                            math.radians(x.target_horizontal_angle - x.cursor_horizontal_angle))), axis=1
+                    )
+                    output['vertical_offset'] = output.apply(
+                        lambda x: math.degrees(math.sin(
+                            math.radians(x.target_vertical_angle - x.cursor_vertical_angle))), axis=1
+                    )
+                    output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
+                    output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
+                    output['target_horizontal_velocity'] = (
+                            output['target_horizontal_angle'].diff(1) / output['timestamp'].diff(1))
+                    # print(str(root / (file.name.split('.')[0] + ".pkl")))
+                    # output.to_pickle(path=str(root / (file.name.split('.')[0] + ".pkl")))
+                    return output
+    except Exception as e:
+        print(e.args)
+    return output
+
+
+def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
+    if pilot: root = Path(__file__).resolve().parent / 'data' / (str(subject) + '_nocursor')
     trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'
     files = root.rglob(trial_detail + '*.json')
     pickled_files = root.rglob(trial_detail + "*.pkl")

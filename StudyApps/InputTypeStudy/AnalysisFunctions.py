@@ -1,5 +1,6 @@
 import math
 
+import matplotlib.patches
 import pandas as pd
 
 from FileHandling import *
@@ -12,7 +13,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
-
+sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
+          ('EYE', 'WALK', 'vertical'): 2.4375580926867078,
+          ('EYE', 'STAND', 'horizontal'): 1.5635038623192548,
+          ('EYE', 'STAND', 'vertical'): 1.491778058469321,
+          ('HAND', 'WALK', 'horizontal'): 6.521336309396893,
+          ('HAND', 'WALK', 'vertical'): 1.6178699940290733,
+          ('HAND', 'STAND', 'horizontal'): 1.2868251691549768,
+          ('HAND', 'STAND', 'vertical'): 1.3437840646867873,
+          ('HEAD', 'WALK', 'horizontal'): 5.0511439371221885,
+          ('HEAD', 'WALK', 'vertical'): 2.3182985184738376,
+          ('HEAD', 'STAND', 'horizontal'): 1.303755389483091,
+          ('HEAD', 'STAND', 'vertical'): 1.5906082672928836}
 
 def collect_offsets(sub_num, cursorTypes=['HEAD', 'EYE', 'HAND'], postures=['STAND', 'WALK'], targets=range(9),
                     repetitions=[4, 5, 6, 7, 8, 9]):
@@ -138,7 +150,7 @@ def visualize_offsets(show_plot=True):
 
 
 def summarize_subject(sub_num, cursorTypes=['HEAD', 'EYE', 'HAND'], postures=['STAND', 'WALK'], targets=range(9),
-                      repetitions=[4, 5, 6, 7, 8, 9]):
+                      repetitions=[4, 5, 6, 7, 8, 9],pilot=False,savefile=True):
     rep_small = [0, 2, 4, 6, 8]
     rep_large = [1, 3, 5, 7, 9]
     draw_plot = False
@@ -150,12 +162,13 @@ def summarize_subject(sub_num, cursorTypes=['HEAD', 'EYE', 'HAND'], postures=['S
                  'std_offset', 'overall_mean_offset', 'overall_std_offset',
                  'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
                  'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
-                 'mean_abs_offset_horizontal', 'mean_abs_offset_vertical','std_abs_offset_horizontal','std_abs_offset_vertical',
+                 'mean_abs_offset_horizontal', 'mean_abs_offset_vertical', 'std_abs_offset_horizontal',
+                 'std_abs_offset_vertical',
                  'error'])
     for cursor_type in cursorTypes:
         for rep in repetitions:
             for pos in postures:
-                data = read_hololens_data(sub_num, pos, cursor_type, rep, True)
+                data = read_hololens_data(sub_num, pos, cursor_type, rep, False,pilot)
                 splited_data = split_target(data)
                 wide = 'SMALL' if rep in rep_small else 'LARGE'
 
@@ -228,7 +241,7 @@ def summarize_subject(sub_num, cursorTypes=['HEAD', 'EYE', 'HAND'], postures=['S
                                          'std_offset_vertical': std_offset_vertical,
                                          'mean_abs_offset_horizontal': dwell_temp.abs_horizontal_offset.mean(),
                                          'mean_abs_offset_vertical': dwell_temp.abs_vertical_offset.mean(),
-                                         'std_abs_offset_horizontal':dwell_temp.abs_horizontal_offset.std(),
+                                         'std_abs_offset_horizontal': dwell_temp.abs_horizontal_offset.std(),
                                          'std_abs_offset_vertical': dwell_temp.abs_vertical_offset.std(),
                                          'error': None
                                          }
@@ -247,9 +260,15 @@ def summarize_subject(sub_num, cursorTypes=['HEAD', 'EYE', 'HAND'], postures=['S
                                          }
                         summary.loc[len(summary)] = error_summary
                         print(sub_num, pos, cursor_type, rep, t, e.args, 'fail count', fail_count)
+
     final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
-    final_summary.to_csv('summary' + str(sub_num) + '.csv')
-    summary.to_csv('Rawsummary' + str(sub_num) + '.csv')
+    if savefile:
+        if pilot:
+            final_summary.to_csv('nocursor_summary' + str(sub_num) + '.csv')
+            summary.to_csv('nocursor_Rawsummary' + str(sub_num) + '.csv')
+        else:
+            final_summary.to_csv('summary' + str(sub_num) + '.csv')
+            summary.to_csv('Rawsummary' + str(sub_num) + '.csv')
     return summary
 
 
@@ -291,43 +310,75 @@ def visualize_summary(show_plot=True):
                      facet_col='posture',
                      title='total basic summary')
         fig.show()
-        wide = 20
-        fig = go.Figure()
-        for t in range(9):
-            for idx, cursor_type in enumerate(['EYE', 'HAND', 'HEAD']):
-                for w in ['LARGE', 'SMALL']:
-                    if w == 'LARGE':
-                        wide = 20
-                    else:
-                        wide = 10
-                    cursor_data = summary[(summary['posture'] == 'WALK') & (summary['cursor_type'] == cursor_type) & (
-                            summary['target_num'] == t) & (summary['wide'] == w)]
-                    cursor_data = cursor_data[cursor_data.error.isna() == True]
-                    x_offset = wide * math.sin(t * math.pi / 9 * 2)
-                    y_offset = wide * math.cos(t * math.pi / 9 * 2)
-                    xs = cursor_data.mean_offset_horizontal + x_offset
-                    ys = cursor_data.mean_offset_vertical + y_offset
-                    color = DEFAULT_PLOTLY_COLORS[idx]
-                    fig.add_trace(
-                        go.Scatter(
-                            x=xs,
-                            y=ys,
-                            name=cursor_type,
-                            mode='markers',
-                            marker={'color': color}
-                            , opacity=0.1
-                        )
-                    )
-                    fig.add_shape(type='path',
-                                  path=confidence_ellipse(xs,
-                                                          ys),
-                                  line={'dash': 'dot'},
-                                  line_color=color)
+        # wide = 20
 
-        fig.update_yaxes(scaleanchor='x', scaleratio=1)
-        fig.add_hline(y=0)
-        fig.add_vline(x=0)
-        fig.show()
+        for posture in ['WALK','STAND']:
+            fig = go.Figure()
+            plt_fig, plt_ax = plt.subplots()
+            wide = 7.125
+            x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
+            y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
+            plt_ax.scatter(x_offsets, y_offsets)
+            wide = 14.04
+            x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
+            y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
+            plt_ax.scatter(x_offsets, y_offsets)
+            for t in range(9):
+                for idx, cursor_type in enumerate(['EYE', 'HAND', 'HEAD']):
+                    for w in ['LARGE', 'SMALL']:
+                        if w == 'LARGE':
+                            wide = 14.04
+                        else:
+                            wide = 7.125
+                        cursor_data = summary[(summary['posture'] == posture) & (summary['cursor_type'] == cursor_type) & (
+                                summary['target_num'] == t) & (summary['wide'] == w)]
+                        cursor_data = cursor_data[cursor_data.error.isna() == True]
+                        x_offset = wide * math.sin(t * math.pi / 9 * 2)
+                        y_offset = wide * math.cos(t * math.pi / 9 * 2)
+                        xs = cursor_data.mean_offset_horizontal + x_offset
+                        ys = cursor_data.mean_offset_vertical + y_offset
+                        color = DEFAULT_PLOTLY_COLORS[idx]
+                        fig.add_trace(
+                            go.Scatter(
+                                x=xs,
+                                y=ys,
+                                name=cursor_type,
+                                mode='markers',
+                                marker={'color': color}
+                                , opacity=0.1
+                            )
+                        )
+                        fig.add_shape(type='path',
+                                      path=confidence_ellipse(xs,
+                                                              ys),
+                                      line={'dash': 'dot'},
+                                      line_color=color)
+                        colorset = ['maroon', 'orangered', 'darkorange', 'olive', 'yellowgreen', 'darkolivegreen',
+                                    'turquoise', 'deepskyblue', 'dodgerblue']
+                        estimated_half_width = abs(
+                            cursor_data.mean_offset_horizontal.mean()) + 2 * cursor_data.std_offset_horizontal.mean()
+                        estimated_half_height = abs(
+                            cursor_data.mean_offset_vertical.mean()) + 2 * cursor_data.std_offset_vertical.mean()
+                        import matplotlib.patches as patches
+                        plt_ax.add_patch(
+                            patches.Rectangle(
+                                (x_offset - estimated_half_width, y_offset - estimated_half_height),
+                                2 * estimated_half_width,
+                                2 * estimated_half_height,
+                                edgecolor=colorset[t],
+                                fill=False
+                            )
+                        )
+
+
+            fig.update_yaxes(scaleanchor='x', scaleratio=1)
+            fig.add_hline(y=0)
+            fig.add_vline(x=0)
+            fig.show()
+            plt.title(str(posture))
+            plt.xlim(-30,30)
+            plt.ylim(-30, 30)
+            plt.show()
 
     return summary
 
@@ -496,6 +547,7 @@ def target_size_analysis(sub_num, cursorTypes=['HEAD', 'EYE', 'HAND'], postures=
                         # dwell threshold and target-size analysis
                         # dwell_thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
                         target_sizes = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+
                         # for threshold in dwell_thresholds:
                         #     for target_size in target_sizes:
                         #         # in each estimation
