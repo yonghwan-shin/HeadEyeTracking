@@ -8,6 +8,21 @@ import numpy as np
 import numpy.linalg as LA
 import os
 
+default_target_size = 1.43209618
+
+sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
+          ('EYE', 'WALK', 'vertical'): 2.4375580926867078,
+          ('EYE', 'STAND', 'horizontal'): 1.5635038623192548,
+          ('EYE', 'STAND', 'vertical'): 1.491778058469321,
+          ('HAND', 'WALK', 'horizontal'): 6.521336309396893,
+          ('HAND', 'WALK', 'vertical'): 1.6178699940290733,
+          ('HAND', 'STAND', 'horizontal'): 1.2868251691549768,
+          ('HAND', 'STAND', 'vertical'): 1.3437840646867873,
+          ('HEAD', 'WALK', 'horizontal'): 5.0511439371221885,
+          ('HEAD', 'WALK', 'vertical'): 2.3182985184738376,
+          ('HEAD', 'STAND', 'horizontal'): 1.303755389483091,
+          ('HEAD', 'STAND', 'vertical'): 1.5906082672928836}
+
 
 def get_one_trial(subject, posture, cursor_type, repetition, end_num):
     data = read_hololens_data(subject, posture, cursor_type, repetition)
@@ -124,6 +139,10 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     os.remove(pickled_file.absolute())
                     print('remove file and re-made', pickled_file.name)
                     output = read_hololens_data(subject, posture, cursor_type, repetition)
+                    drop_index = output[
+                        (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
+                                output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
+                    output = output.drop(drop_index)
                 # print('found pickled file!')
                 return output
     except Exception as e:
