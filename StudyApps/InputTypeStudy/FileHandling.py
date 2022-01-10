@@ -8,7 +8,7 @@ import numpy as np
 import numpy.linalg as LA
 import os
 
-default_target_size = 1.43209618
+default_target_size = 3.0 / 2
 
 sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
           ('EYE', 'WALK', 'vertical'): 2.4375580926867078,
@@ -22,6 +22,28 @@ sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
           ('HEAD', 'WALK', 'vertical'): 2.3182985184738376,
           ('HEAD', 'STAND', 'horizontal'): 1.303755389483091,
           ('HEAD', 'STAND', 'vertical'): 1.5906082672928836}
+
+# wide = 1
+# x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
+# y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
+# for i in range(9):
+#     j = i + 5
+#     if j > 8:
+#         j -= 9
+#     x_dir = x_offsets[i] - x_offsets[j]
+#     y_dir = y_offsets[i] - y_offsets[j]
+#     print(i, ':',(x_dir, y_dir),',')
+directions = {
+    0: (0.34202014332566866, 1.9396926207859084),
+    1: (1.5088130134709776, 1.2660444431189786),
+    2: (1.9696155060244163, 4.440892098500626e-16),
+    3: (1.5088130134709785, -1.2660444431189777),
+    4: (0.3420201433256689, -1.9396926207859084),
+    5: (-0.9848077530122079, -1.7057370639048866),
+    6: (-1.8508331567966465, -0.6736481776669309),
+    7: (-1.850833156796647, 0.6736481776669297),
+    8: (-0.9848077530122085, 1.7057370639048863),
+}
 
 
 def get_one_trial(subject, posture, cursor_type, repetition, end_num):

@@ -224,7 +224,9 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                  'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
                  'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
                  'mean_abs_offset_horizontal', 'mean_abs_offset_vertical', 'std_abs_offset_horizontal',
-                 'std_abs_offset_vertical',
+                 'std_abs_offset_vertical', 'longest_dwell_time',
+                 'movement_length',
+                 'entering_position',
                  'error'])
     for cursor_type in cursorTypes:
         for rep in repetitions:
@@ -245,35 +247,65 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         temp_data = splited_data[t]
                         temp_data.reset_index(inplace=True)
                         temp_data.timestamp -= temp_data.timestamp.values[0]
+
+                        drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
+                                temp_data['direction_z'] == 0)].index
                         validate, reason = validate_trial_data(temp_data)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
                             summary.loc[len(summary)] = trial_summary
                             continue
-                        drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-                                temp_data['direction_z'] == 0)].index
-                        # if len(drop_index) > 0:
-                        #     print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
-                        #     # raise ValueError
-                        temp_data = temp_data.drop(drop_index)
-                        only_success = temp_data[temp_data.target_name == "Target_" + str(t)]
+                        if len(drop_index) > 0:
+                            loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+                            if len(temp_data) in loss_indices:
+                                loss_indices.remove(len(temp_data))
+                            if len(temp_data) + 1 in loss_indices:
+                                loss_indices.remove(len(temp_data) + 1)
+                            temp_data.loc[loss_indices] = np.nan
+                            temp_data = temp_data.interpolate()
+
+
+                        # temp_data = temp_data.drop(drop_index)
+                        temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
+                            1) / temp_data.timestamp.diff(1)
+                        temp_data['cursor_speed'] = abs(
+                            temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
+
+
+                        only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
                         if len(only_success) <= 0:
                             raise ValueError('no success frames', len(only_success))
                         initial_contact_time = only_success.timestamp.values[0]
 
                         success_dwells = []
-                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
+                        temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
+                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
+                        # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
                             # print(k, [t[0] for t in g])
-                            if k == 'Target_' + str(t):
+                            if k==True:
+                            # if k == 'Target_' + str(t):
                                 df = pd.DataFrame([r[1] for r in g])
                                 success_dwells.append(df)
                         time_sum = 0
+                        times = []
                         for dw in success_dwells:
-                            time_sum += dw.timestamp.values[-1] - dw.timestamp.values[0]
+                            current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                            time_sum += current_dwell_time
+                            times.append(current_dwell_time)
 
                         target_in_count = len(success_dwells)
                         target_in_total_time = time_sum
                         target_in_mean_time = time_sum / target_in_count
+                        # TODO
+                        longest_dwell_time = max(times)
+                        targeting = temp_data[temp_data.timestamp <= initial_contact_time]
+                        movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(
+                            1) ** 2).apply(math.sqrt)
+                        movement_length = movement.sum()
+                        contact_frame = temp_data[temp_data.timestamp == initial_contact_time]
+                        x = contact_frame.horizontal_offset.values[0]
+                        y = contact_frame.vertical_offset.values[0]
+                        entering_position = (-x, y)
 
                         dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
                         #
@@ -304,6 +336,9 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          'mean_abs_offset_vertical': dwell_temp.abs_vertical_offset.mean(),
                                          'std_abs_offset_horizontal': dwell_temp.abs_horizontal_offset.std(),
                                          'std_abs_offset_vertical': dwell_temp.abs_vertical_offset.std(),
+                                         'longest_dwell_time': longest_dwell_time,
+                                         'movement_length': movement_length,
+                                         'entering_position': entering_position,
                                          'error': None
                                          }
                         summary.loc[len(summary)] = trial_summary
@@ -333,18 +368,49 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
     return summary
 
 
-def visualize_summary(show_plot=True):
+def visualize_summary(show_plot=True,show_distribution=False):
     subjects = range(24)
     dfs = []
     for subject in subjects:
         summary_subject = pd.read_csv('Rawsummary' + str(subject) + '.csv')
         dfs.append(summary_subject)
     summary = pd.concat(dfs)
-    # print('total failure',summary.isnull().mean_offset.sum(),'/',len(summary.index))
     errors = summary[summary.error.isna() == False]
     print(errors.groupby(errors['error']).subject_num.count())
-    # summary.mean_offset_horizontal = summary.mean_offset_horizontal.apply(math.degrees)
-    # summary.std_offset_horizontal = summary.std_offset_horizontal.apply(math.degrees)
+
+    def cart2pol(x, y):
+        z = x + y * 1j
+        r, theta = np.abs(z), np.angle(z)
+        return (r, theta)
+
+    def pol2cart(rho, phi):
+        x = rho * np.cos(phi)
+        y = rho * np.sin(phi)
+        return (x, y)
+
+    from ast import literal_eval
+    for pos in ['STAND']:
+        for t in range(9):
+            entering = summary[(summary.target_num == t) & (summary.posture==pos)].entering_position
+            a = entering[entering.notna()]
+            entering_positions = a.apply(literal_eval).values
+            x, y = zip(*entering_positions)
+            spherical = list(map(cart2pol, x, y))
+            sx,sy = zip(*spherical)
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='polar')
+
+            colors = sy
+            c = ax.scatter(sy, sx,marker='.', alpha=0.75)
+
+            default_r,default_theta = cart2pol(directions[t][0],directions[t][1])
+            ax.scatter(default_theta + math.pi, 1.5, marker='x')
+
+
+            plt.title(pos + " - "+str(t))
+            plt.show()
+
+
     if (show_plot == True):
         fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
 
@@ -372,74 +438,74 @@ def visualize_summary(show_plot=True):
                      title='total basic summary')
         fig.show()
         # wide = 20
-
-        for posture in ['WALK', 'STAND']:
-            fig = go.Figure()
-            plt_fig, plt_ax = plt.subplots()
-            wide = 7.125
-            x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
-            y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
-            plt_ax.scatter(x_offsets, y_offsets)
-            wide = 14.04
-            x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
-            y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
-            plt_ax.scatter(x_offsets, y_offsets)
-            for t in range(9):
-                for idx, cursor_type in enumerate(['EYE', 'HAND', 'HEAD']):
-                    for w in ['LARGE', 'SMALL']:
-                        if w == 'LARGE':
-                            wide = 14.04
-                        else:
-                            wide = 7.125
-                        cursor_data = summary[
-                            (summary['posture'] == posture) & (summary['cursor_type'] == cursor_type) & (
-                                    summary['target_num'] == t) & (summary['wide'] == w)]
-                        cursor_data = cursor_data[cursor_data.error.isna() == True]
-                        x_offset = wide * math.sin(t * math.pi / 9 * 2)
-                        y_offset = wide * math.cos(t * math.pi / 9 * 2)
-                        xs = cursor_data.mean_offset_horizontal + x_offset
-                        ys = cursor_data.mean_offset_vertical + y_offset
-                        color = DEFAULT_PLOTLY_COLORS[idx]
-                        fig.add_trace(
-                            go.Scatter(
-                                x=xs,
-                                y=ys,
-                                name=cursor_type,
-                                mode='markers',
-                                marker={'color': color}
-                                , opacity=0.1
+        if show_distribution:
+            for posture in ['WALK', 'STAND']:
+                fig = go.Figure()
+                plt_fig, plt_ax = plt.subplots()
+                wide = 7.125
+                x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
+                y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
+                plt_ax.scatter(x_offsets, y_offsets)
+                wide = 14.04
+                x_offsets = [wide * math.sin(t * math.pi / 9 * 2) for t in range(9)]
+                y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
+                plt_ax.scatter(x_offsets, y_offsets)
+                for t in range(9):
+                    for idx, cursor_type in enumerate(['EYE', 'HAND', 'HEAD']):
+                        for w in ['LARGE', 'SMALL']:
+                            if w == 'LARGE':
+                                wide = 14.04
+                            else:
+                                wide = 7.125
+                            cursor_data = summary[
+                                (summary['posture'] == posture) & (summary['cursor_type'] == cursor_type) & (
+                                        summary['target_num'] == t) & (summary['wide'] == w)]
+                            cursor_data = cursor_data[cursor_data.error.isna() == True]
+                            x_offset = wide * math.sin(t * math.pi / 9 * 2)
+                            y_offset = wide * math.cos(t * math.pi / 9 * 2)
+                            xs = cursor_data.mean_offset_horizontal + x_offset
+                            ys = cursor_data.mean_offset_vertical + y_offset
+                            color = DEFAULT_PLOTLY_COLORS[idx]
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=xs,
+                                    y=ys,
+                                    name=cursor_type,
+                                    mode='markers',
+                                    marker={'color': color}
+                                    , opacity=0.1
+                                )
                             )
-                        )
-                        fig.add_shape(type='path',
-                                      path=confidence_ellipse(xs,
-                                                              ys),
-                                      line={'dash': 'dot'},
-                                      line_color=color)
-                        colorset = ['maroon', 'orangered', 'darkorange', 'olive', 'yellowgreen', 'darkolivegreen',
-                                    'turquoise', 'deepskyblue', 'dodgerblue']
-                        estimated_half_width = abs(
-                            cursor_data.mean_offset_horizontal.mean()) + 2 * cursor_data.std_offset_horizontal.mean()
-                        estimated_half_height = abs(
-                            cursor_data.mean_offset_vertical.mean()) + 2 * cursor_data.std_offset_vertical.mean()
-                        import matplotlib.patches as patches
-                        plt_ax.add_patch(
-                            patches.Rectangle(
-                                (x_offset - estimated_half_width, y_offset - estimated_half_height),
-                                2 * estimated_half_width,
-                                2 * estimated_half_height,
-                                edgecolor=colorset[t],
-                                fill=False
+                            fig.add_shape(type='path',
+                                          path=confidence_ellipse(xs,
+                                                                  ys),
+                                          line={'dash': 'dot'},
+                                          line_color=color)
+                            colorset = ['maroon', 'orangered', 'darkorange', 'olive', 'yellowgreen', 'darkolivegreen',
+                                        'turquoise', 'deepskyblue', 'dodgerblue']
+                            estimated_half_width = abs(
+                                cursor_data.mean_offset_horizontal.mean()) + 2 * cursor_data.std_offset_horizontal.mean()
+                            estimated_half_height = abs(
+                                cursor_data.mean_offset_vertical.mean()) + 2 * cursor_data.std_offset_vertical.mean()
+                            import matplotlib.patches as patches
+                            plt_ax.add_patch(
+                                patches.Rectangle(
+                                    (x_offset - estimated_half_width, y_offset - estimated_half_height),
+                                    2 * estimated_half_width,
+                                    2 * estimated_half_height,
+                                    edgecolor=colorset[t],
+                                    fill=False
+                                )
                             )
-                        )
 
-            fig.update_yaxes(scaleanchor='x', scaleratio=1)
-            fig.add_hline(y=0)
-            fig.add_vline(x=0)
-            fig.show()
-            plt.title(str(posture))
-            plt.xlim(-30, 30)
-            plt.ylim(-30, 30)
-            plt.show()
+                fig.update_yaxes(scaleanchor='x', scaleratio=1)
+                fig.add_hline(y=0)
+                fig.add_vline(x=0)
+                fig.show()
+                plt.title(str(posture))
+                plt.xlim(-30, 30)
+                plt.ylim(-30, 30)
+                plt.show()
 
     return summary
 
@@ -736,8 +802,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
             for rep in repetitions:
                 for pos in postures:
                     data = read_hololens_data(sub_num, pos, cursor_type, rep)
-                    data['cursor_speed'] = data.cursor_angular_distance.diff(1) / data.timestamp.diff(1)
-                    data['cursor_speed'] = data.cursor_speed.rolling(30,min_periods=1).mean()
+
                     splited_data = split_target(data)
                     wide = 'SMALL' if rep in rep_small else 'LARGE'
 
@@ -755,14 +820,31 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
+                            drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
+                                    temp_data['direction_z'] == 0)].index
+                            if len(drop_index) > 0:
+                                loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+                                if len(temp_data) in loss_indices:
+                                    loss_indices.remove(len(temp_data))
+                                if len(temp_data) + 1 in loss_indices:
+                                    loss_indices.remove(len(temp_data) + 1)
+                                temp_data.loc[loss_indices] = np.nan
+                                temp_data = temp_data.interpolate()
+                                # temp_data.loc[
+                                #     set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))] = np.nan
+                                # temp_data = temp_data.interpolate()
+                            temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
+                                1) / temp_data.timestamp.diff(1)
+                            temp_data['cursor_speed'] = abs(
+                                temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
                             validate, reason = validate_trial_data(temp_data)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
                                 continue
-                            drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-                                    temp_data['direction_z'] == 0)].index
-                            # if len(drop_index) > 0:
+
+                                # temp_data = temp_data.drop(
+                                #     set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2)))
                             #     print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
                             #     # raise ValueError
                             # temp_data = temp_data.drop(drop_index)
@@ -785,7 +867,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                                           key=lambda row: row[1]['target_name']):
                                 # print(k, [t[0] for t in g])
                                 # if k == True:
-                                if k=='Target_'+str(t):
+                                if k == 'Target_' + str(t):
                                     df = pd.DataFrame([r[1] for r in g])
                                     all_success_dwells.append(df)
                             success_dwells = []
@@ -820,7 +902,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             # mean speed during final 100 ms
                             final_speeds = []
                             for dw in success_dwells:
-                                final_speed = dw.cursor_angular_distance[-16:-1].mean()
+                                final_speed = dw.cursor_speed[-16:-1].mean()
                                 final_speeds.append(final_speed)
                             mean_final_speed = sum(final_speeds) / len(final_speeds)
                             trial_summary = {'dwell_time': dwell_time, 'subject_num': sub_num,
@@ -869,7 +951,7 @@ def watch_errors():
         draw_plot = False
         cursorTypes = ['HEAD', 'EYE', 'HAND']
 
-        postures = ['WALK']
+        postures = ['WALK','STAND']
         targets = range(9)
         repetitions = [4, 5, 6, 7, 8, 9]
         # repetitions = range(10)
