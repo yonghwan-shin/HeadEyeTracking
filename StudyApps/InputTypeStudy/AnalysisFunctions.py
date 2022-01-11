@@ -264,13 +264,11 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                             temp_data.loc[loss_indices] = np.nan
                             temp_data = temp_data.interpolate()
 
-
                         # temp_data = temp_data.drop(drop_index)
                         temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
                             1) / temp_data.timestamp.diff(1)
                         temp_data['cursor_speed'] = abs(
                             temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
-
 
                         only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
                         if len(only_success) <= 0:
@@ -280,10 +278,10 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         success_dwells = []
                         temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
                         for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
-                        # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
+                            # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
                             # print(k, [t[0] for t in g])
-                            if k==True:
-                            # if k == 'Target_' + str(t):
+                            if k == True:
+                                # if k == 'Target_' + str(t):
                                 df = pd.DataFrame([r[1] for r in g])
                                 success_dwells.append(df)
                         time_sum = 0
@@ -368,7 +366,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
     return summary
 
 
-def visualize_summary(show_plot=True,show_distribution=False):
+def visualize_summary(show_plot=True, show_distribution=False):
     subjects = range(24)
     dfs = []
     for subject in subjects:
@@ -391,25 +389,23 @@ def visualize_summary(show_plot=True,show_distribution=False):
     from ast import literal_eval
     for pos in ['STAND']:
         for t in range(9):
-            entering = summary[(summary.target_num == t) & (summary.posture==pos)].entering_position
+            entering = summary[(summary.target_num == t) & (summary.posture == pos)].entering_position
             a = entering[entering.notna()]
             entering_positions = a.apply(literal_eval).values
             x, y = zip(*entering_positions)
             spherical = list(map(cart2pol, x, y))
-            sx,sy = zip(*spherical)
+            sx, sy = zip(*spherical)
             fig = plt.figure()
             ax = fig.add_subplot(projection='polar')
 
             colors = sy
-            c = ax.scatter(sy, sx,marker='.', alpha=0.75)
+            c = ax.scatter(sy, sx, marker='.', alpha=0.75)
 
-            default_r,default_theta = cart2pol(directions[t][0],directions[t][1])
+            default_r, default_theta = cart2pol(directions[t][0], directions[t][1])
             ax.scatter(default_theta + math.pi, 1.5, marker='x')
 
-
-            plt.title(pos + " - "+str(t))
+            plt.title(pos + " - " + str(t))
             plt.show()
-
 
     if (show_plot == True):
         fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
@@ -796,7 +792,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
     summary = pd.DataFrame(
         columns=['dwell_time', 'subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide',
                  'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-                 'first_dwell_time', 'required_target_size', 'mean_final_speed', 'error'])
+                 'first_dwell_time', 'required_target_size', 'mean_final_speed', 'min_target_size', 'error'])
     for sub_num in subjects:
         for cursor_type in cursorTypes:
             for rep in repetitions:
@@ -836,7 +832,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
                                 1) / temp_data.timestamp.diff(1)
                             temp_data['cursor_speed'] = abs(
-                                temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
+                                temp_data.cursor_speed.rolling(3, min_periods=1, center=True).mean())
                             validate, reason = validate_trial_data(temp_data)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
@@ -859,6 +855,13 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                     temp_data.timestamp <= dwell_time + initial_contact_time)]
                             mrt = max(list(mrt_df.cursor_angular_distance))
                             trial_summary['required_target_size'] = mrt
+                            maxes = []
+                            frame = int(dwell_time * 60)
+                            for i in range(len(temp_data.cursor_angular_distance) - frame):
+                                maxes.append(max(temp_data.cursor_angular_distance[i:i + frame]))
+
+                            min_target_size = min(maxes)
+                            trial_summary['min_target_size'] = min_target_size
 
                             all_success_dwells = []
                             temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
@@ -901,11 +904,12 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                     first_dwell_time = dw.timestamp.values[0]
                             # mean speed during final 100 ms
                             final_speeds = []
-                            for dw in success_dwells:
-                                frame = int(dwell_time*60)
-                                final_speed = dw.cursor_speed[frame-6:frame].mean()
-                                final_speeds.append(final_speed)
-                            mean_final_speed = sum(final_speeds) / len(final_speeds)
+                            # for dw in success_dwells:
+                            frame = int(dwell_time * 60)
+                            final_speed = success_dwells[0].cursor_speed[frame - 6:frame].mean()
+                            # final_speeds.append(final_speed)
+                            # mean_final_speed = sum(final_speeds) / len(final_speeds)
+                            mean_final_speed = final_speed
                             trial_summary = {'dwell_time': dwell_time, 'subject_num': sub_num,
                                              'posture': pos,
                                              'cursor_type': cursor_type,
@@ -919,6 +923,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                              'first_dwell_time': first_dwell_time,
                                              'required_target_size': mrt,
                                              'mean_final_speed': mean_final_speed,
+                                             'min_target_size': min_target_size,
                                              'error': None
                                              }
                             summary.loc[len(summary)] = trial_summary
@@ -952,7 +957,7 @@ def watch_errors():
         draw_plot = False
         cursorTypes = ['HEAD', 'EYE', 'HAND']
 
-        postures = ['WALK','STAND']
+        postures = ['WALK', 'STAND']
         targets = range(9)
         repetitions = [4, 5, 6, 7, 8, 9]
         # repetitions = range(10)

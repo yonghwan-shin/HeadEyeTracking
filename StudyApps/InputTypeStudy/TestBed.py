@@ -25,25 +25,26 @@ pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
 
 # %%
 
-data = read_hololens_data(7, 'STAND', 'HAND', 4)
+data = read_hololens_data(11, 'STAND', 'EYE', 7)
 # data['cursor_speed'] = data.cursor_angular_distance.diff(1) / data.timestamp.diff(1)
 # data['cursor_speed'] = abs(data.cursor_speed.rolling(10,center=True).mean())
 splited_data = split_target(data)
 
-for t in range(9):
+# for t in range(3):
+for t in [6]:
     temp_data = splited_data[t]
     temp_data.reset_index(inplace=True)
     temp_data.timestamp -= temp_data.timestamp.values[0]
     drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
             temp_data['direction_z'] == 0)].index
-    if len(drop_index) > 0:
-        loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-        if len(temp_data) in loss_indices:
-            loss_indices.remove(len(temp_data))
-        if len(temp_data) + 1 in loss_indices:
-            loss_indices.remove(len(temp_data) + 1)
-        temp_data.loc[loss_indices] = np.nan
-        temp_data = temp_data.interpolate()
+    # if len(drop_index) > 0:
+    #     loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+    #     if len(temp_data) in loss_indices:
+    #         loss_indices.remove(len(temp_data))
+    #     if len(temp_data) + 1 in loss_indices:
+    #         loss_indices.remove(len(temp_data) + 1)
+    #     temp_data.loc[loss_indices] = np.nan
+    #     temp_data = temp_data.interpolate()
 
     only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
     if len(only_success) <= 0:
@@ -51,17 +52,28 @@ for t in range(9):
         # raise ValueError('no success frames', len(only_success))
 
     initial_contact_time = only_success.timestamp.values[0]
-    targeting = temp_data[temp_data.timestamp <= initial_contact_time]
-    # temp_data.horizontal_offset.plot()
-    # temp_data.vertical_offset.plot()
-    # movement length
-    movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(1) ** 2).apply(math.sqrt)
-    # print(movement.sum(),t)
-    # contact position
-    contact_frame = temp_data[temp_data.timestamp == initial_contact_time]
-    x = contact_frame.horizontal_offset.values[0]
-    y = contact_frame.vertical_offset.values[0]
-    entering_position = (x, y)
+    dwell_time = 0.8
+    frame = int(dwell_time * 60)
+    maxes = []
+    for i in range(len(temp_data.cursor_angular_distance) - frame):
+        maxes.append(max(temp_data.cursor_angular_distance[i:i + frame]))
+    print(min(maxes))
+    plt.plot(temp_data.timestamp,temp_data.cursor_angular_distance)
+    plt.plot(temp_data.timestamp[frame:],maxes)
+    plt.axhline(min(maxes))
+    plt.show()
+    # maxes = [m for m in temp_data['cursor_angular_distance']]
+    # targeting = temp_data[temp_data.timestamp <= initial_contact_time]
+    # # temp_data.horizontal_offset.plot()
+    # # temp_data.vertical_offset.plot()
+    # # movement length
+    # movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(1) ** 2).apply(math.sqrt)
+    # # print(movement.sum(),t)
+    # # contact position
+    # contact_frame = temp_data[temp_data.timestamp == initial_contact_time]
+    # x = contact_frame.horizontal_offset.values[0]
+    # y = contact_frame.vertical_offset.values[0]
+    # entering_position = (x, y)
 
     # fig, ax = plt.subplots()
     # x_offset = 1.5 * math.sin(t * math.pi / 9 * 2)
@@ -206,6 +218,11 @@ dwell_times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 for dt in dwell_times:
     dwell_time_analysis(dt)
 # %% visualize dwell-wise analysis
+# 527          527         0.1  ...        170.893736   NaN
+# 3732        3732         0.1  ...        189.193031   NaN
+# 4088        4088         0.1  ...        146.179401   NaN
+# 5064        5064         0.1  ...        178.581023   NaN
+# 7654
 dwell_times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 dfs = []
 for dt in dwell_times:
@@ -249,6 +266,7 @@ for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
                         'mean_final_speed_std': mean_final_speed_std
                         }
         plot_df.loc[len(plot_df)] = plot_summary
+plot_df.to_csv('DwellRawSummary.csv')
 # %%
 
 for c in ['success_rate', 'required_target_size', 'first_dwell_time',
@@ -285,7 +303,7 @@ ax.legend(handles, ['Cursor Type', 'Head', 'Eye', 'Hand', 'Posture', 'STAND', 'W
 plt.show()
 # %% dwell time box plots
 dcs = ['required_target_size', 'first_dwell_time',
-       'mean_final_speed']
+       'mean_final_speed','min_target_size']
 
 sns.set_style('ticks')
 sns.set_context('talk')
@@ -316,10 +334,10 @@ for c in dcs:
     plt.show()
     # Standing condition plots
     sns.boxplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'STAND'],
-                   showfliers=False, showmeans=True,
-                   meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
-                              'markersize': '10'},
-                   palette='Set2', width=0.8)
+                showfliers=False, showmeans=True,
+                meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                           'markersize': '10'},
+                palette='Set2', width=0.8)
     # sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture=='WALK'], kind='box', showfliers=False, showmeans=True,
     #             meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
     #             height=5,aspect=2,legend=False)
@@ -336,7 +354,7 @@ for c in dcs:
         # plt.ylim(0, 5)
     elif c == 'mean_final_speed':
         plt.ylabel('Final Cursor Speed (°/s)')
-        # plt.ylim(0, 8)
+        plt.ylim(0, 20)
     # plt.legend(loc='upper right')
     plt.legend(loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2),
                fancybox=True, ncol=3)
