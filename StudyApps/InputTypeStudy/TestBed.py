@@ -266,7 +266,7 @@ for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
                         'mean_final_speed_std': mean_final_speed_std
                         }
         plot_df.loc[len(plot_df)] = plot_summary
-plot_df.to_csv('DwellRawSummary.csv')
+dwell_summary.to_csv('DwellRawSummary.csv')
 # %%
 
 for c in ['success_rate', 'required_target_size', 'first_dwell_time',
