@@ -136,6 +136,7 @@ for i in range(24):
     summarize_subject(i)
 # %%x
 summary = visualize_summary(show_plot=False)
+summary.to_csv('BasicRawSummary.csv')
 # %%basic performance results : maybe table?
 fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
 fs.to_csv('table_candidate_wide.csv')
