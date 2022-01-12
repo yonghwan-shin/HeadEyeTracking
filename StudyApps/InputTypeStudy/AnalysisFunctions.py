@@ -904,12 +904,12 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                     first_dwell_time = dw.timestamp.values[0]
                             # mean speed during final 100 ms
                             final_speeds = []
-                            # for dw in success_dwells:
-                            frame = int(dwell_time * 60)
-                            final_speed = success_dwells[0].cursor_speed[frame - 6:frame].mean()
-                            # final_speeds.append(final_speed)
-                            # mean_final_speed = sum(final_speeds) / len(final_speeds)
-                            mean_final_speed = final_speed
+                            for dw in success_dwells:
+                                frame = int(dwell_time * 60)
+                                final_speed = success_dwells[0].cursor_speed[frame - 3:frame].mean()
+                            final_speeds.append(final_speed)
+                            mean_final_speed = sum(final_speeds) / len(final_speeds)
+                            # mean_final_speed = final_speed
                             trial_summary = {'dwell_time': dwell_time, 'subject_num': sub_num,
                                              'posture': pos,
                                              'cursor_type': cursor_type,
