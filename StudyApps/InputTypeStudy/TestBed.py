@@ -58,8 +58,8 @@ for t in [6]:
     for i in range(len(temp_data.cursor_angular_distance) - frame):
         maxes.append(max(temp_data.cursor_angular_distance[i:i + frame]))
     print(min(maxes))
-    plt.plot(temp_data.timestamp,temp_data.cursor_angular_distance)
-    plt.plot(temp_data.timestamp[frame:],maxes)
+    plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance)
+    plt.plot(temp_data.timestamp[frame:], maxes)
     plt.axhline(min(maxes))
     plt.show()
     # maxes = [m for m in temp_data['cursor_angular_distance']]
@@ -183,34 +183,48 @@ from statsmodels.stats.anova import AnovaRM
 from scipy.stats import shapiro, levene, bartlett
 from statsmodels.sandbox.stats.multicomp import MultiComparison
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import pingouin as pg
 
 s = summary[summary.error.isna()]
-# print(levene(
-#     s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')].mean_offset.values,
-#     s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'SMALL')].mean_offset.values,
-#     # s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')].mean_offset.values,
-# ))
+import scipy.stats
 
-cs = ['mean_offset', 'std_offset',
-      'initial_contact_time',
-      'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-      'mean_offset_horizontal', 'mean_offset_vertical',
-      'std_offset_horizontal', 'std_offset_vertical', 'longest_dwell_time', 'movement_length']
-for c in cs:
-    # equal variance test
-    print(bartlett(
-        s[(s.posture == 'STAND') & (s.cursor_type == 'HEAD') & (s.wide == 'LARGE')][c].values,
-        s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')][c].values,
-        s[(s.posture == 'STAND') & (s.cursor_type == 'HAND') & (s.wide == 'LARGE')][c].values,
-    ))
-    print(levene(
-        s[(s.posture == 'STAND') & (s.cursor_type == 'HEAD') & (s.wide == 'LARGE')][c].values,
-        s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')][c].values,
-        s[(s.posture == 'STAND') & (s.cursor_type == 'HAND') & (s.wide == 'LARGE')][c].values,
-    ))
-    wide_result = AnovaRM(data=s, depvar=c, subject='subject_num',
-                          within=['wide', 'posture', 'cursor_type'], aggregate_func='mean').fit()
-    print(c, wide_result)
+s = summary[summary.error.isna()]
+for column in ['initial_contact_time', 'mean_offset', 'longest_dwell_time', 'target_in_count',
+               'mean_abs_offset_horizontal', 'mean_abs_offset_vertical', 'mean_offset_horizontal',
+               'mean_offset_vertical', 'movement_length']:
+    for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
+        result = scipy.stats.ttest_ind(s[(s.cursor_type == ct) & (s.posture == pos) & (s.wide == 'SMALL')][column],
+                                       s[(s.cursor_type == ct) & (s.posture == pos) & (s.wide == 'LARGE')][column],
+                                       equal_var=False
+                                       )
+        if result.pvalue < 0.01:
+            print(column, pos, ct, result.pvalue)
+# print(pg.homoscedasticity(dv='target_in_count', group='cursor_type', data=s))
+# from scipy import stats
+#
+# f,p=stats.f_oneway(s[s.cursor_type == 'HEAD'].initial_contact_time, s[s.cursor_type == 'EYE'].initial_contact_time,
+#                s[s.cursor_type == 'HAND'].initial_contact_time)
+# print(f,p)
+# cs = ['mean_offset', 'std_offset',
+#       'initial_contact_time',
+#       'target_in_count', 'target_in_total_time', 'target_in_mean_time',
+#       'mean_offset_horizontal', 'mean_offset_vertical',
+#       'std_offset_horizontal', 'std_offset_vertical', 'longest_dwell_time', 'movement_length']
+# for c in cs:
+#     # equal variance test
+#     print(bartlett(
+#         s[(s.posture == 'STAND') & (s.cursor_type == 'HEAD') & (s.wide == 'LARGE')][c].values,
+#         s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')][c].values,
+#         s[(s.posture == 'STAND') & (s.cursor_type == 'HAND') & (s.wide == 'LARGE')][c].values,
+#     ))
+#     print(levene(
+#         s[(s.posture == 'STAND') & (s.cursor_type == 'HEAD') & (s.wide == 'LARGE')][c].values,
+#         s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')][c].values,
+#         s[(s.posture == 'STAND') & (s.cursor_type == 'HAND') & (s.wide == 'LARGE')][c].values,
+#     ))
+#     wide_result = AnovaRM(data=s, depvar=c, subject='subject_num',
+#                           within=['wide', 'posture', 'cursor_type'], aggregate_func='mean').fit()
+#     print(c, wide_result)
 # summary_dataframe = visualize_offsets(show_plot=False)
 # target_sizes = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
 # %%dwell-wise anaylsis
@@ -304,7 +318,7 @@ ax.legend(handles, ['Cursor Type', 'Head', 'Eye', 'Hand', 'Posture', 'STAND', 'W
 plt.show()
 # %% dwell time box plots
 dcs = ['required_target_size', 'first_dwell_time',
-       'mean_final_speed','min_target_size']
+       'mean_final_speed', 'min_target_size']
 
 sns.set_style('ticks')
 sns.set_context('talk')
