@@ -67,18 +67,28 @@ def get_one_trial(subject, posture, cursor_type, repetition, end_num):
     return temp_data
 
 
-def validate_trial_data(data):
+def validate_trial_data(data, cursor_type):
     # if there is a sudden target-shift occurs
+    if cursor_type == 'EYE':
+        # drop_index = temp_data[(temp_data['ray_direction_x'] == 0) & (temp_data['ray_direction_y'] == 0) & (
+        #         temp_data['ray_direction_z'] == 0)].index
+        data['check_eye'] = data.latestEyeGazeDirection_x.diff(1)
+        eye_index = data[data.check_eye == 0].index
+        invalidate_index = data[data.isEyeTrackingEnabledAndValid == False].index
+        if len(eye_index) > len(data.index) / 3:
+            # if len(drop_index) > 0 and len(drop_index) > 0:
+            # print('eye loss')
+            return False, 'loss'
+    else:
+        drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
+                data['direction_z'] == 0)].index
+        if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
+            # if len(drop_index) > 0 and len(drop_index) > 0:
+            return False, 'loss'
 
-    drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
-            data['direction_z'] == 0)].index
-    if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
-        # if len(drop_index) > 0 and len(drop_index) > 0:
-        return False, 'loss'
-
-    outlier = data[(data.target_horizontal_velocity > 10 * 57.296) | (data.target_horizontal_velocity < -10 * 57.296)][
-              5:]
-    if len(outlier.timestamp.values) > 1:
+    outlier = list(data[(abs(data.target_horizontal_velocity) > 10 * 57.296)].index)
+    outlier = [x for x in outlier if x > 5]
+    if len(outlier) > 1:
         # in this data, sudden target movement happened.
         return False, 'jump'
     return True, 'None'
@@ -161,10 +171,10 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     os.remove(pickled_file.absolute())
                     print('remove file and re-made', pickled_file.name)
                     output = read_hololens_data(subject, posture, cursor_type, repetition)
-                    drop_index = output[
-                        (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
-                                output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
-                    output = output.drop(drop_index)
+                    # drop_index = output[
+                    #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
+                    #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
+                    # output = output.drop(drop_index)
                 # print('found pickled file!')
                 return output
     except Exception as e:
@@ -175,6 +185,7 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
             if trial_detail in file.name:
                 with open(file) as f:  # found exact file
                     # output = pd.DataFrame(json.load(f))
+
                     output = pd.read_json(f)
                     target_position = pd.json_normalize(output.target_position, sep='_').rename(
                         columns={'x': 'target_position_x', 'y': 'target_position_y', 'z': 'target_position_z'})

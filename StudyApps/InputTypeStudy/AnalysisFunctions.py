@@ -44,7 +44,7 @@ def collect_offsets(sub_num, cursorTypes=None, postures=None, targets=range(9),
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data)
+                validate, reason = validate_trial_data(temp_data,cursor_type)
                 if not validate:  # in case of invalid trial.
                     trial_summary['error'] = reason
                     summary.loc[len(summary)] = trial_summary
@@ -205,7 +205,7 @@ def visualize_offsets(show_plot=True):
 
 
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
-                      repetitions=None, pilot=False, savefile=True):
+                      repetitions=None, pilot=False, savefile=True,resetFile=False):
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
@@ -231,7 +231,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
     for cursor_type in cursorTypes:
         for rep in repetitions:
             for pos in postures:
-                data = read_hololens_data(sub_num, pos, cursor_type, rep, False, pilot)
+                data = read_hololens_data(sub_num, pos, cursor_type, rep, resetFile, pilot)
                 splited_data = split_target(data)
                 wide = 'SMALL' if rep in rep_small else 'LARGE'
 
@@ -245,12 +245,15 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          'wide': wide,
                                          }
                         temp_data = splited_data[t]
+
                         temp_data.reset_index(inplace=True)
                         temp_data.timestamp -= temp_data.timestamp.values[0]
-
+                        # drop_index = output[
+                        #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
+                        #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
                         drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
                                 temp_data['direction_z'] == 0)].index
-                        validate, reason = validate_trial_data(temp_data)
+                        validate, reason = validate_trial_data(temp_data, cursor_type)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
                             summary.loc[len(summary)] = trial_summary
@@ -386,26 +389,26 @@ def visualize_summary(show_plot=True, show_distribution=False):
         y = rho * np.sin(phi)
         return (x, y)
 
-    from ast import literal_eval
-    for pos in ['STAND']:
-        for t in range(9):
-            entering = summary[(summary.target_num == t) & (summary.posture == pos)].entering_position
-            a = entering[entering.notna()]
-            entering_positions = a.apply(literal_eval).values
-            x, y = zip(*entering_positions)
-            spherical = list(map(cart2pol, x, y))
-            sx, sy = zip(*spherical)
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='polar')
-
-            colors = sy
-            c = ax.scatter(sy, sx, marker='.', alpha=0.75)
-
-            default_r, default_theta = cart2pol(directions[t][0], directions[t][1])
-            ax.scatter(default_theta + math.pi, 1.5, marker='x')
-
-            plt.title(pos + " - " + str(t))
-            plt.show()
+    # from ast import literal_eval
+    # for pos in ['STAND']:
+    #     for t in range(9):
+    #         entering = summary[(summary.target_num == t) & (summary.posture == pos)].entering_position
+    #         a = entering[entering.notna()]
+    #         entering_positions = a.apply(literal_eval).values
+    #         x, y = zip(*entering_positions)
+    #         spherical = list(map(cart2pol, x, y))
+    #         sx, sy = zip(*spherical)
+    #         fig = plt.figure()
+    #         ax = fig.add_subplot(projection='polar')
+    #
+    #         colors = sy
+    #         c = ax.scatter(sy, sx, marker='.', alpha=0.75)
+    #
+    #         default_r, default_theta = cart2pol(directions[t][0], directions[t][1])
+    #         ax.scatter(default_theta + math.pi, 1.5, marker='x')
+    #
+    #         plt.title(pos + " - " + str(t))
+    #         plt.show()
 
     if (show_plot == True):
         fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
@@ -641,7 +644,7 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
-                            validate, reason = validate_trial_data(temp_data)
+                            validate, reason = validate_trial_data(temp_data,cursor_type)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -833,7 +836,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                 1) / temp_data.timestamp.diff(1)
                             temp_data['cursor_speed'] = abs(
                                 temp_data.cursor_speed.rolling(3, min_periods=1, center=True).mean())
-                            validate, reason = validate_trial_data(temp_data)
+                            validate, reason = validate_trial_data(temp_data,cursor_type)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -982,7 +985,7 @@ def watch_errors():
                     for t in targets:
                         try:
                             total_count += 1
-                            validation, reason = validate_trial_data(splited_data[t])
+                            validation, reason = validate_trial_data(splited_data[t],cursor_type)
                             if validation == False:
                                 if reason == 'loss':
                                     loss_count += 1

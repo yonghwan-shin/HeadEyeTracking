@@ -25,65 +25,72 @@ pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
 
 # %%
 
-data = read_hololens_data(11, 'STAND', 'EYE', 7)
-# data['cursor_speed'] = data.cursor_angular_distance.diff(1) / data.timestamp.diff(1)
-# data['cursor_speed'] = abs(data.cursor_speed.rolling(10,center=True).mean())
-splited_data = split_target(data)
+# data = read_hololens_data(11, 'STAND', 'EYE', 7)
+# temp_data = get_one_trial(20,'WALK','EYE',5,2)
+temp_data = get_one_trial(6, 'WALK', 'EYE', 3, 6)
+validate, reason = validate_trial_data(temp_data,'EYE')
+# # drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
+# #         temp_data['direction_z'] == 0)].index
+# drop_index = temp_data[(temp_data['ray_direction_x'] == 0) & (temp_data['ray_direction_y'] == 0) & (
+#         temp_data['ray_direction_z'] == 0)].index
+temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+eye_index = temp_data[temp_data.check_eye == 0].index
+invalidate_index = temp_data[temp_data.isEyeTrackingEnabledAndValid == False].index
+# plt.plot(temp_data.timestamp,temp_data.target_horizontal_angle.apply(math.sin))
+# temp_data= temp_data.drop(eye_index)
+# temp_data= temp_data.drop(invalidate_index)
+plt.plot(temp_data.timestamp,temp_data.target_horizontal_angle)
+plt.plot(temp_data.timestamp,temp_data.cursor_horizontal_angle)
+# plt.plot(temp_data.timestamp,temp_data.target_vertical_angle)
+# plt.plot(temp_data.timestamp,temp_data.cursor_vertical_angle)
+plt.plot(temp_data.timestamp,temp_data.cursor_angular_distance,'b-')
+plt.show()
+plt.plot(temp_data.timestamp,temp_data.target_horizontal_velocity)
+plt.show()
+# plt.plot(temp_data.timestamp,temp_data.horizontal_offset)
+# plt.show()
+#%% see eye-errors
+repetitions = [0,1,2,3,4,5,6,7,8,9]
 
-# for t in range(3):
-for t in [6]:
-    temp_data = splited_data[t]
-    temp_data.reset_index(inplace=True)
-    temp_data.timestamp -= temp_data.timestamp.values[0]
-    drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-            temp_data['direction_z'] == 0)].index
-    # if len(drop_index) > 0:
-    #     loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-    #     if len(temp_data) in loss_indices:
-    #         loss_indices.remove(len(temp_data))
-    #     if len(temp_data) + 1 in loss_indices:
-    #         loss_indices.remove(len(temp_data) + 1)
-    #     temp_data.loc[loss_indices] = np.nan
-    #     temp_data = temp_data.interpolate()
+postures = ['STAND', 'WALK']
 
-    only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
-    if len(only_success) <= 0:
-        continue
-        # raise ValueError('no success frames', len(only_success))
+cursorTypes = [ 'EYE']
+targets=range(9)
+for sub_num in range(24):
+# for sub_num in [6]:
+    subject_total_count=0
+    subject_error_eye_count=0
+    subject_error_invalidate=0
+    for cursor_type, rep, pos in itertools.product(cursorTypes, repetitions, postures):
+        data = read_hololens_data(sub_num, pos, cursor_type, rep)
+        splited_data = split_target(data)
+        # wide = 'SMALL' if rep in rep_small else 'LARGE'
+        for t in targets:
+            try:
 
-    initial_contact_time = only_success.timestamp.values[0]
-    dwell_time = 0.8
-    frame = int(dwell_time * 60)
-    maxes = []
-    for i in range(len(temp_data.cursor_angular_distance) - frame):
-        maxes.append(max(temp_data.cursor_angular_distance[i:i + frame]))
-    print(min(maxes))
-    plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance)
-    plt.plot(temp_data.timestamp[frame:], maxes)
-    plt.axhline(min(maxes))
-    plt.show()
-    # maxes = [m for m in temp_data['cursor_angular_distance']]
-    # targeting = temp_data[temp_data.timestamp <= initial_contact_time]
-    # # temp_data.horizontal_offset.plot()
-    # # temp_data.vertical_offset.plot()
-    # # movement length
-    # movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(1) ** 2).apply(math.sqrt)
-    # # print(movement.sum(),t)
-    # # contact position
-    # contact_frame = temp_data[temp_data.timestamp == initial_contact_time]
-    # x = contact_frame.horizontal_offset.values[0]
-    # y = contact_frame.vertical_offset.values[0]
-    # entering_position = (x, y)
-
-    # fig, ax = plt.subplots()
-    # x_offset = 1.5 * math.sin(t * math.pi / 9 * 2)
-    # y_offset = 1.5 * math.cos(t * math.pi / 9 * 2)
-    # # ax.scatter(x_offset,y_offset,marker='x')
-    # ax.scatter(x,y,marker='o')
-    # circle2 = plt.Circle((0, 0), 1.5, color='b', fill=False)
-    # ax.add_patch(circle2)
-    # plt.title(str(t))
-    # plt.show()
+                temp_data = splited_data[t]
+                temp_data.reset_index(inplace=True)
+                temp_data.timestamp -= temp_data.timestamp.values[0]
+                validate, reason = validate_trial_data(temp_data,cursor_type)
+                temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+                eye_index = temp_data[temp_data.check_eye == 0].index
+                invalidate_index=temp_data[temp_data.isEyeTrackingEnabledAndValid==False].index
+                subject_total_count+=len(temp_data.index)
+                subject_error_eye_count+=len(eye_index)
+                subject_error_invalidate+=len(invalidate_index)
+                # plt.plot(temp_data.timestamp,temp_data.horizontal_offset)
+                # plt.plot(temp_data.timestamp, temp_data.vertical_offset)
+                # plt.show()
+                # plt.plot(temp_data.timestamp,temp_data.direction_x)
+                # plt.plot(temp_data.timestamp, temp_data.head_forward_x)
+                # plt.show()
+                # if len(eye_index)>0:
+                #     print(sub_num, pos, cursor_type, rep,len(eye_index))
+            except Exception as e:
+                print(sub_num, pos, cursor_type, rep,e.args)
+    print(sub_num,subject_error_eye_count,subject_total_count,subject_error_invalidate,
+          100*subject_error_eye_count/subject_total_count,'%',
+          100*subject_error_invalidate/subject_total_count,'%')
 
 # %%
 offsets = visualize_offsets(False)
@@ -133,10 +140,14 @@ for i in t.values:
 # collect_offsets()
 # %%
 for i in range(24):
-    summarize_subject(i)
-# %%x
+    summarize_subject(i,resetFile=True)
+# summary = summarize_subject(6)
+
 summary = visualize_summary(show_plot=False)
 summary.to_csv('BasicRawSummary.csv')
+errors = summary[summary.error.isna() == False]
+print('\nError trial counts')
+print(errors.groupby(errors['error']).subject_num.count())
 # %%basic performance results : maybe table?
 fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
 fs.to_csv('table_candidate_wide.csv')
@@ -179,54 +190,119 @@ for c in cs:
     plt.show()
 
 # %% RM anova
+from scipy.stats import shapiro
+import seaborn as sns
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+import itertools
+from scipy.stats import anderson
 from statsmodels.stats.anova import AnovaRM
-from scipy.stats import shapiro, levene, bartlett
-from statsmodels.sandbox.stats.multicomp import MultiComparison
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import pingouin as pg
+import numpy as np
+from scipy import stats
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+# from bioinfokit.analys import stat
+# import pyvttbl as pt
+from collections import namedtuple
 
-s = summary[summary.error.isna()]
-import scipy.stats
+pd.set_option('max_colwidth', 400)
+pd.set_option('max_rows', 99999)
 
-s = summary[summary.error.isna()]
-for column in ['initial_contact_time', 'mean_offset', 'longest_dwell_time', 'target_in_count',
-               'mean_abs_offset_horizontal', 'mean_abs_offset_vertical', 'mean_offset_horizontal',
-               'mean_offset_vertical', 'movement_length']:
+for column in ['mean_offset', 'std_offset',
+
+               'initial_contact_time', 'target_in_count',
+               'target_in_total_time', 'target_in_mean_time', 'mean_offset_horizontal',
+               'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
+               'mean_abs_offset_horizontal', 'mean_abs_offset_vertical',
+               'std_abs_offset_horizontal', 'std_abs_offset_vertical',
+               'longest_dwell_time', 'movement_length'
+               ]:
+    s = summary[summary.error.isna()]
     for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
-        result = scipy.stats.ttest_ind(s[(s.cursor_type == ct) & (s.posture == pos) & (s.wide == 'SMALL')][column],
-                                       s[(s.cursor_type == ct) & (s.posture == pos) & (s.wide == 'LARGE')][column],
-                                       equal_var=False
-                                       )
-        if result.pvalue < 0.01:
-            print(column, pos, ct, result.pvalue)
-# print(pg.homoscedasticity(dv='target_in_count', group='cursor_type', data=s))
-# from scipy import stats
-#
-# f,p=stats.f_oneway(s[s.cursor_type == 'HEAD'].initial_contact_time, s[s.cursor_type == 'EYE'].initial_contact_time,
-#                s[s.cursor_type == 'HAND'].initial_contact_time)
-# print(f,p)
-# cs = ['mean_offset', 'std_offset',
-#       'initial_contact_time',
-#       'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-#       'mean_offset_horizontal', 'mean_offset_vertical',
-#       'std_offset_horizontal', 'std_offset_vertical', 'longest_dwell_time', 'movement_length']
-# for c in cs:
-#     # equal variance test
-#     print(bartlett(
-#         s[(s.posture == 'STAND') & (s.cursor_type == 'HEAD') & (s.wide == 'LARGE')][c].values,
-#         s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')][c].values,
-#         s[(s.posture == 'STAND') & (s.cursor_type == 'HAND') & (s.wide == 'LARGE')][c].values,
-#     ))
-#     print(levene(
-#         s[(s.posture == 'STAND') & (s.cursor_type == 'HEAD') & (s.wide == 'LARGE')][c].values,
-#         s[(s.posture == 'STAND') & (s.cursor_type == 'EYE') & (s.wide == 'LARGE')][c].values,
-#         s[(s.posture == 'STAND') & (s.cursor_type == 'HAND') & (s.wide == 'LARGE')][c].values,
-#     ))
-#     wide_result = AnovaRM(data=s, depvar=c, subject='subject_num',
-#                           within=['wide', 'posture', 'cursor_type'], aggregate_func='mean').fit()
-#     print(c, wide_result)
-# summary_dataframe = visualize_offsets(show_plot=False)
-# target_sizes = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+        temp_df = s[(s.cursor_type == ct) & (s.posture == pos)]
+        # .groupby(s.subject_num).mean()
+        temp_df[(np.abs(stats.zscore(temp_df[column])) < 3)]
+        data = temp_df.groupby(temp_df.subject_num).mean()[column]
+        # data = temp_df[column]
+
+        # sns.histplot(data);
+        data = data[(np.abs(stats.zscore(data)) < 2)]
+        # statistics,p=shapiro(data[data.between(data.quantile(.05),data.quantile(.95))])
+        statistics, p = shapiro(data)
+        # print(anderson(data))
+
+        if p > 0.05:
+            # print(p)
+            pass
+        else:
+            pass
+            print(pos, ct, column)
+            print(p, ' no normality', '\n')
+            # sns.displot(data)
+            # plt.show()
+    # rm-anova
+
+    list_subjects = []
+    for i, subject_data in s.groupby(s.subject_num):
+        d = subject_data[np.abs(stats.zscore(subject_data[column])) < 2]
+        list_subjects.append(d.reset_index())
+    s = pd.concat(list_subjects)
+
+    bySubjects = s.groupby([s.subject_num, s.cursor_type, s.posture]).mean()
+    bySubjects = bySubjects.reset_index()
+    from bioinfokit.analys import stat
+
+    aovrm = AnovaRM(summary[summary.error.isna()], column, 'subject_num', within=['cursor_type', 'posture'],
+                    aggregate_func='mean').fit()
+
+    aov = pg.rm_anova(dv=column, within=['cursor_type', 'posture'],
+                      subject='subject_num', data=s, detailed=True,
+                      effsize="ng2", correction=True)
+    sph = pg.sphericity(dv=column, within=['cursor_type', 'posture'],
+                        subject='subject_num', data=s,
+                        )
+
+    print('METRIC', column)
+
+    aov.round(3)
+    print('RM-anova(statsmodel)')
+    t = summary[summary.error.isna()]
+    plt.subplot(1, 2, 1)
+    sns.pointplot(data=t[t.posture == 'STAND'], x='cursor_type', y=column, hue='wide')
+    plt.subplot(1, 2, 2)
+    sns.pointplot(data=t[t.posture == "WALK"], x='cursor_type', y=column, hue='wide')
+    plt.show()
+    print(aovrm)
+    print('RM-anova(pg)')
+    # print(aov)
+    pg.print_table(aov)
+    print('Sphericity(pg)')
+    print(sph)
+    # plt.figure(figsize=(20, 10))
+    # bySubjects.boxplot(column=column,by=['cursor_type','posture'])
+    # sns.boxplot(data=bySubjects, x='cursor_type', y=column, hue='posture')
+    # plt.show()
+    # display(bySubjects)
+    for pos in ['STAND', 'WALK']:
+        print(pos, bySubjects[bySubjects.posture == pos].pairwise_tukey(dv=column, between=['cursor_type']).round(3))
+        # posthoc = pairwise_tukeyhsd(bySubjects[column], bySubjects['cursor_type'], alpha=0.05)
+        # print('Posthoc(tukeyhsd)',pos)
+        # print(posthoc)
+        # fig = posthoc.plot_simultaneous()
+        # fig.show()
+    pg_posthoc = pg.pairwise_ttests(dv=column, within=['cursor_type', 'posture'], subject='subject_num', data=s)
+    print('Posthoc(pairwise ttest,pg)')
+    print(pg_posthoc)
+
+    print('-' * 100)
+    # bySubjects.anova()
+
+"""
+Mean offset-horizontal : no significant difference
+mean offset-vertical : posture
+std offset: cursor type
+"""
 # %%dwell-wise anaylsis
 dwell_times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 # dwell_times=[0.1]
