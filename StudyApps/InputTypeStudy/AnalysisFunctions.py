@@ -44,7 +44,7 @@ def collect_offsets(sub_num, cursorTypes=None, postures=None, targets=range(9),
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data,cursor_type)
+                validate, reason = validate_trial_data(temp_data, cursor_type)
                 if not validate:  # in case of invalid trial.
                     trial_summary['error'] = reason
                     summary.loc[len(summary)] = trial_summary
@@ -205,7 +205,7 @@ def visualize_offsets(show_plot=True):
 
 
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
-                      repetitions=None, pilot=False, savefile=True,resetFile=False):
+                      repetitions=None, pilot=False, savefile=True, resetFile=False):
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
@@ -257,16 +257,39 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
                             summary.loc[len(summary)] = trial_summary
-                            continue
-                        if len(drop_index) > 0:
-                            loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-                            if len(temp_data) in loss_indices:
-                                loss_indices.remove(len(temp_data))
-                            if len(temp_data) + 1 in loss_indices:
-                                loss_indices.remove(len(temp_data) + 1)
+                            if reason == 'jump':
+                                pass
+                            else:
+                                continue
+
+                        if cursor_type == 'EYE':
+                            temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+                            eye_index = temp_data[temp_data.check_eye == 0].index
+                            loss_interval = 3
+                            loss_indices = []
+                            for i in range(-loss_interval, loss_interval + 1):
+                                loss_indices += list(eye_index + i)
+                            loss_indices=set(loss_indices)
+                            # for i in range(-loss_interval, loss_interval + 1):
+                            #     if len(temp_data) + i in loss_indices:
+                            #         loss_indices.remove(len(temp_data) + i)
+                            for i in range(loss_interval+1):
+                                if len(temp_data)+i in loss_indices:
+                                    loss_indices.remove(len(temp_data)+i)
+                                if -i in loss_indices:
+                                    loss_indices.remove(-i)
+
                             temp_data.loc[loss_indices] = np.nan
                             temp_data = temp_data.interpolate()
-
+                        else:
+                            if len(drop_index) > 0:
+                                loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+                                if len(temp_data) in loss_indices:
+                                    loss_indices.remove(len(temp_data))
+                                if len(temp_data) + 1 in loss_indices:
+                                    loss_indices.remove(len(temp_data) + 1)
+                                temp_data.loc[loss_indices] = np.nan
+                                temp_data = temp_data.interpolate()
                         # temp_data = temp_data.drop(drop_index)
                         temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
                             1) / temp_data.timestamp.diff(1)
@@ -644,7 +667,7 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
-                            validate, reason = validate_trial_data(temp_data,cursor_type)
+                            validate, reason = validate_trial_data(temp_data, cursor_type)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -836,7 +859,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                 1) / temp_data.timestamp.diff(1)
                             temp_data['cursor_speed'] = abs(
                                 temp_data.cursor_speed.rolling(3, min_periods=1, center=True).mean())
-                            validate, reason = validate_trial_data(temp_data,cursor_type)
+                            validate, reason = validate_trial_data(temp_data, cursor_type)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -985,7 +1008,7 @@ def watch_errors():
                     for t in targets:
                         try:
                             total_count += 1
-                            validation, reason = validate_trial_data(splited_data[t],cursor_type)
+                            validation, reason = validate_trial_data(splited_data[t], cursor_type)
                             if validation == False:
                                 if reason == 'loss':
                                     loss_count += 1

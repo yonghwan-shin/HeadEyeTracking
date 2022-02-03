@@ -75,6 +75,16 @@ def validate_trial_data(data, cursor_type):
         data['check_eye'] = data.latestEyeGazeDirection_x.diff(1)
         eye_index = data[data.check_eye == 0].index
         invalidate_index = data[data.isEyeTrackingEnabledAndValid == False].index
+        loss_interval = 3
+        loss_indices = []
+        for i in range(-loss_interval, loss_interval + 1):
+            loss_indices += list(eye_index + i)
+        for i in loss_indices:
+            if i > len(data) or i < 0:
+                loss_indices.remove(i)
+        # for i in range(-loss_interval, loss_interval + 1):
+        #     if len(data) + i in loss_indices:
+        #         loss_indices.remove(len(data) + i)
         if len(eye_index) > len(data.index) / 3:
             # if len(drop_index) > 0 and len(drop_index) > 0:
             # print('eye loss')
@@ -216,23 +226,40 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     output['target_vertical_angle'] = output.apply(
                         lambda x: x.target_rotation[0], axis=1
                     )
-                    output['horizontal_offset'] = output.apply(
-                        lambda x: math.degrees(math.sin(
-                            math.radians(x.target_horizontal_angle - x.cursor_horizontal_angle))), axis=1
-                    )
-                    output['vertical_offset'] = output.apply(
-                        lambda x: math.degrees(math.sin(
-                            math.radians(x.target_vertical_angle - x.cursor_vertical_angle))), axis=1
-                    )
+                    # print(output['target_horizontal_angle'])
+                    # output['horizontal_offset'] = output.apply(
+                    #     # lambda x: math.degrees(math.sin(
+                    #     #     math.radians(x.target_horizontal_angle - x.cursor_horizontal_angle))), axis=1
+                    #     lambda x: correct_angle(x.target_horizontal_angle - x.cursor_horizontal_angle),axis=1
+                    # )
+
+                    # output['horizontal_offset']=(output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
+                    output['horizontal_offset'] = (
+                                output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
+                    output['vertical_offset'] = (
+                                output.target_vertical_angle - output.cursor_vertical_angle).apply(correct_angle)
+                    # output['vertical_offset'] = output.apply(
+                    #     # lambda x: math.degrees(math.sin(
+                    #     #     math.radians(x.target_vertical_angle - x.cursor_vertical_angle))), axis=1
+                    #     lambda x: correct_angle(x.target_vertical_angle - x.cursor_vertical_angle), axis=1
+                    # )
                     output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
                     output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
                     output['target_horizontal_velocity'] = (
                             output['target_horizontal_angle'].diff(1) / output['timestamp'].diff(1))
-                    # print(str(root / (file.name.split('.')[0] + ".pkl")))
+                    print(str(root / (file.name.split('.')[0] + ".pkl")))
                     output.to_pickle(path=str(root / (file.name.split('.')[0] + ".pkl")))
                     return output
     except Exception as e:
-        print(e.args)
+        print('error in reading file',e.args)
+
+
+def correct_angle(angle):
+    if angle > 180:
+        return angle - 360
+    if angle < -180:
+        return angle + 360
+    return angle
 
 
 def split_target(data):
