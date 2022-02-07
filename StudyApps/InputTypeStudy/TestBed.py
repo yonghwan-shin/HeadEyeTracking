@@ -23,6 +23,13 @@ pio.renderers.default = 'browser'
 
 pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
 
+#%%
+# data=read_hololens_data(4,'WALK','HAND',4)
+data = get_one_trial(4,'WALK','HAND',7,5)
+plt.plot(data.timestamp,data.cursor_angular_distance)
+plt.plot(data.timestamp,data.cursor_horizontal_angle,'r')
+plt.plot(data.timestamp,data.target_horizontal_angle,'g')
+plt.show()
 # %%
 
 # data = read_hololens_data(11, 'STAND', 'EYE', 7)
@@ -168,7 +175,7 @@ for i in t.values:
 # collect_offsets()
 # %%
 for i in range(24):
-    summarize_subject(i, resetFile=True)
+    summarize_subject(i, resetFile=False)
 # summary = summarize_subject(6)
 
 summary = visualize_summary(show_plot=False)

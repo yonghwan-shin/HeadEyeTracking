@@ -253,14 +253,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
                         drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
                                 temp_data['direction_z'] == 0)].index
-                        validate, reason = validate_trial_data(temp_data, cursor_type)
-                        if not validate:  # in case of invalid trial.
-                            trial_summary['error'] = reason
-                            summary.loc[len(summary)] = trial_summary
-                            if reason == 'jump':
-                                pass
-                            else:
-                                continue
+
 
                         if cursor_type == 'EYE':
                             temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
@@ -291,6 +284,14 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                 temp_data.loc[loss_indices] = np.nan
                                 temp_data = temp_data.interpolate()
                         # temp_data = temp_data.drop(drop_index)
+                        validate, reason = validate_trial_data(temp_data, cursor_type)
+                        if not validate:  # in case of invalid trial.
+                            trial_summary['error'] = reason
+                            summary.loc[len(summary)] = trial_summary
+                            if reason == 'jump':
+                                pass
+                            else:
+                                continue
                         temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
                             1) / temp_data.timestamp.diff(1)
                         temp_data['cursor_speed'] = abs(
