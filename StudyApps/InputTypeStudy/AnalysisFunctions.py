@@ -206,6 +206,7 @@ def visualize_offsets(show_plot=True):
 
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
                       repetitions=None, pilot=False, savefile=True, resetFile=False):
+    print('summarizing subject',sub_num)
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
@@ -254,7 +255,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
                                 temp_data['direction_z'] == 0)].index
 
-
+                        temp_data['error_frame'] = False
                         if cursor_type == 'EYE':
                             temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
                             eye_index = temp_data[temp_data.check_eye == 0].index
@@ -274,6 +275,8 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
 
                             temp_data.loc[loss_indices] = np.nan
                             temp_data = temp_data.interpolate()
+
+                            temp_data['error_frame'].loc[loss_indices] = True
                         else:
                             if len(drop_index) > 0:
                                 loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
@@ -283,15 +286,18 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                     loss_indices.remove(len(temp_data) + 1)
                                 temp_data.loc[loss_indices] = np.nan
                                 temp_data = temp_data.interpolate()
+
+                                temp_data['error_frame'].loc[loss_indices] = True
                         # temp_data = temp_data.drop(drop_index)
                         validate, reason = validate_trial_data(temp_data, cursor_type)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
                             summary.loc[len(summary)] = trial_summary
-                            if reason == 'jump':
-                                pass
-                            else:
-                                continue
+                            continue
+                            # if reason == 'jump':
+                            #     pass
+                            # else:
+                            #     continue
                         temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
                             1) / temp_data.timestamp.diff(1)
                         temp_data['cursor_speed'] = abs(
@@ -323,6 +329,8 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         target_in_mean_time = time_sum / target_in_count
                         # TODO
                         longest_dwell_time = max(times)
+                        if longest_dwell_time>=1:
+                            longest_dwell_time=1.0
                         targeting = temp_data[temp_data.timestamp <= initial_contact_time]
                         movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(
                             1) ** 2).apply(math.sqrt)
@@ -381,7 +389,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          }
                         summary.loc[len(summary)] = error_summary
                         print(sub_num, pos, cursor_type, rep, t, e.args, 'fail count', fail_count)
-
+    print(summary)
     final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
     if savefile:
         if pilot:
@@ -845,37 +853,58 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             temp_data.timestamp -= temp_data.timestamp.values[0]
                             drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
                                     temp_data['direction_z'] == 0)].index
-                            if len(drop_index) > 0:
-                                loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-                                if len(temp_data) in loss_indices:
-                                    loss_indices.remove(len(temp_data))
-                                if len(temp_data) + 1 in loss_indices:
-                                    loss_indices.remove(len(temp_data) + 1)
+
+                            temp_data['error_frame'] = False
+                            if cursor_type == 'EYE':
+                                temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+                                eye_index = temp_data[temp_data.check_eye == 0].index
+                                loss_interval = 3
+                                loss_indices = []
+                                for i in range(-loss_interval, loss_interval + 1):
+                                    loss_indices += list(eye_index + i)
+                                loss_indices = set(loss_indices)
+                                # for i in range(-loss_interval, loss_interval + 1):
+                                #     if len(temp_data) + i in loss_indices:
+                                #         loss_indices.remove(len(temp_data) + i)
+                                for i in range(loss_interval + 1):
+                                    if len(temp_data) + i in loss_indices:
+                                        loss_indices.remove(len(temp_data) + i)
+                                    if -i in loss_indices:
+                                        loss_indices.remove(-i)
+
                                 temp_data.loc[loss_indices] = np.nan
                                 temp_data = temp_data.interpolate()
-                                # temp_data.loc[
-                                #     set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))] = np.nan
-                                # temp_data = temp_data.interpolate()
-                            temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
-                                1) / temp_data.timestamp.diff(1)
-                            temp_data['cursor_speed'] = abs(
-                                temp_data.cursor_speed.rolling(3, min_periods=1, center=True).mean())
+
+                                temp_data['error_frame'].loc[loss_indices] = True
+                            else:
+                                if len(drop_index) > 0:
+                                    loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+                                    if len(temp_data) in loss_indices:
+                                        loss_indices.remove(len(temp_data))
+                                    if len(temp_data) + 1 in loss_indices:
+                                        loss_indices.remove(len(temp_data) + 1)
+                                    temp_data.loc[loss_indices] = np.nan
+                                    temp_data = temp_data.interpolate()
+
+                                    temp_data['error_frame'].loc[loss_indices] = True
+                            # temp_data = temp_data.drop(drop_index)
                             validate, reason = validate_trial_data(temp_data, cursor_type)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
                                 continue
+                                # if reason == 'jump':
+                                #     pass
+                                # else:
+                                #     continue
+                            temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
+                                1) / temp_data.timestamp.diff(1)
+                            temp_data['cursor_speed'] = abs(
+                                temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
 
-                                # temp_data = temp_data.drop(
-                                #     set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2)))
-                            #     print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
-                            #     # raise ValueError
-                            # temp_data = temp_data.drop(drop_index)
-                            # only_success = temp_data[temp_data.target_name == "Target_" + str(t)]
                             only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
                             if len(only_success) <= 0:
                                 raise ValueError('no success frames', len(only_success))
-
                             initial_contact_time = only_success.timestamp.values[0]
                             # mean required target size
                             mrt_df = temp_data[(temp_data.timestamp >= initial_contact_time) & (

@@ -95,7 +95,9 @@ def validate_trial_data(data, cursor_type):
         if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
             # if len(drop_index) > 0 and len(drop_index) > 0:
             return False, 'loss'
-
+    if len(data[data['error_frame']==True]) > len(data.index)*2/3:
+        # print(len(data['error_frame']) , len(data.index))
+        return False, 'LOSS'
     outlier = list(data[(abs(data.target_horizontal_velocity) > 10 * 57.296)].index)
     outlier = [x for x in outlier if x > 5]
     if len(outlier) > 1:
