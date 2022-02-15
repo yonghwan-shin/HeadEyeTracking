@@ -206,7 +206,7 @@ def visualize_offsets(show_plot=True):
 
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
                       repetitions=None, pilot=False, savefile=True, resetFile=False):
-    print('summarizing subject',sub_num)
+    print('summarizing subject', sub_num)
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
@@ -263,13 +263,13 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                             loss_indices = []
                             for i in range(-loss_interval, loss_interval + 1):
                                 loss_indices += list(eye_index + i)
-                            loss_indices=set(loss_indices)
+                            loss_indices = set(loss_indices)
                             # for i in range(-loss_interval, loss_interval + 1):
                             #     if len(temp_data) + i in loss_indices:
                             #         loss_indices.remove(len(temp_data) + i)
-                            for i in range(loss_interval+1):
-                                if len(temp_data)+i in loss_indices:
-                                    loss_indices.remove(len(temp_data)+i)
+                            for i in range(loss_interval + 1):
+                                if len(temp_data) + i in loss_indices:
+                                    loss_indices.remove(len(temp_data) + i)
                                 if -i in loss_indices:
                                     loss_indices.remove(-i)
 
@@ -298,19 +298,20 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                             #     pass
                             # else:
                             #     continue
-                        temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
+                        temp_data['cursor_speed'] = temp_data.angle.diff(
                             1) / temp_data.timestamp.diff(1)
                         temp_data['cursor_speed'] = abs(
                             temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
 
-                        only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
+                        # only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
+                        only_success = temp_data[temp_data.success==True]
                         if len(only_success) <= 0:
                             raise ValueError('no success frames', len(only_success))
                         initial_contact_time = only_success.timestamp.values[0]
 
                         success_dwells = []
-                        temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
-                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
+                        # temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
+                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
                             # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
                             # print(k, [t[0] for t in g])
                             if k == True:
@@ -329,8 +330,8 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         target_in_mean_time = time_sum / target_in_count
                         # TODO
                         longest_dwell_time = max(times)
-                        if longest_dwell_time>=1:
-                            longest_dwell_time=1.0
+                        if longest_dwell_time >= 1:
+                            longest_dwell_time = 1.0
                         targeting = temp_data[temp_data.timestamp <= initial_contact_time]
                         movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(
                             1) ** 2).apply(math.sqrt)
@@ -353,10 +354,10 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          'repetition': rep,
                                          'target_num': t,
                                          'wide': wide,
-                                         'mean_offset': dwell_temp.cursor_angular_distance.mean(),
-                                         'std_offset': dwell_temp.cursor_angular_distance.std(),
-                                         'overall_mean_offset': temp_data.cursor_angular_distance.mean(),
-                                         'overall_std_offset': temp_data.cursor_angular_distance.std(),
+                                         'mean_offset': dwell_temp.angle.mean(),
+                                         'std_offset': dwell_temp.angle.std(),
+                                         'overall_mean_offset': temp_data.angle.mean(),
+                                         'overall_std_offset': temp_data.angle.std(),
                                          'initial_contact_time': initial_contact_time,
                                          'target_in_count': float(target_in_count),
                                          'target_in_total_time': target_in_total_time,
@@ -827,13 +828,14 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
     summary = pd.DataFrame(
         columns=['dwell_time', 'subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide',
                  'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-                 'first_dwell_time', 'required_target_size', 'mean_final_speed', 'min_target_size', 'error'])
+                 'first_dwell_time', 'required_target_size', 'mean_final_speed', 'min_target_size', 'best_record',
+                 'error'])
     for sub_num in subjects:
         for cursor_type in cursorTypes:
             for rep in repetitions:
                 for pos in postures:
                     data = read_hololens_data(sub_num, pos, cursor_type, rep)
-
+                    data['distance']= data.horizontal_offset
                     splited_data = split_target(data)
                     wide = 'SMALL' if rep in rep_small else 'LARGE'
 
@@ -902,43 +904,57 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             temp_data['cursor_speed'] = abs(
                                 temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
 
-                            only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
+                            only_success = temp_data[temp_data.success==True]
                             if len(only_success) <= 0:
-                                raise ValueError('no success frames', len(only_success))
+                                trial_summary['error'] = 'no success frame'
+                                summary.loc[len(summary)] = trial_summary
+                                # raise ValueError('no success frames', len(only_success))
                             initial_contact_time = only_success.timestamp.values[0]
                             # mean required target size
                             mrt_df = temp_data[(temp_data.timestamp >= initial_contact_time) & (
                                     temp_data.timestamp <= dwell_time + initial_contact_time)]
-                            mrt = max(list(mrt_df.cursor_angular_distance))
+                            mrt = max(list(mrt_df.angle))
                             trial_summary['required_target_size'] = mrt
                             maxes = []
                             frame = int(dwell_time * 60)
-                            for i in range(len(temp_data.cursor_angular_distance) - frame):
-                                maxes.append(max(temp_data.cursor_angular_distance[i:i + frame]))
+                            for i in range(len(temp_data.angle) - frame):
+                                maxes.append(max(temp_data.angle[i:i + frame]))
 
                             min_target_size = min(maxes)
                             trial_summary['min_target_size'] = min_target_size
 
                             all_success_dwells = []
-                            temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
+
                             # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
                             for k, g in itertools.groupby(temp_data.iterrows(),
-                                                          key=lambda row: row[1]['target_name']):
+                                key = lambda row: row[1]['success']):
                                 # print(k, [t[0] for t in g])
                                 # if k == True:
-                                if k == 'Target_' + str(t):
+                                if k == True:
+                                # if k == 'Target_' + str(t):
                                     df = pd.DataFrame([r[1] for r in g])
                                     all_success_dwells.append(df)
-                            success_dwells = []
 
+                            success_dwells = []
+                            times = []
                             for dw in all_success_dwells:
-                                if (dw.timestamp.values[-1] - dw.timestamp.values[0]) > dwell_time - 2 / 60:
+                                time_record =dw.timestamp.values[-1] - dw.timestamp.values[0]+2/60
+                                times.append(time_record)
+                                if time_record > dwell_time :
                                     success_dwells.append(dw)
+                            best_record = max(times)
+                            trial_summary['best_record'] = best_record
                             if len(success_dwells) <= 0:
-                                raise ValueError('no success dwell', len(success_dwells))
+                                trial_summary['error'] = 'no success dwell'
+                                summary.loc[len(summary)] = trial_summary
+                                continue
+                                # raise ValueError('no success dwell', len(success_dwells))
                             time_sum = 0
+
                             for dw in success_dwells:
-                                time_sum += dw.timestamp.values[-1] - dw.timestamp.values[0]
+                                record = dw.timestamp.values[-1] - dw.timestamp.values[0]
+
+                                time_sum += record
 
                             target_in_count = len(success_dwells)
                             target_in_total_time = time_sum
@@ -951,6 +967,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             number of extra times over 
                             target mean speed during final 100ms
                             mean required-target-size
+                            best dwell time
                             """
 
                             # time to achieve success
@@ -980,6 +997,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                              'required_target_size': mrt,
                                              'mean_final_speed': mean_final_speed,
                                              'min_target_size': min_target_size,
+                                             'best_record': best_record,
                                              'error': None
                                              }
                             summary.loc[len(summary)] = trial_summary
@@ -993,7 +1011,8 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                                 'repetition': rep,
                                 'target_num': t,
                                 'wide': wide,
-                                'required_target_size': mrt,
+                                # 'required_target_size': mrt,
+                                # 'best_record': best_record,
                                 'error': e.args
                             }
                             summary.loc[len(summary)] = error_summary

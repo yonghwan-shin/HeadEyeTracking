@@ -9,6 +9,8 @@ import numpy.linalg as LA
 import os
 
 default_target_size = 3.0 / 2
+default_target_radius = 0.05237
+default_target_diameter = 0.10474
 
 sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
           ('EYE', 'WALK', 'vertical'): 2.4375580926867078,
@@ -95,7 +97,7 @@ def validate_trial_data(data, cursor_type):
         if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
             # if len(drop_index) > 0 and len(drop_index) > 0:
             return False, 'loss'
-    if len(data[data['error_frame']==True]) > len(data.index)*2/3:
+    if len(data[data['error_frame'] == True]) > len(data.index) * 2 / 3:
         # print(len(data['error_frame']) , len(data.index))
         return False, 'LOSS'
     outlier = list(data[(abs(data.target_horizontal_velocity) > 10 * 57.296)].index)
@@ -228,6 +230,7 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     output['target_vertical_angle'] = output.apply(
                         lambda x: x.target_rotation[0], axis=1
                     )
+
                     # print(output['target_horizontal_angle'])
                     # output['horizontal_offset'] = output.apply(
                     #     # lambda x: math.degrees(math.sin(
@@ -237,14 +240,22 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
 
                     # output['horizontal_offset']=(output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
                     output['horizontal_offset'] = (
-                                output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
+                            output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
                     output['vertical_offset'] = (
-                                output.target_vertical_angle - output.cursor_vertical_angle).apply(correct_angle)
+                            output.target_vertical_angle - output.cursor_vertical_angle).apply(correct_angle)
                     # output['vertical_offset'] = output.apply(
                     #     # lambda x: math.degrees(math.sin(
                     #     #     math.radians(x.target_vertical_angle - x.cursor_vertical_angle))), axis=1
                     #     lambda x: correct_angle(x.target_vertical_angle - x.cursor_vertical_angle), axis=1
                     # )
+                    output['angle'] = (output.horizontal_offset ** 2 + output.vertical_offset ** 2).apply(
+                        math.sqrt)
+                    output['distance'] = ((output.target_position_x - output.origin_x) ** 2 + (
+                            output.target_position_y - output.origin_y) ** 2 +
+                                          (output.target_position_z - output.origin_z) ** 2).apply(math.sqrt)
+                    output['max_angle'] = (default_target_radius / output['distance']).apply(math.asin).apply(
+                        math.degrees)
+                    output['success'] = output.angle < output.max_angle
                     output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
                     output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
                     output['target_horizontal_velocity'] = (
@@ -253,7 +264,7 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     output.to_pickle(path=str(root / (file.name.split('.')[0] + ".pkl")))
                     return output
     except Exception as e:
-        print('error in reading file',e.args)
+        print('error in reading file', e.args)
 
 
 def correct_angle(angle):

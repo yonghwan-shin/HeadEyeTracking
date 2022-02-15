@@ -25,11 +25,65 @@ pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
 
 # %%
 # data=read_hololens_data(4,'WALK','HAND',4)
-data = get_one_trial(4, 'WALK', 'HAND', 7, 5)
-plt.plot(data.timestamp, data.cursor_angular_distance)
-plt.plot(data.timestamp, data.cursor_horizontal_angle, 'r')
-plt.plot(data.timestamp, data.target_horizontal_angle, 'g')
+cursor_type = 'HAND'
+temp_data = get_one_trial(0, 'STAND', cursor_type, 4, 4)
+drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
+        temp_data['direction_z'] == 0)].index
+temp_data['angle'] = (temp_data.horizontal_offset**2 + temp_data.vertical_offset**2).apply(math.sqrt)
+temp_data['distance'] = ((temp_data.target_position_x - temp_data.origin_x) ** 2 + (
+            temp_data.target_position_y - temp_data.origin_y) ** 2 +
+                         (temp_data.target_position_z - temp_data.origin_z) ** 2).apply(math.sqrt)
+temp_data['max_angle'] = (default_target_radius/ temp_data['distance']).apply(math.asin).apply(math.degrees)
+# output['target_rotation'] = output.apply(
+#     lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+#                           x.target_position_z - x.origin_z), axis=1)
+temp_data['error_frame'] = False
+if cursor_type == 'EYE':
+    temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+    eye_index = temp_data[temp_data.check_eye == 0].index
+    loss_interval = 3
+    loss_indices = []
+    for i in range(-loss_interval, loss_interval + 1):
+        loss_indices += list(eye_index + i)
+    loss_indices = set(loss_indices)
+    # for i in range(-loss_interval, loss_interval + 1):
+    #     if len(temp_data) + i in loss_indices:
+    #         loss_indices.remove(len(temp_data) + i)
+    for i in range(loss_interval + 1):
+        if len(temp_data) + i in loss_indices:
+            loss_indices.remove(len(temp_data) + i)
+        if -i in loss_indices:
+            loss_indices.remove(-i)
+
+    temp_data.loc[loss_indices] = np.nan
+    temp_data = temp_data.interpolate()
+
+    temp_data['error_frame'].loc[loss_indices] = True
+else:
+    if len(drop_index) > 0:
+        loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+        if len(temp_data) in loss_indices:
+            loss_indices.remove(len(temp_data))
+        if len(temp_data) + 1 in loss_indices:
+            loss_indices.remove(len(temp_data) + 1)
+        temp_data.loc[loss_indices] = np.nan
+        temp_data = temp_data.interpolate()
+
+        temp_data['error_frame'].loc[loss_indices] = True
+plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance)
+# plt.plot(temp_data.timestamp, temp_data.distance, 'g')
+# plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle, 'r')
+# plt.plot(temp_data.timestamp, temp_data.target_horizontal_angle, 'g')
+# plt.axhline(1.5)
+plt.plot(temp_data.timestamp,temp_data.max_angle)
+# plt.show()
+su= temp_data[temp_data.target_name == 'Target_4']
+su_angle= temp_data[temp_data.angle < temp_data['max_angle']]
+plt.plot(su.timestamp,su.angle)
+plt.scatter(su_angle.timestamp,su_angle.angle)
+
 plt.show()
+abc= temp_data.angle < temp_data.max_angle
 # %%
 
 # data = read_hololens_data(11, 'STAND', 'EYE', 7)
@@ -228,7 +282,7 @@ for i in t.values:
 # collect_offsets()
 # %%
 for i in range(24):
-    summarize_subject(i, resetFile=False)
+    summarize_subject(i, resetFile=True)
 # summary = summarize_subject(6)
 
 summary = visualize_summary(show_plot=False)
@@ -364,7 +418,8 @@ for column in [
                      meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
                                 'markersize': '10'},
                      palette='Set1', width=0.8)
-    annot = Annotator(ax, pairs, data=bySubjects, x='posture', y=column, order=order, hue='cursor_type', hue_order=hue_order)
+    annot = Annotator(ax, pairs, data=bySubjects, x='posture', y=column, order=order, hue='cursor_type',
+                      hue_order=hue_order)
     # annot.new_plot(ax, pairs, data=s, x='posture', y=column, order=order, hue='cursor_type', hue_order=hue_order)
     annot.configure(test='t-test_ind', comparisons_correction="Bonferroni").apply_test().annotate()
     # sns.boxplot(data=ss, x='posture', y=column, hue='cursor_type', showfliers=False, showmeans=True, )
@@ -414,7 +469,7 @@ for column in [
 
 # %%dwell-wise anaylsis
 dwell_times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-# dwell_times=[0.1]
+# dwell_times = [1.0]
 for dt in dwell_times:
     dwell_time_analysis(dt)
 # %% visualize dwell-wise analysis
@@ -432,8 +487,9 @@ for dt in dwell_times:
 dwell_summary = pd.concat(dfs)
 plot_df = pd.DataFrame(
     columns=['posture', 'cursor_type', 'dwell_time', 'success_rate', 'required_target_size', 'first_dwell_time',
-             'mean_final_speed', 'required_target_size_std', 'first_dwell_time_std', 'mean_final_speed_std'])
-for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
+             'mean_final_speed', 'required_target_size_std', 'first_dwell_time_std', 'mean_final_speed_std',
+             'best_record'])
+for pos, ct in itertools.product(['WALK', 'STAND'], ['HEAD', 'EYE', 'HAND']):
 
     srs = []
     for dt in dwell_times:
@@ -445,15 +501,17 @@ for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
         fail_count = temp.groupby(temp.error).count().posture[0]
         # print(dt,temp.groupby(temp.error).count().posture)
         success_rate = 1 - fail_count / (total_count - (all_error_count - fail_count))
-        # print(dt,pos,ct, success_rate,total_count,fail_count,all_error_count)
-        # print(temp.groupby(temp.error).count())
+        print(dt, pos, ct, success_rate, total_count, fail_count, all_error_count)
+        print(temp.groupby(temp.error).count().posture)
         required_target_size = temp.required_target_size.mean()
         first_dwell_time = temp.first_dwell_time.mean()
         mean_final_speed = temp.mean_final_speed.mean()
+        mean_best_record = temp.best_record.mean()
         # errorbar
         required_target_size_std = temp.required_target_size.std()
         first_dwell_time_std = temp.first_dwell_time.std()
         mean_final_speed_std = temp.mean_final_speed.std()
+
         plot_summary = {'posture': pos,
                         'cursor_type': ct,
                         'dwell_time': dt,
@@ -463,14 +521,18 @@ for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
                         'mean_final_speed': mean_final_speed,
                         'required_target_size_std': required_target_size_std,
                         'first_dwell_time_std': first_dwell_time_std,
-                        'mean_final_speed_std': mean_final_speed_std
+                        'mean_final_speed_std': mean_final_speed_std,
+                        'mean_best_record': mean_best_record
                         }
         plot_df.loc[len(plot_df)] = plot_summary
 dwell_summary.to_csv('DwellRawSummary.csv')
+
+abc = dwell_summary[
+    (dwell_summary.posture == 'STAND') & (dwell_summary.cursor_type == 'HAND') & (dwell_summary.dwell_time == 1.0)]
 # %%
 
 for c in ['success_rate', 'required_target_size', 'first_dwell_time',
-          'mean_final_speed']:
+          'mean_final_speed', 'best_record']:
     fig = go.Figure()
     for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
         plot_data = plot_df[(plot_df.posture == pos) & (plot_df.cursor_type == ct)]
@@ -503,7 +565,7 @@ ax.legend(handles, ['Cursor Type', 'Head', 'Eye', 'Hand', 'Posture', 'STAND', 'W
 plt.show()
 # %% dwell time box plots
 dcs = ['required_target_size', 'first_dwell_time',
-       'mean_final_speed', 'min_target_size']
+       'mean_final_speed', 'min_target_size', 'best_record']
 
 sns.set_style('ticks')
 sns.set_context('talk')
