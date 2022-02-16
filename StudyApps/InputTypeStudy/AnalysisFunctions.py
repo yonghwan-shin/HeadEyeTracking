@@ -283,7 +283,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         time_sum = 0
                         times = []
                         for dw in success_dwells:
-                            current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                            current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0] +2/60
                             time_sum += current_dwell_time
                             times.append(current_dwell_time)
 
@@ -880,7 +880,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             mrt = max(list(mrt_df.angle))
                             trial_summary['required_target_size'] = mrt
                             maxes = []
-                            frame = int(dwell_time * 60)
+                            frame = int(dwell_time * 60)-3
                             for i in range(len(temp_data.angle) - frame):
                                 maxes.append(max(temp_data.angle[i:i + frame]))
 

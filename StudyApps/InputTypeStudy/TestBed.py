@@ -438,7 +438,7 @@ import seaborn as sns
 
 sns.set_style('ticks')
 sns.set_context('notebook')
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(6,8))
 sns.lineplot(x='dwell_time', y='success_rate', hue='cursor_type', style='posture', data=plot_df, marker='o',
              markersize=10, alpha=0.75,
              palette='Set2', linewidth=3)
@@ -461,10 +461,11 @@ sns.set_context('talk')
 # sns.catplot(data=plot_data,x='dwell_time',y='success_rate',hue='')
 for c in dcs:
     # Walking condition plots
+    fig, ax = plt.subplots(figsize=(6, 8))
     sns.boxplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'WALK'],
                 showfliers=False, showmeans=True,
                 meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '10'},
-                palette='Set1', width=0.8)
+                palette='Set1', width=0.8,ax=ax)
     plt.legend(loc='upper right')
     if c == 'required_target_size':
         plt.ylabel('Required Target Size (°)')
@@ -482,13 +483,15 @@ for c in dcs:
                fancybox=False, ncol=3)
 
     plt.xlabel('dwell threshold (s)')
+    plt.tight_layout()
     plt.show()
     # Standing condition plots
+    fig, ax = plt.subplots(figsize=(6, 8))
     sns.boxplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'STAND'],
                 showfliers=False, showmeans=True,
                 meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
                            'markersize': '10'},
-                palette='Set2', width=0.8)
+                palette='Set2', width=0.8,ax=ax)
     # sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture=='WALK'], kind='box', showfliers=False, showmeans=True,
     #             meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
     #             height=5,aspect=2,legend=False)
@@ -510,6 +513,7 @@ for c in dcs:
     plt.legend(loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2),
                fancybox=True, ncol=3)
     plt.xlabel('dwell threshold (s)')
+    plt.tight_layout()
     plt.show()
 
 # %%
