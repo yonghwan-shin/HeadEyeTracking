@@ -44,7 +44,7 @@ def collect_offsets(sub_num, cursorTypes=None, postures=None, targets=range(9),
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data, cursor_type)
+                validate, reason = validate_trial_data(temp_data, cursor_type,pos)
                 if not validate:  # in case of invalid trial.
                     trial_summary['error'] = reason
                     summary.loc[len(summary)] = trial_summary
@@ -252,59 +252,21 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         # drop_index = output[
                         #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
                         #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
-                        drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-                                temp_data['direction_z'] == 0)].index
-
-                        temp_data['error_frame'] = False
-                        if cursor_type == 'EYE':
-                            temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
-                            eye_index = temp_data[temp_data.check_eye == 0].index
-                            loss_interval = 3
-                            loss_indices = []
-                            for i in range(-loss_interval, loss_interval + 1):
-                                loss_indices += list(eye_index + i)
-                            loss_indices = set(loss_indices)
-                            # for i in range(-loss_interval, loss_interval + 1):
-                            #     if len(temp_data) + i in loss_indices:
-                            #         loss_indices.remove(len(temp_data) + i)
-                            for i in range(loss_interval + 1):
-                                if len(temp_data) + i in loss_indices:
-                                    loss_indices.remove(len(temp_data) + i)
-                                if -i in loss_indices:
-                                    loss_indices.remove(-i)
-
-                            temp_data.loc[loss_indices] = np.nan
-                            temp_data = temp_data.interpolate()
-
-                            temp_data['error_frame'].loc[loss_indices] = True
-                        else:
-                            if len(drop_index) > 0:
-                                loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-                                if len(temp_data) in loss_indices:
-                                    loss_indices.remove(len(temp_data))
-                                if len(temp_data) + 1 in loss_indices:
-                                    loss_indices.remove(len(temp_data) + 1)
-                                temp_data.loc[loss_indices] = np.nan
-                                temp_data = temp_data.interpolate()
-
-                                temp_data['error_frame'].loc[loss_indices] = True
+                        temp_data = check_loss(temp_data,cursor_type)
                         # temp_data = temp_data.drop(drop_index)
-                        validate, reason = validate_trial_data(temp_data, cursor_type)
+                        validate, reason = validate_trial_data(temp_data, cursor_type,pos)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
                             summary.loc[len(summary)] = trial_summary
                             continue
-                            # if reason == 'jump':
-                            #     pass
-                            # else:
-                            #     continue
+
                         temp_data['cursor_speed'] = temp_data.angle.diff(
                             1) / temp_data.timestamp.diff(1)
                         temp_data['cursor_speed'] = abs(
                             temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
 
                         # only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
-                        only_success = temp_data[temp_data.success==True]
+                        only_success = temp_data[temp_data.success == True]
                         if len(only_success) <= 0:
                             raise ValueError('no success frames', len(only_success))
                         initial_contact_time = only_success.timestamp.values[0]
@@ -677,7 +639,7 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
-                            validate, reason = validate_trial_data(temp_data, cursor_type)
+                            validate, reason = validate_trial_data(temp_data, cursor_type,pos)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -835,7 +797,8 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
             for rep in repetitions:
                 for pos in postures:
                     data = read_hololens_data(sub_num, pos, cursor_type, rep)
-                    data['distance']= data.horizontal_offset
+                    print(dwell_time, sub_num, pos, cursor_type, rep)
+
                     splited_data = split_target(data)
                     wide = 'SMALL' if rep in rep_small else 'LARGE'
 
@@ -890,7 +853,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
 
                                     temp_data['error_frame'].loc[loss_indices] = True
                             # temp_data = temp_data.drop(drop_index)
-                            validate, reason = validate_trial_data(temp_data, cursor_type)
+                            validate, reason = validate_trial_data(temp_data, cursor_type,pos)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -904,10 +867,11 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             temp_data['cursor_speed'] = abs(
                                 temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
 
-                            only_success = temp_data[temp_data.success==True]
+                            only_success = temp_data[temp_data.success == True]
                             if len(only_success) <= 0:
                                 trial_summary['error'] = 'no success frame'
                                 summary.loc[len(summary)] = trial_summary
+                                continue
                                 # raise ValueError('no success frames', len(only_success))
                             initial_contact_time = only_success.timestamp.values[0]
                             # mean required target size
@@ -927,20 +891,20 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
 
                             # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
                             for k, g in itertools.groupby(temp_data.iterrows(),
-                                key = lambda row: row[1]['success']):
+                                                          key=lambda row: row[1]['success']):
                                 # print(k, [t[0] for t in g])
                                 # if k == True:
                                 if k == True:
-                                # if k == 'Target_' + str(t):
+                                    # if k == 'Target_' + str(t):
                                     df = pd.DataFrame([r[1] for r in g])
                                     all_success_dwells.append(df)
 
                             success_dwells = []
                             times = []
                             for dw in all_success_dwells:
-                                time_record =dw.timestamp.values[-1] - dw.timestamp.values[0]+2/60
+                                time_record = dw.timestamp.values[-1] - dw.timestamp.values[0] + 2 / 60
                                 times.append(time_record)
-                                if time_record > dwell_time :
+                                if round(time_record,1) >= dwell_time:
                                     success_dwells.append(dw)
                             best_record = max(times)
                             trial_summary['best_record'] = best_record
@@ -952,7 +916,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             time_sum = 0
 
                             for dw in success_dwells:
-                                record = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                                record = dw.timestamp.values[-1] - dw.timestamp.values[0]+ 2 / 60
 
                                 time_sum += record
 
@@ -1057,7 +1021,7 @@ def watch_errors():
                     for t in targets:
                         try:
                             total_count += 1
-                            validation, reason = validate_trial_data(splited_data[t], cursor_type)
+                            validation, reason = validate_trial_data(splited_data[t], cursor_type,pos)
                             if validation == False:
                                 if reason == 'loss':
                                     loss_count += 1

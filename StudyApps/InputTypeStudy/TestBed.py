@@ -24,173 +24,58 @@ pio.renderers.default = 'browser'
 pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
 
 # %%
-# data=read_hololens_data(4,'WALK','HAND',4)
-cursor_type = 'HAND'
-temp_data = get_one_trial(0, 'STAND', cursor_type, 4, 4)
-drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-        temp_data['direction_z'] == 0)].index
-temp_data['angle'] = (temp_data.horizontal_offset**2 + temp_data.vertical_offset**2).apply(math.sqrt)
-temp_data['distance'] = ((temp_data.target_position_x - temp_data.origin_x) ** 2 + (
-            temp_data.target_position_y - temp_data.origin_y) ** 2 +
-                         (temp_data.target_position_z - temp_data.origin_z) ** 2).apply(math.sqrt)
-temp_data['max_angle'] = (default_target_radius/ temp_data['distance']).apply(math.asin).apply(math.degrees)
-# output['target_rotation'] = output.apply(
-#     lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
-#                           x.target_position_z - x.origin_z), axis=1)
-temp_data['error_frame'] = False
-if cursor_type == 'EYE':
-    temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
-    eye_index = temp_data[temp_data.check_eye == 0].index
-    loss_interval = 3
-    loss_indices = []
-    for i in range(-loss_interval, loss_interval + 1):
-        loss_indices += list(eye_index + i)
-    loss_indices = set(loss_indices)
-    # for i in range(-loss_interval, loss_interval + 1):
-    #     if len(temp_data) + i in loss_indices:
-    #         loss_indices.remove(len(temp_data) + i)
-    for i in range(loss_interval + 1):
-        if len(temp_data) + i in loss_indices:
-            loss_indices.remove(len(temp_data) + i)
-        if -i in loss_indices:
-            loss_indices.remove(-i)
+temp_data = get_one_trial(0,'STAND','EYE',4,2)
+corr_data=check_loss(temp_data,'EYE')
 
-    temp_data.loc[loss_indices] = np.nan
-    temp_data = temp_data.interpolate()
-
-    temp_data['error_frame'].loc[loss_indices] = True
-else:
-    if len(drop_index) > 0:
-        loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-        if len(temp_data) in loss_indices:
-            loss_indices.remove(len(temp_data))
-        if len(temp_data) + 1 in loss_indices:
-            loss_indices.remove(len(temp_data) + 1)
-        temp_data.loc[loss_indices] = np.nan
-        temp_data = temp_data.interpolate()
-
-        temp_data['error_frame'].loc[loss_indices] = True
-plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance)
-# plt.plot(temp_data.timestamp, temp_data.distance, 'g')
-# plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle, 'r')
-# plt.plot(temp_data.timestamp, temp_data.target_horizontal_angle, 'g')
-# plt.axhline(1.5)
-plt.plot(temp_data.timestamp,temp_data.max_angle)
+# plt.plot(corr_data.timestamp, corr_data.angle, 'r')
+# plt.plot(corr_data.timestamp, corr_data.max_angle, 'b')
 # plt.show()
-su= temp_data[temp_data.target_name == 'Target_4']
-su_angle= temp_data[temp_data.angle < temp_data['max_angle']]
-plt.plot(su.timestamp,su.angle)
-plt.scatter(su_angle.timestamp,su_angle.angle)
+all_success_dwells = []
 
-plt.show()
-abc= temp_data.angle < temp_data.max_angle
-# %%
+# for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
+for k, g in itertools.groupby(temp_data.iterrows(),
+                              key=lambda row: row[1]['success']):
+    # print(k, [t[0] for t in g])
+    # if k == True:
+    if k == True:
+        # if k == 'Target_' + str(t):
+        df = pd.DataFrame([r[1] for r in g])
+        all_success_dwells.append(df)
+for d in all_success_dwells:
+    record = d.timestamp.values[-1] - d.timestamp.values[0]
 
+    print(d.timestamp.values[-1], d.timestamp.values[0],record)
+#%%
 # data = read_hololens_data(11, 'STAND', 'EYE', 7)
 # temp_data = get_one_trial(20,'WALK','EYE',5,2)
 summary = pd.read_csv("BasicRawSummary.csv")
-s = summary[summary.error.isna()]
-sorted = s.sort_values(by=['longest_dwell_time'], ascending=False)
-for i in range(3):
-    sub_num = sorted.iloc[i].subject_num
-    posture = sorted.iloc[i].posture
-    ct = sorted.iloc[i].cursor_type
-    rep = sorted.iloc[i].repetition
-    target_num = sorted.iloc[i].target_num
-    # ct = 'HEAD'
-    temp_data = get_one_trial(sub_num, posture, ct, rep, target_num)
-    # validate, reason = validate_trial_data(temp_data, ct)
-    # # drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-    # #         temp_data['direction_z'] == 0)].index
-    # drop_index = temp_data[(temp_data['ray_direction_x'] == 0) & (temp_data['ray_direction_y'] == 0) & (
-    #         temp_data['ray_direction_z'] == 0)].index
-    drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-            temp_data['direction_z'] == 0)].index
-    temp_data['error_frame'] = False
-    if ct == 'EYE':
-        temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
-        eye_index = temp_data[temp_data.check_eye == 0].index
-        loss_interval = 3
-        loss_indices = []
-        for i in range(-loss_interval, loss_interval + 1):
-            loss_indices += list(eye_index + i)
-        loss_indices = set(loss_indices)
-        # for i in range(-loss_interval, loss_interval + 1):
-        #     if len(temp_data) + i in loss_indices:
-        #         loss_indices.remove(len(temp_data) + i)
-        for i in range(loss_interval + 1):
-            if len(temp_data) + i in loss_indices:
-                loss_indices.remove(len(temp_data) + i)
-            if -i in loss_indices:
-                loss_indices.remove(-i)
-
-        temp_data.loc[loss_indices] = np.nan
-        temp_data = temp_data.interpolate()
-
-        temp_data['error_frame'].loc[loss_indices] = True
-    else:
-        if len(drop_index) > 0:
-            loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-            if len(temp_data) in loss_indices:
-                loss_indices.remove(len(temp_data))
-            if len(temp_data) + 1 in loss_indices:
-                loss_indices.remove(len(temp_data) + 1)
-            temp_data.loc[loss_indices] = np.nan
-            temp_data = temp_data.interpolate()
-
-            temp_data['error_frame'].loc[loss_indices] = True
-    # temp_data = temp_data.drop(drop_index)
-    validate, reason = validate_trial_data(temp_data, ct)
-    if not validate:  # in case of invalid trial.
-        # trial_summary['error'] = reason
-        # summary.loc[len(summary)] = trial_summary
-        continue
-        # if reason == 'jump':
-        #     pass
-        # else:
-        #     continue
-    temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
-        1) / temp_data.timestamp.diff(1)
-    temp_data['cursor_speed'] = abs(
-        temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
-
-    only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
-    if len(only_success) <= 0:
-        raise ValueError('no success frames', len(only_success))
-    initial_contact_time = only_success.timestamp.values[0]
-
-    fig, ax = plt.subplots(1, 2)
-    ax[0].plot(temp_data.timestamp, temp_data.target_horizontal_angle, 'r.')
-    ax[0].plot(temp_data.timestamp, temp_data.cursor_horizontal_angle, 'r:')
-    ax[0].plot(temp_data.timestamp, temp_data.target_vertical_angle, 'b.')
-    ax[0].plot(temp_data.timestamp, temp_data.cursor_vertical_angle, 'b:')
-    ax[1].plot(temp_data.timestamp, temp_data.cursor_angular_distance, 'k--')
-    ax[1].plot(temp_data.timestamp, -temp_data.cursor_horizontal_angle + temp_data.target_horizontal_angle, 'r:')
-    ax[1].plot(temp_data.timestamp, -temp_data.cursor_vertical_angle + temp_data.target_vertical_angle, 'b:')
-    ax[1].axhline(3)
-    ax[1].axhline(-3)
-    plt.title(str(sub_num) + str(posture) + str(ct) + str(rep) + str(target_num))
+jumps=summary[summary.error == 'jump']
+for trial in jumps.head(3).iterrows():
+    trial=trial[1]
+    temp_data =get_one_trial(trial.subject_num,trial.posture,trial.cursor_type,trial.repetition,trial.target_num)
+    outlier = list(temp_data[(abs(temp_data.target_horizontal_velocity) > 10 * 57.296)].index)
+    outlier = [x for x in outlier if x > 5]
+    outlier_timestamp= temp_data.iloc[outlier].timestamp.values
+    plt.plot(temp_data.timestamp, temp_data.angle, 'r:')
+    plt.plot(temp_data.timestamp, temp_data.max_angle, 'b:')
+    corr_data=check_loss(temp_data,trial.cursor_type)
+    corr_data['target_horizontal_velocity'] = (
+            corr_data['target_horizontal_angle'].diff(1).apply(correct_angle) / corr_data['timestamp'].diff(1))
+    outlier = list(corr_data[(abs(corr_data.target_horizontal_velocity) > 10 * 57.296)].index)
+    outlier = [x for x in outlier if x > 5]
+    corr_outlier_timestamp= corr_data.iloc[outlier].timestamp.values
+    plt.plot(corr_data.timestamp,corr_data.angle,'r')
+    plt.plot(corr_data.timestamp,corr_data.max_angle,'b')
+    plt.title(str(corr_outlier_timestamp))
+    # for ol in outlier_timestamp:
+    #     plt.axvline(ol)
+    for ol in corr_outlier_timestamp:
+        plt.axvline(ol)
     plt.show()
-    success_dwells = []
-    temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
-    for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
-        # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
-        # print(k, [t[0] for t in g])
-        if k == True:
-            # if k == 'Target_' + str(t):
-            df = pd.DataFrame([r[1] for r in g])
-            success_dwells.append(df)
-    times = []
-    for dw in success_dwells:
-        current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
-        # time_sum += current_dwell_time
-        times.append(current_dwell_time)
-    print(str(sub_num) + str(posture) + str(ct) + str(rep) + str(target_num))
-    print(times)
-    # plt.plot(temp_data.timestamp, temp_data.target_horizontal_velocity)
-    # plt.show()
-    # plt.plot(temp_data.timestamp,temp_data.horizontal_offset)
-    # plt.show()
+
+    # plt.plot(corr_data.timestamp,abs(corr_data.target_horizontal_velocity))
+    plt.plot(corr_data.timestamp,corr_data.target_horizontal_velocity)
+    plt.show()
 # %% see eye-errors
 repetitions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -213,7 +98,7 @@ for sub_num in range(24):
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data, cursor_type)
+                validate, reason = validate_trial_data(temp_data, cursor_type,pos)
                 temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
                 eye_index = temp_data[temp_data.check_eye == 0].index
                 invalidate_index = temp_data[temp_data.isEyeTrackingEnabledAndValid == False].index
@@ -282,7 +167,7 @@ for i in t.values:
 # collect_offsets()
 # %%
 for i in range(24):
-    summarize_subject(i, resetFile=True)
+    summarize_subject(i, resetFile=False)
 # summary = summarize_subject(6)
 
 summary = visualize_summary(show_plot=False)
@@ -497,8 +382,10 @@ for pos, ct in itertools.product(['WALK', 'STAND'], ['HEAD', 'EYE', 'HAND']):
         temp = temp[temp.posture == pos]
         total_count = len(temp)
         all_error_count = sum(temp.groupby(temp.error).count().posture)
-
-        fail_count = temp.groupby(temp.error).count().posture[0]
+        if temp.groupby(temp.error).count().posture.__contains__("no success dwell"):
+            fail_count = temp.groupby(temp.error).count().posture['no success dwell']
+        else:
+            fail_count=0
         # print(dt,temp.groupby(temp.error).count().posture)
         success_rate = 1 - fail_count / (total_count - (all_error_count - fail_count))
         print(dt, pos, ct, success_rate, total_count, fail_count, all_error_count)
@@ -529,6 +416,8 @@ dwell_summary.to_csv('DwellRawSummary.csv')
 
 abc = dwell_summary[
     (dwell_summary.posture == 'STAND') & (dwell_summary.cursor_type == 'HAND') & (dwell_summary.dwell_time == 1.0)]
+ddd = dwell_summary[
+    (dwell_summary.posture == 'STAND') & (dwell_summary.cursor_type == 'EYE') & (dwell_summary.dwell_time == 1.0)]
 # %%
 
 for c in ['success_rate', 'required_target_size', 'first_dwell_time',

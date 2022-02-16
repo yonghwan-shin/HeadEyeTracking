@@ -69,7 +69,57 @@ def get_one_trial(subject, posture, cursor_type, repetition, end_num):
     return temp_data
 
 
-def validate_trial_data(data, cursor_type):
+def check_loss(temp_data, cursor_type):
+    drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
+            temp_data['direction_z'] == 0)].index
+    temp_data['error_frame'] = False
+
+    if cursor_type == 'EYE':
+        temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+        check_eyes = []
+        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['check_eye']):
+            if k == 0:
+                df = pd.DataFrame([r[1] for r in g])
+                check_eyes.append(df)
+        loss_interval = 3
+        loss_indices = []
+        for eye in check_eyes:
+            if len(eye) > 10:
+                for i in range(-loss_interval, loss_interval + 1):
+                    loss_indices += list(eye.index + i)
+        # eye_index = temp_data[temp_data.check_eye == 0].index
+
+        loss_indices = set(loss_indices)
+        # for i in range(-loss_interval, loss_interval + 1):
+        #     if len(temp_data) + i in loss_indices:
+        #         loss_indices.remove(len(temp_data) + i)
+        for i in range(loss_interval + 1):
+            if len(temp_data) + i in loss_indices:
+                loss_indices.remove(len(temp_data) + i)
+            if -i in loss_indices:
+                loss_indices.remove(-i)
+
+        temp_data.loc[loss_indices] = np.nan
+        temp_data = temp_data.interpolate()
+
+        temp_data['error_frame'].loc[loss_indices] = True
+    else:
+        if len(drop_index) > 0:
+            loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
+            if len(temp_data) in loss_indices:
+                loss_indices.remove(len(temp_data))
+            if len(temp_data) + 1 in loss_indices:
+                loss_indices.remove(len(temp_data) + 1)
+            temp_data.loc[loss_indices] = np.nan
+            temp_data = temp_data.interpolate()
+
+            temp_data['error_frame'].loc[loss_indices] = True
+    temp_data['target_horizontal_velocity'] = (
+            temp_data['target_horizontal_angle'].diff(1).apply(correct_angle) / temp_data['timestamp'].diff(1))
+    return temp_data
+
+
+def validate_trial_data(data, cursor_type, posture):
     # if there is a sudden target-shift occurs
     if cursor_type == 'EYE':
         # drop_index = temp_data[(temp_data['ray_direction_x'] == 0) & (temp_data['ray_direction_y'] == 0) & (
@@ -100,11 +150,12 @@ def validate_trial_data(data, cursor_type):
     if len(data[data['error_frame'] == True]) > len(data.index) * 2 / 3:
         # print(len(data['error_frame']) , len(data.index))
         return False, 'LOSS'
-    outlier = list(data[(abs(data.target_horizontal_velocity) > 10 * 57.296)].index)
-    outlier = [x for x in outlier if x > 5]
-    if len(outlier) > 1:
-        # in this data, sudden target movement happened.
-        return False, 'jump'
+    if posture == 'WALK':
+        outlier = list(data[(abs(data.target_horizontal_velocity) > 10 * 57.296)].index)
+        outlier = [x for x in outlier if x > 5]
+        if len(outlier) > 1:
+            # in this data, sudden target movement happened.
+            return False, 'jump'
     return True, 'None'
     # print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
 
