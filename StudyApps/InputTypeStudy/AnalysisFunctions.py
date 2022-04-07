@@ -44,7 +44,7 @@ def collect_offsets(sub_num, cursorTypes=None, postures=None, targets=range(9),
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data, cursor_type,pos)
+                validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                 if not validate:  # in case of invalid trial.
                     trial_summary['error'] = reason
                     summary.loc[len(summary)] = trial_summary
@@ -205,7 +205,8 @@ def visualize_offsets(show_plot=True):
 
 
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
-                      repetitions=None, pilot=False, savefile=True, resetFile=False):
+                      repetitions=None, pilot=False, savefile=True, resetFile=False, secondstudy=False, fnc=None,
+                      suffix="", arg=None):
     print('summarizing subject', sub_num)
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
@@ -213,6 +214,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
         postures = ['STAND', 'WALK']
     if cursorTypes is None:
         cursorTypes = ['HEAD', 'EYE', 'HAND']
+
     rep_small = [0, 2, 4, 6, 8]
     rep_large = [1, 3, 5, 7, 9]
     draw_plot = False
@@ -228,11 +230,16 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                  'std_abs_offset_vertical', 'longest_dwell_time',
                  'movement_length',
                  'entering_position',
+                 'walking_speed',
                  'error'])
     for cursor_type in cursorTypes:
         for rep in repetitions:
             for pos in postures:
-                data = read_hololens_data(sub_num, pos, cursor_type, rep, resetFile, pilot)
+                data = read_hololens_data(sub_num, pos, cursor_type, rep, resetFile, pilot, secondstudy)
+
+                # print(data)
+                # data=data.apply(fnc,arg)
+
                 splited_data = split_target(data)
                 wide = 'SMALL' if rep in rep_small else 'LARGE'
 
@@ -249,12 +256,14 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
 
                         temp_data.reset_index(inplace=True)
                         temp_data.timestamp -= temp_data.timestamp.values[0]
+                        if fnc != None:
+                            temp_data = fnc(temp_data, arg)
                         # drop_index = output[
                         #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
                         #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
-                        temp_data = check_loss(temp_data,cursor_type)
+                        temp_data = check_loss(temp_data, cursor_type)
                         # temp_data = temp_data.drop(drop_index)
-                        validate, reason = validate_trial_data(temp_data, cursor_type,pos)
+                        validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
                             summary.loc[len(summary)] = trial_summary
@@ -283,7 +292,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         time_sum = 0
                         times = []
                         for dw in success_dwells:
-                            current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0] +2/60
+                            current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0] + 2 / 60
                             time_sum += current_dwell_time
                             times.append(current_dwell_time)
 
@@ -309,7 +318,9 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         std_offset_horizontal = dwell_temp.horizontal_offset.std()
                         mean_offset_vertical = dwell_temp.vertical_offset.mean()
                         std_offset_vertical = dwell_temp.vertical_offset.std()
-
+                        walklength = (temp_data.head_position_x.diff(1) ** 2 + temp_data.head_position_z.diff(
+                            1) ** 2).apply(math.sqrt).sum()
+                        walking_speed = (walklength / (temp_data.timestamp.values[-1] - temp_data.timestamp.values[0]))
                         trial_summary = {'subject_num': sub_num,
                                          'posture': pos,
                                          'cursor_type': cursor_type,
@@ -335,6 +346,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          'longest_dwell_time': longest_dwell_time,
                                          'movement_length': movement_length,
                                          'entering_position': entering_position,
+                                         'walking_speed': walking_speed,
                                          'error': None
                                          }
                         summary.loc[len(summary)] = trial_summary
@@ -352,23 +364,23 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          }
                         summary.loc[len(summary)] = error_summary
                         print(sub_num, pos, cursor_type, rep, t, e.args, 'fail count', fail_count)
-    print(summary)
+    # print(summary)
     final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
     if savefile:
         if pilot:
-            final_summary.to_csv('nocursor_summary' + str(sub_num) + '.csv')
-            summary.to_csv('nocursor_Rawsummary' + str(sub_num) + '.csv')
+            final_summary.to_csv(suffix + 'nocursor_summary' + str(sub_num) + '.csv')
+            summary.to_csv(suffix + 'nocursor_Rawsummary' + str(sub_num) + '.csv')
         else:
-            final_summary.to_csv('summary' + str(sub_num) + '.csv')
-            summary.to_csv('Rawsummary' + str(sub_num) + '.csv')
+            final_summary.to_csv(suffix + 'summary' + str(sub_num) + '.csv')
+            summary.to_csv(suffix + 'Rawsummary' + str(sub_num) + '.csv')
     return summary
 
 
-def visualize_summary(show_plot=True, show_distribution=False):
-    subjects = range(24)
+def visualize_summary(show_plot=True, show_distribution=False, subjects=range(24), suffix=""):
+    # subjects = range(24)
     dfs = []
     for subject in subjects:
-        summary_subject = pd.read_csv('Rawsummary' + str(subject) + '.csv')
+        summary_subject = pd.read_csv(suffix + 'Rawsummary' + str(subject) + '.csv')
         dfs.append(summary_subject)
     summary = pd.concat(dfs)
     errors = summary[summary.error.isna() == False]
@@ -639,7 +651,7 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
-                            validate, reason = validate_trial_data(temp_data, cursor_type,pos)
+                            validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -853,7 +865,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
 
                                     temp_data['error_frame'].loc[loss_indices] = True
                             # temp_data = temp_data.drop(drop_index)
-                            validate, reason = validate_trial_data(temp_data, cursor_type,pos)
+                            validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
                                 summary.loc[len(summary)] = trial_summary
@@ -880,7 +892,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             mrt = max(list(mrt_df.angle))
                             trial_summary['required_target_size'] = mrt
                             maxes = []
-                            frame = int(dwell_time * 60)-3
+                            frame = int(dwell_time * 60) - 3
                             for i in range(len(temp_data.angle) - frame):
                                 maxes.append(max(temp_data.angle[i:i + frame]))
 
@@ -904,7 +916,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             for dw in all_success_dwells:
                                 time_record = dw.timestamp.values[-1] - dw.timestamp.values[0] + 2 / 60
                                 times.append(time_record)
-                                if round(time_record,1) >= dwell_time:
+                                if round(time_record, 1) >= dwell_time:
                                     success_dwells.append(dw)
                             best_record = max(times)
                             trial_summary['best_record'] = best_record
@@ -916,7 +928,7 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             time_sum = 0
 
                             for dw in success_dwells:
-                                record = dw.timestamp.values[-1] - dw.timestamp.values[0]+ 2 / 60
+                                record = dw.timestamp.values[-1] - dw.timestamp.values[0] + 2 / 60
 
                                 time_sum += record
 
@@ -1021,7 +1033,7 @@ def watch_errors():
                     for t in targets:
                         try:
                             total_count += 1
-                            validation, reason = validate_trial_data(splited_data[t], cursor_type,pos)
+                            validation, reason = validate_trial_data(splited_data[t], cursor_type, pos)
                             if validation == False:
                                 if reason == 'loss':
                                     loss_count += 1
@@ -1195,3 +1207,108 @@ def find_outliers():
         HEAD STAND horizontal -0.0398596984122698 1.303755389483091 3.9112661684492736
         HEAD STAND vertical 0.1434393747167268 1.5906082672928836 4.771824801878651
         """
+
+
+def easing(data, factor):
+    eased = []
+    for idx, d in enumerate(list(data)):
+        if idx == 0:
+            eased.append(d)
+        else:
+            eased.append(eased[-1] * (1 - factor) + d * factor)
+    return eased
+
+def movingAverage(data,window):
+    data= data.rolling(min_periods=1,window=window)
+    return data
+def weightedAverage(data, window):
+    output = []
+    data = list(data)
+    potential = 0
+    for i in range(len(data)):
+        if i == 0:
+            output.append(data[i])
+            continue
+        elif i < window:
+            length = i
+        elif i > len(data) - window:
+            length = len(data) - i
+        else:
+            length = window
+        temp = data[i - length:i]
+        result = 0
+        for j in range(len(temp)):
+            result += (j + 1) * np.array(temp[j])
+        result = result / sum(range(len(temp) + 1))
+        output.append(result)
+    return pd.Series(output)
+
+
+def smoothTriangle(data, degree, dropVals=False):
+    triangle = np.array(list(range(degree)) + [degree] + list(range(degree)[::-1])) + 1
+    smoothed = []
+
+    for i in range(degree, len(data) - degree * 2):
+        point = data[i:i + len(triangle)] * triangle
+        smoothed.append(sum(point) / sum(triangle))
+    if dropVals:
+        return smoothed
+    smoothed = [smoothed[0]] * int(degree + degree / 2) + smoothed
+    while len(smoothed) < len(data):
+        smoothed.append(smoothed[-1])
+    return smoothed
+
+
+def TriangleDataframe(data, window):
+    # data.cursor_vertical_angle = weightedAverage(data.cursor_vertical_angle, window)
+    # data.cursor_horizontal_angle = weightedAverage(data.cursor_horizontal_angle, window)
+    # data.cursor_rotation = weightedAverage(data.cursor_rotation,window)
+    data.direction_x = weightedAverage(data.direction_x, window)
+    data.direction_y = weightedAverage(data.direction_y, window)
+    data.direction_z = weightedAverage(data.direction_z, window)
+    data['cursor_rotation'] = data.apply(
+        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+    data['cursor_horizontal_angle'] = data.apply(
+        lambda x: x.cursor_rotation[1], axis=1
+    )
+    data['cursor_vertical_angle'] = data.apply(
+        lambda x: x.cursor_rotation[0], axis=1
+    )
+    data['horizontal_offset'] = (
+            data.target_horizontal_angle - data.cursor_horizontal_angle).apply(correct_angle)
+    data['vertical_offset'] = (
+            data.target_vertical_angle - data.cursor_vertical_angle).apply(correct_angle)
+    data['angle'] = (data.horizontal_offset ** 2 + data.vertical_offset ** 2).apply(
+        math.sqrt)
+    data['success'] = data.angle < data.max_angle
+    data['abs_horizontal_offset'] = data['horizontal_offset'].apply(abs)
+    data['abs_vertical_offset'] = data['vertical_offset'].apply(abs)
+    return data
+def MovingAverage(data, window):
+    # data.cursor_vertical_angle = weightedAverage(data.cursor_vertical_angle, window)
+    # data.cursor_horizontal_angle = weightedAverage(data.cursor_horizontal_angle, window)
+    # data.cursor_rotation = weightedAverage(data.cursor_rotation,window)
+    # data.direction_x = movingAverage(data.direction_x, window)
+    # data.direction_y = movingAverage(data.direction_y, window)
+    # data.direction_z = movingAverage(data.direction_z, window)
+    data.direction_x = data.direction_x.rolling(min_periods=1,window=window).mean()
+    data.direction_y = data.direction_y.rolling(min_periods=1, window=window).mean()
+    data.direction_z = data.direction_z.rolling(min_periods=1, window=window).mean()
+    data['cursor_rotation'] = data.apply(
+        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+    data['cursor_horizontal_angle'] = data.apply(
+        lambda x: x.cursor_rotation[1], axis=1
+    )
+    data['cursor_vertical_angle'] = data.apply(
+        lambda x: x.cursor_rotation[0], axis=1
+    )
+    data['horizontal_offset'] = (
+            data.target_horizontal_angle - data.cursor_horizontal_angle).apply(correct_angle)
+    data['vertical_offset'] = (
+            data.target_vertical_angle - data.cursor_vertical_angle).apply(correct_angle)
+    data['angle'] = (data.horizontal_offset ** 2 + data.vertical_offset ** 2).apply(
+        math.sqrt)
+    data['success'] = data.angle < data.max_angle
+    data['abs_horizontal_offset'] = data['horizontal_offset'].apply(abs)
+    data['abs_vertical_offset'] = data['vertical_offset'].apply(abs)
+    return data

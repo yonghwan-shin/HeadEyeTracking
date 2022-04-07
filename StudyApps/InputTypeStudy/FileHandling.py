@@ -48,8 +48,8 @@ directions = {
 }
 
 
-def get_one_trial(subject, posture, cursor_type, repetition, end_num):
-    data = read_hololens_data(subject, posture, cursor_type, repetition)
+def get_one_trial(subject, posture, cursor_type, repetition, end_num, secondstudy=False):
+    data = read_hololens_data(subject, posture, cursor_type, repetition, secondstudy=secondstudy)
     splited_data = split_target(data)
     temp_data = splited_data[end_num]
     temp_data.reset_index(inplace=True)
@@ -187,9 +187,17 @@ def without_cursor_file(subject, posture, cursor_type, repetition):
 
                     output['cursor_rotation'] = output.apply(
                         lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                    output['head_rotation'] = output.apply(
+                        lambda x: asSpherical(x.head_forward_x, x.head_forward_y, x.head_forward_z), axis=1)
                     output['target_rotation'] = output.apply(
                         lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
                                               x.target_position_z - x.origin_z), axis=1)
+                    output['head_horizontal_angle'] = output.apply(
+                        lambda x: x.head_rotation[1], axis=1
+                    )
+                    output['head_vertical_angle'] = output.apply(
+                        lambda x: x.head_rotation[0], axis=1
+                    )
                     output['cursor_horizontal_angle'] = output.apply(
                         lambda x: x.cursor_rotation[1], axis=1
                     )
@@ -222,8 +230,10 @@ def without_cursor_file(subject, posture, cursor_type, repetition):
     return output
 
 
-def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False):
+def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
+    if secondstudy:
+        root = Path(__file__).resolve().parent / 'SecondStudy' / str(subject)
     if pilot: root = Path(__file__).resolve().parent / 'data' / (str(subject) + '_nocursor')
     trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'
     files = root.rglob(trial_detail + '*.json')
@@ -263,12 +273,15 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     output['target_rotation'] = output.apply(
                         lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
                                               x.target_position_z - x.origin_z), axis=1)
+                    output['head_rotation'] = output.apply(
+                        lambda x: asSpherical(x.head_forward_x, x.head_forward_y, x.head_forward_z), axis=1)
 
-                    output['cursor_rotation'] = output.apply(
-                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
-                    output['target_rotation'] = output.apply(
-                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
-                                              x.target_position_z - x.origin_z), axis=1)
+                    output['head_horizontal_angle'] = output.apply(
+                        lambda x: x.head_rotation[1], axis=1
+                    )
+                    output['head_vertical_angle'] = output.apply(
+                        lambda x: x.head_rotation[0], axis=1
+                    )
                     output['cursor_horizontal_angle'] = output.apply(
                         lambda x: x.cursor_rotation[1], axis=1
                     )

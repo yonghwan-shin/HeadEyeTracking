@@ -24,48 +24,98 @@ pio.renderers.default = 'browser'
 pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
 
 # %%
-temp_data = get_one_trial(0,'STAND','EYE',4,2)
-corr_data=check_loss(temp_data,'EYE')
-
-# plt.plot(corr_data.timestamp, corr_data.angle, 'r')
-# plt.plot(corr_data.timestamp, corr_data.max_angle, 'b')
-# plt.show()
-all_success_dwells = []
-
-# for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
-for k, g in itertools.groupby(temp_data.iterrows(),
-                              key=lambda row: row[1]['success']):
-    # print(k, [t[0] for t in g])
-    # if k == True:
-    if k == True:
-        # if k == 'Target_' + str(t):
-        df = pd.DataFrame([r[1] for r in g])
-        all_success_dwells.append(df)
-for d in all_success_dwells:
-    record = d.timestamp.values[-1] - d.timestamp.values[0]
-
-    print(d.timestamp.values[-1], d.timestamp.values[0],record)
+# dd=summarize_subject(2, resetFile=False, suffix='Triangle' + str(5), fnc=TriangleDataframe, arg=5)
+for t in np.arange(5, 65, 5):
+    for i in range(24):
+        summarize_subject(i, resetFile=False, suffix='Moving' + str(t), fnc=MovingAverage, arg=t)
+# %%
+dfs = []
+data=visualize_summary(show_plot=False,subjects=range(24))
+# data=visualize_summary(show_plot=False,subjects=[2])
+data['window']=0
+data=data[data.cursor_type !='NEW']
+dfs.append(data)
+for t in np.arange(5, 65, 5):
+    data = visualize_summary(show_plot=False, subjects=range(24), suffix='Moving' + str(t))
+    # data = visualize_summary(show_plot=False, subjects=[2], suffix='Triangle' + str(t))
+    data['window'] = t
+    dfs.append(data)
+summary = pd.concat(dfs)
+fs = summary.groupby([summary.window, summary.posture, summary.cursor_type]).mean()
+fs=fs.reset_index()
+parameters = list(fs.columns)
+remove_columns = ['Unnamed: 0', 'subject_num', 'repetition', 'target_num']
+for removal in remove_columns:
+    parameters.remove(removal)
 #%%
+
+# parameters=['mean_offset']
+# for p in parameters:
+fig=px.bar(fs,x='window',y=parameters,barmode='group',facet_col='posture',facet_row='cursor_type')
+fig.show()
+
+# fig = px.bar(plot_df, x='dwell_time', y=['success_rate', 'required_target_size', 'first_dwell_time',
+#                                          'mean_final_speed'], barmode='group', facet_col='posture',
+#              facet_row='cursor_type',
+#              title='target_size')
+# %%
+# 20 WALK EYE 6 6
+# 14 WALK HEAD 4 2
+# 15 WALK HAND 6 3
+# 17 WALK EYE 4 2
+# 0 WALK EYE 8 8
+# temp_data = get_one_trial(20, 'WALK', 'EYE', 6, 6)
+# temp_data = get_one_trial(14 ,'WALK', 'HEAD', 4, 2)
+# temp_data = get_one_trial(15 ,'WALK', 'HAND', 6, 3)
+# temp_data = get_one_trial(17 ,'WALK', 'EYE', 4, 2)
+# temp_data = get_one_trial(0, 'WALK', 'EYE', 8, 7)
+
+# temp_data = read_hololens_data(22, 'WALK', 'EYE', 5, reset=True)
+temp_data= get_one_trial(22,'WALK','EYE',5,7)
+data = temp_data.copy()
+window=30
+data= TriangleDataframe(data,30)
+# plt.plot(temp_data.timestamp, temp_data.head_vertical_angle)
+plt.plot(temp_data.timestamp, temp_data.cursor_vertical_angle, ':')
+plt.plot(temp_data.timestamp, temp_data.target_vertical_angle, '--')
+plt.plot(data.timestamp, data.cursor_vertical_angle, '-')
+# plt.plot(temp_data.timestamp, weightedAverage(temp_data.cursor_vertical_angle, 30))
+
+plt.show()
+# plt.plot(temp_data.timestamp, temp_data.cursor_vertical_angle - temp_data.head_vertical_angle)
+# plt.plot(temp_data.timestamp, temp_data.target_vertical_angle - temp_data.head_vertical_angle, '--')
+#
+# plt.ylim(-10, 10)
+#
+# plt.show()
+# plt.plot(temp_data.timestamp, temp_data.head_horizontal_angle)
+# plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle, ':')
+plt.plot(temp_data.timestamp, (temp_data.target_horizontal_angle- temp_data.cursor_horizontal_angle).apply(correct_angle), '--')
+plt.plot(data.timestamp, (temp_data.target_horizontal_angle-data.cursor_horizontal_angle).apply(correct_angle), '-')
+plt.show()
+
+
+# %%
 # data = read_hololens_data(11, 'STAND', 'EYE', 7)
 # temp_data = get_one_trial(20,'WALK','EYE',5,2)
 summary = pd.read_csv("BasicRawSummary.csv")
-jumps=summary[summary.error == 'jump']
+jumps = summary[summary.error == 'jump']
 for trial in jumps.head(3).iterrows():
-    trial=trial[1]
-    temp_data =get_one_trial(trial.subject_num,trial.posture,trial.cursor_type,trial.repetition,trial.target_num)
+    trial = trial[1]
+    temp_data = get_one_trial(trial.subject_num, trial.posture, trial.cursor_type, trial.repetition, trial.target_num)
     outlier = list(temp_data[(abs(temp_data.target_horizontal_velocity) > 10 * 57.296)].index)
     outlier = [x for x in outlier if x > 5]
-    outlier_timestamp= temp_data.iloc[outlier].timestamp.values
+    outlier_timestamp = temp_data.iloc[outlier].timestamp.values
     plt.plot(temp_data.timestamp, temp_data.angle, 'r:')
     plt.plot(temp_data.timestamp, temp_data.max_angle, 'b:')
-    corr_data=check_loss(temp_data,trial.cursor_type)
+    corr_data = check_loss(temp_data, trial.cursor_type)
     corr_data['target_horizontal_velocity'] = (
             corr_data['target_horizontal_angle'].diff(1).apply(correct_angle) / corr_data['timestamp'].diff(1))
     outlier = list(corr_data[(abs(corr_data.target_horizontal_velocity) > 10 * 57.296)].index)
     outlier = [x for x in outlier if x > 5]
-    corr_outlier_timestamp= corr_data.iloc[outlier].timestamp.values
-    plt.plot(corr_data.timestamp,corr_data.angle,'r')
-    plt.plot(corr_data.timestamp,corr_data.max_angle,'b')
+    corr_outlier_timestamp = corr_data.iloc[outlier].timestamp.values
+    plt.plot(corr_data.timestamp, corr_data.angle, 'r')
+    plt.plot(corr_data.timestamp, corr_data.max_angle, 'b')
     plt.title(str(corr_outlier_timestamp))
     # for ol in outlier_timestamp:
     #     plt.axvline(ol)
@@ -74,7 +124,7 @@ for trial in jumps.head(3).iterrows():
     plt.show()
 
     # plt.plot(corr_data.timestamp,abs(corr_data.target_horizontal_velocity))
-    plt.plot(corr_data.timestamp,corr_data.target_horizontal_velocity)
+    plt.plot(corr_data.timestamp, corr_data.target_horizontal_velocity)
     plt.show()
 # %% see eye-errors
 repetitions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -98,7 +148,7 @@ for sub_num in range(24):
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data, cursor_type,pos)
+                validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                 temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
                 eye_index = temp_data[temp_data.check_eye == 0].index
                 invalidate_index = temp_data[temp_data.isEyeTrackingEnabledAndValid == False].index
@@ -166,15 +216,42 @@ for i in t.values:
     # print(type(i))
 # collect_offsets()
 # %%
-for i in range(24):
+# for t in np.arange(5, 65, 5):
+for i in [1,3]:
     summarize_subject(i, resetFile=False)
 # summary = summarize_subject(6)
 
-summary = visualize_summary(show_plot=False)
-summary.to_csv('BasicRawSummary.csv')
-errors = summary[summary.error.isna() == False]
-print('\nError trial counts')
-print(errors.groupby(errors['error']).subject_num.count())
+# summary = visualize_summary(show_plot=False)
+# summary.to_csv('BasicRawSummary.csv')
+# errors = summary[summary.error.isna() == False]
+# print('\nError trial counts')
+# print(errors.groupby(errors['error']).subject_num.count())
+# %%
+import seaborn as sns
+
+summary = pd.read_csv('BasicRawSummary.csv')
+summary = summary[summary.error.isna()]
+# summary=summary[(summary.posture=='WALK')]
+# for trial in summary.sort_values(by=['std_offset'],ascending=False).head(3).iterrows():
+#     trial = trial[1]
+#     temp_data = get_one_trial(trial.subject_num, trial.posture, trial.cursor_type, trial.repetition, trial.target_num)
+#     plt.plot(temp_data.timestamp, temp_data.horizontal_offset)
+#     plt.plot(temp_data.timestamp, temp_data.vertical_offset)
+#     plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance,'+')
+#     plt.title(str(trial.subject_num) +  trial.posture +  trial.cursor_type + str(trial.repetition) + str(trial.target_num))
+#     plt.show()
+#     plt.plot(temp_data.timestamp, temp_data.target_horizontal_angle)
+#     plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle)
+#     plt.plot(temp_data.timestamp, temp_data.target_vertical_angle, '.')
+#     plt.plot(temp_data.timestamp, temp_data.cursor_vertical_angle, '.')
+#     plt.show()
+sns.boxplot(data=summary, hue='cursor_type',
+            x='posture',
+            y='std_offset',
+            showfliers=False,
+            showmeans=True,
+            )
+plt.show()
 # %%basic performance results : maybe table?
 fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
 fs.to_csv('table_candidate_wide.csv')
@@ -385,7 +462,7 @@ for pos, ct in itertools.product(['WALK', 'STAND'], ['HEAD', 'EYE', 'HAND']):
         if temp.groupby(temp.error).count().posture.__contains__("no success dwell"):
             fail_count = temp.groupby(temp.error).count().posture['no success dwell']
         else:
-            fail_count=0
+            fail_count = 0
         # print(dt,temp.groupby(temp.error).count().posture)
         success_rate = 1 - fail_count / (total_count - (all_error_count - fail_count))
         print(dt, pos, ct, success_rate, total_count, fail_count, all_error_count)
@@ -437,11 +514,16 @@ for c in ['success_rate', 'required_target_size', 'first_dwell_time',
 import seaborn as sns
 
 sns.set_style('ticks')
-sns.set_context('notebook')
-fig, ax = plt.subplots(figsize=(6,8))
-sns.lineplot(x='dwell_time', y='success_rate', hue='cursor_type', style='posture', data=plot_df, marker='o',
-             markersize=10, alpha=0.75,
-             palette='Set2', linewidth=3)
+sns.set_context('talk')
+fig, ax = plt.subplots(figsize=(8, 8))
+sns.lineplot(x='dwell_time', y='success_rate', hue='cursor_type', data=plot_df,
+             palette='Set2', marker='o', style='posture', ci=0, style_order=['STAND', 'WALK'],
+             ax=ax)
+# sns.lineplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary,
+#
+#              palette='Set2', marker='o', style='posture', ci=0,
+#              # width=0.8,
+#              ax=ax)
 plt.ylim(0, 110)
 
 plt.xticks(dwell_times)
@@ -450,48 +532,54 @@ plt.ylabel('Success Rate (%)')
 handles, labels = ax.get_legend_handles_labels()
 
 ax.legend(handles, ['Cursor Type', 'Head', 'Eye', 'Hand', 'Posture', 'STAND', 'WALK'], loc='center right')
-
+plt.tight_layout()
 plt.show()
 # %% dwell time box plots
-dcs = ['required_target_size', 'first_dwell_time',
-       'mean_final_speed', 'min_target_size', 'best_record']
+dcs = ['required_target_size',
+       # 'first_dwell_time',
+       # 'mean_final_speed', 'min_target_size', 'best_record'
+       ]
 
 sns.set_style('ticks')
 sns.set_context('talk')
 # sns.catplot(data=plot_data,x='dwell_time',y='success_rate',hue='')
 for c in dcs:
     # Walking condition plots
-    fig, ax = plt.subplots(figsize=(6, 8))
-    sns.boxplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'WALK'],
-                showfliers=False, showmeans=True,
-                meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '10'},
-                palette='Set1', width=0.8,ax=ax)
-    plt.legend(loc='upper right')
-    if c == 'required_target_size':
-        plt.ylabel('Required Target Size (°)')
-        # plt.ylim(0, 13)
-    elif c == 'first_dwell_time':
-        plt.ylabel('First Dwell Success Time (s)')
-        # plt.ylim(0, 3.5)
-    elif c == 'mean_final_speed':
-        plt.ylabel('Final Cursor Speed (°/s)')
-        # plt.ylim(0, 5)
-        # plt.title('Walk '+ c)
-    # xmin, xmax, ymin, ymax = plt.axis()
-    # plt.ylim(ymin - 1, ymax)
-    plt.legend(loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2),
-               fancybox=False, ncol=3)
-
-    plt.xlabel('dwell threshold (s)')
-    plt.tight_layout()
-    plt.show()
+    # fig, ax = plt.subplots(figsize=(6, 8))
+    # sns.lineplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'WALK'],
+    #             # showfliers=False, showmeans=True,
+    #             # meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '10'},
+    #             palette='Set2', markers=True, dashes=True,style='cursor_type',ci=0,
+    #              # width=0.8,
+    #              ax=ax)
+    # plt.legend(loc='upper right')
+    # if c == 'required_target_size':
+    #     plt.ylabel('Required Target Size (°)')
+    #     # plt.ylim(0, 13)
+    # elif c == 'first_dwell_time':
+    #     plt.ylabel('First Dwell Success Time (s)')
+    #     # plt.ylim(0, 3.5)
+    # elif c == 'mean_final_speed':
+    #     plt.ylabel('Final Cursor Speed (°/s)')
+    #     # plt.ylim(0, 5)
+    #     # plt.title('Walk '+ c)
+    # # xmin, xmax, ymin, ymax = plt.axis()
+    # # plt.ylim(ymin - 1, ymax)
+    # plt.legend(loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2),
+    #            fancybox=False, ncol=3)
+    #
+    # plt.xlabel('dwell threshold (s)')
+    # plt.tight_layout()
+    # plt.show()
     # Standing condition plots
-    fig, ax = plt.subplots(figsize=(6, 8))
-    sns.boxplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'STAND'],
-                showfliers=False, showmeans=True,
-                meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
-                           'markersize': '10'},
-                palette='Set2', width=0.8,ax=ax)
+    fig, ax = plt.subplots(figsize=(8, 8))
+    sns.lineplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary,
+                 # showfliers=False, showmeans=True,
+                 # meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                 #            'markersize': '10'},
+                 palette='Set2', marker='o', style='posture', ci=0,
+                 # width=0.8,
+                 ax=ax)
     # sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture=='WALK'], kind='box', showfliers=False, showmeans=True,
     #             meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
     #             height=5,aspect=2,legend=False)
@@ -502,7 +590,8 @@ for c in dcs:
     # sns.displot(data=summary,y=c,hue='posture',col='cursor_type',kind='kde')
     if c == 'required_target_size':
         plt.ylabel('Required Target Size (°)')
-        # plt.ylim(0, 11)
+        plt.xticks(dwell_summary.dwell_time.unique())
+        plt.ylim(0, 10)
     elif c == 'first_dwell_time':
         plt.ylabel('First Dwell Success Time (s)')
         # plt.ylim(0, 5)
@@ -510,8 +599,17 @@ for c in dcs:
         plt.ylabel('Final Cursor Speed (°/s)')
         plt.ylim(0, 20)
     # plt.legend(loc='upper right')
-    plt.legend(loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2),
-               fancybox=True, ncol=3)
+    handles, labels = ax.get_legend_handles_labels()
+
+    ax.legend(handles, ['Cursor Type', 'Head', 'Eye', 'Hand', 'Posture', 'STAND', 'WALK'],
+              # loc='center right'
+              loc='best'
+              )
+
+    # plt.legend(loc='lower left',
+    #            bbox_to_anchor=(1, 0),
+    # #            fancybox=True, ncol=3,
+    #            )
     plt.xlabel('dwell threshold (s)')
     plt.tight_layout()
     plt.show()

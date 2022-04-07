@@ -24,30 +24,34 @@ get_anova_table(res.aov)
 data <- read_csv(file="BasicRawSummary.csv")
 data$posture = as.factor(data$posture)
 data$cursor_type = as.factor(data$cursor_type)
+data$wide = as.factor(data$wide)
 
 data = data[-which(is.na(data$target_in_count)), ]
 row.names(data) = NULL
 
-
-data.mean <- aggregate(data$initial_contact_time,
+c = 'mean_offset'
+data.mean <- aggregate(data$mean_offset,
                          by = list(data$subject_num, data$posture,
-                                   data$cursor_type),
+                                   data$cursor_type,data$wide),
                          FUN = 'mean'
-                       # ,na.rm=TRUE
+                       ,na.rm=TRUE
                        )
-colnames(data.mean) = c('subject_num','posture','cursor_type','initial_contact_time')
+colnames(data.mean) = c('subject_num','posture','cursor_type',c)
+colnames(data.mean) = c('subject_num','posture','cursor_type','wide',c)
 data.aov <- with(data.mean,
                    aov(initial_contact_time ~ posture * cursor_type +
                          Error(subject_num / (posture * cursor_type)))
 )
 summary(data.aov)
-a1 = aov_ez('subject_num','initial_contact_time',data.mean,within=c('posture','cursor_type'), 
-            # anova_table = list(es = "pes")
+a1 = aov_ez('subject_num','mean_offset',data.mean,within=c('posture','cursor_type'),
+            anova_table = list(es = "pes")
+            # , fun_aggregate = mean,na.rm=TRUE
             )
+print(a1)
 summary(a1)$sphericity.tests
 library("papaja")
 apa_print(a1, correction = "none", es="pes")$full_result 													   # get latex and effect sizes with NO spherecity corrections
-apa_print(a1, correction = "GG", es="pes")$full_result
+apa_print(a1, correction = "GG", es="pes")$dfull_result
 # m1 = emmeans(a1,~posture)
 afex_plot(a1, x = "posture",error="within")																		
 afex_plot(a1, x = "cursor_type",error="within")
