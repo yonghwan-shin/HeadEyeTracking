@@ -9,8 +9,10 @@ import numpy.linalg as LA
 import os
 
 default_target_size = 3.0 / 2
-default_target_radius = 0.05237
+# default_target_radius = 0.05237 # 3 degree
+default_target_radius = 0.07858022 # 4.5 degree
 default_target_diameter = 0.10474
+
 
 sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
           ('EYE', 'WALK', 'vertical'): 2.4375580926867078,

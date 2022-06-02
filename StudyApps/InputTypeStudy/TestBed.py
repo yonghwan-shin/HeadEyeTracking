@@ -21,7 +21,7 @@ from AnalysisFunctions import *
 
 pio.renderers.default = 'browser'
 
-pd.set_option('mode.chained_assignment', None)  # <==== 경고를 끈다
+pd.set_option('mode.chained_assignment', None)
 
 # %%
 # dd=summarize_subject(2, resetFile=False, suffix='Triangle' + str(5), fnc=TriangleDataframe, arg=5)
@@ -30,10 +30,10 @@ for t in np.arange(5, 65, 5):
         summarize_subject(i, resetFile=False, suffix='Moving' + str(t), fnc=MovingAverage, arg=t)
 # %%
 dfs = []
-data=visualize_summary(show_plot=False,subjects=range(24))
+data = visualize_summary(show_plot=False, subjects=range(24))
 # data=visualize_summary(show_plot=False,subjects=[2])
-data['window']=0
-data=data[data.cursor_type !='NEW']
+data['window'] = 0
+data = data[data.cursor_type != 'NEW']
 dfs.append(data)
 for t in np.arange(5, 65, 5):
     data = visualize_summary(show_plot=False, subjects=range(24), suffix='Moving' + str(t))
@@ -42,16 +42,16 @@ for t in np.arange(5, 65, 5):
     dfs.append(data)
 summary = pd.concat(dfs)
 fs = summary.groupby([summary.window, summary.posture, summary.cursor_type]).mean()
-fs=fs.reset_index()
+fs = fs.reset_index()
 parameters = list(fs.columns)
 remove_columns = ['Unnamed: 0', 'subject_num', 'repetition', 'target_num']
 for removal in remove_columns:
     parameters.remove(removal)
-#%%
+# %%
 
 # parameters=['mean_offset']
 # for p in parameters:
-fig=px.bar(fs,x='window',y=parameters,barmode='group',facet_col='posture',facet_row='cursor_type')
+fig = px.bar(fs, x='window', y=parameters, barmode='group', facet_col='posture', facet_row='cursor_type')
 fig.show()
 
 # fig = px.bar(plot_df, x='dwell_time', y=['success_rate', 'required_target_size', 'first_dwell_time',
@@ -68,32 +68,40 @@ fig.show()
 # temp_data = get_one_trial(14 ,'WALK', 'HEAD', 4, 2)
 # temp_data = get_one_trial(15 ,'WALK', 'HAND', 6, 3)
 # temp_data = get_one_trial(17 ,'WALK', 'EYE', 4, 2)
-# temp_data = get_one_trial(0, 'WALK', 'EYE', 8, 7)
+# temp_data=check_loss(temp_data,'EYE')
+temp_data = get_one_trial(0, 'WALK', 'HEAD', 8, 7)
 
 # temp_data = read_hololens_data(22, 'WALK', 'EYE', 5, reset=True)
-temp_data= get_one_trial(22,'WALK','EYE',5,7)
-data = temp_data.copy()
-window=30
-data= TriangleDataframe(data,30)
-# plt.plot(temp_data.timestamp, temp_data.head_vertical_angle)
-plt.plot(temp_data.timestamp, temp_data.cursor_vertical_angle, ':')
-plt.plot(temp_data.timestamp, temp_data.target_vertical_angle, '--')
-plt.plot(data.timestamp, data.cursor_vertical_angle, '-')
-# plt.plot(temp_data.timestamp, weightedAverage(temp_data.cursor_vertical_angle, 30))
 
+# temp_data= get_one_trial(22,'WALK','HEAD',5,8)
+plt.plot(temp_data.timestamp,temp_data.head_forward_y)
+plt.plot(temp_data.timestamp,temp_data.direction_y)
 plt.show()
-# plt.plot(temp_data.timestamp, temp_data.cursor_vertical_angle - temp_data.head_vertical_angle)
-# plt.plot(temp_data.timestamp, temp_data.target_vertical_angle - temp_data.head_vertical_angle, '--')
-#
-# plt.ylim(-10, 10)
-#
+plt.plot(temp_data.timestamp, temp_data.horizontal_offset, 'b-', label='H')
+plt.plot(temp_data.timestamp, temp_data.vertical_offset, 'r-', label='V')
+plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance, 'c-', label='A', alpha=0.5)
+plt.plot(temp_data.timestamp, temp_data.max_angle, 'k--')
+plt.plot(temp_data.timestamp, -temp_data.max_angle, 'k--')
+# plt.plot(temp_data.timestamp,temp_data.target_horizontal_velocity)
+# plt.ylim(-15,15)
+plt.axhline(0)
+plt.axhline(temp_data.cursor_angular_distance.mean())
+plt.legend()
+plt.show()
+
+
+def c(a):
+    if a < -90:
+        return a + 360
+    else:
+        return a
+
+
+# plt.plot(temp_data.timestamp,temp_data.horizontal_offset,'b-',label='H')
+# plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle.apply(c), 'r-', label='V')
+# plt.plot(temp_data.timestamp, temp_data.target_horizontal_angle, 'b-', label='T')
+# plt.legend()
 # plt.show()
-# plt.plot(temp_data.timestamp, temp_data.head_horizontal_angle)
-# plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle, ':')
-plt.plot(temp_data.timestamp, (temp_data.target_horizontal_angle- temp_data.cursor_horizontal_angle).apply(correct_angle), '--')
-plt.plot(data.timestamp, (temp_data.target_horizontal_angle-data.cursor_horizontal_angle).apply(correct_angle), '-')
-plt.show()
-
 
 # %%
 # data = read_hololens_data(11, 'STAND', 'EYE', 7)
@@ -217,7 +225,7 @@ for i in t.values:
 # collect_offsets()
 # %%
 # for t in np.arange(5, 65, 5):
-for i in [1,3]:
+for i in [1, 3]:
     summarize_subject(i, resetFile=False)
 # summary = summarize_subject(6)
 

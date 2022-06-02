@@ -230,7 +230,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                  'std_abs_offset_vertical', 'longest_dwell_time',
                  'movement_length',
                  'entering_position',
-                 'walking_speed',
+                 'walking_speed', 'total_time',
                  'error'])
     for cursor_type in cursorTypes:
         for rep in repetitions:
@@ -281,14 +281,27 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         initial_contact_time = only_success.timestamp.values[0]
 
                         success_dwells = []
-                        # temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
-                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
-                            # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
-                            # print(k, [t[0] for t in g])
-                            if k == True:
-                                # if k == 'Target_' + str(t):
-                                df = pd.DataFrame([r[1] for r in g])
-                                success_dwells.append(df)
+
+                        if "STICKY" in cursor_type:
+                            score_columns = ['score' + str(tn) for tn in range(9)]
+                            scores = pd.DataFrame(temp_data.scores.to_list(), columns=score_columns, index=temp_data.index)
+                            temp_data = pd.concat([temp_data,scores], axis=1)
+                            temp_data['selected_target'] = temp_data.scores.apply(np.argmax)
+                            temp_data['stick_success'] = temp_data['selected_target'] == t
+                            for k, g in itertools.groupby(temp_data.iterrows(),
+                                                          key=lambda row: row[1]['stick_success']):
+                                if k == True:
+                                    df = pd.DataFrame([r[1] for r in g])
+                                    success_dwells.append(df)
+                        else:
+                            # temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
+                            for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                                # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
+                                # print(k, [t[0] for t in g])
+                                if k == True:
+                                    # if k == 'Target_' + str(t):
+                                    df = pd.DataFrame([r[1] for r in g])
+                                    success_dwells.append(df)
                         time_sum = 0
                         times = []
                         for dw in success_dwells:
@@ -347,6 +360,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                                          'movement_length': movement_length,
                                          'entering_position': entering_position,
                                          'walking_speed': walking_speed,
+                                         'total_time': temp_data.timestamp.values[-1],
                                          'error': None
                                          }
                         summary.loc[len(summary)] = trial_summary
@@ -370,6 +384,9 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
         if pilot:
             final_summary.to_csv(suffix + 'nocursor_summary' + str(sub_num) + '.csv')
             summary.to_csv(suffix + 'nocursor_Rawsummary' + str(sub_num) + '.csv')
+        elif secondstudy:
+            final_summary.to_csv(suffix + 'second_summary' + str(sub_num) + '.csv')
+            summary.to_csv(suffix + 'second_Rawsummary' + str(sub_num) + '.csv')
         else:
             final_summary.to_csv(suffix + 'summary' + str(sub_num) + '.csv')
             summary.to_csv(suffix + 'Rawsummary' + str(sub_num) + '.csv')
@@ -1218,9 +1235,12 @@ def easing(data, factor):
             eased.append(eased[-1] * (1 - factor) + d * factor)
     return eased
 
-def movingAverage(data,window):
-    data= data.rolling(min_periods=1,window=window)
+
+def movingAverage(data, window):
+    data = data.rolling(min_periods=1, window=window)
     return data
+
+
 def weightedAverage(data, window):
     output = []
     data = list(data)
@@ -1284,6 +1304,8 @@ def TriangleDataframe(data, window):
     data['abs_horizontal_offset'] = data['horizontal_offset'].apply(abs)
     data['abs_vertical_offset'] = data['vertical_offset'].apply(abs)
     return data
+
+
 def MovingAverage(data, window):
     # data.cursor_vertical_angle = weightedAverage(data.cursor_vertical_angle, window)
     # data.cursor_horizontal_angle = weightedAverage(data.cursor_horizontal_angle, window)
@@ -1291,7 +1313,7 @@ def MovingAverage(data, window):
     # data.direction_x = movingAverage(data.direction_x, window)
     # data.direction_y = movingAverage(data.direction_y, window)
     # data.direction_z = movingAverage(data.direction_z, window)
-    data.direction_x = data.direction_x.rolling(min_periods=1,window=window).mean()
+    data.direction_x = data.direction_x.rolling(min_periods=1, window=window).mean()
     data.direction_y = data.direction_y.rolling(min_periods=1, window=window).mean()
     data.direction_z = data.direction_z.rolling(min_periods=1, window=window).mean()
     data['cursor_rotation'] = data.apply(
