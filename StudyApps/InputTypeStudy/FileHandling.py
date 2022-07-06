@@ -10,9 +10,8 @@ import os
 
 default_target_size = 3.0 / 2
 # default_target_radius = 0.05237 # 3 degree
-default_target_radius = 0.07858022 # 4.5 degree
+default_target_radius = 0.07858022  # 4.5 degree
 default_target_diameter = 0.10474
-
 
 sigmas = {('EYE', 'WALK', 'horizontal'): 4.420237751534142,
           ('EYE', 'WALK', 'vertical'): 2.4375580926867078,
@@ -101,10 +100,10 @@ def check_loss(temp_data, cursor_type):
             if -i in loss_indices:
                 loss_indices.remove(-i)
 
-        temp_data.loc[loss_indices] = np.nan
+        temp_data.loc[list(loss_indices)] = np.nan
         temp_data = temp_data.interpolate()
 
-        temp_data['error_frame'].loc[loss_indices] = True
+        temp_data['error_frame'].loc[list(loss_indices)] = True
     else:
         if len(drop_index) > 0:
             loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
@@ -112,10 +111,10 @@ def check_loss(temp_data, cursor_type):
                 loss_indices.remove(len(temp_data))
             if len(temp_data) + 1 in loss_indices:
                 loss_indices.remove(len(temp_data) + 1)
-            temp_data.loc[loss_indices] = np.nan
+            temp_data.loc[list(loss_indices)] = np.nan
             temp_data = temp_data.interpolate()
 
-            temp_data['error_frame'].loc[loss_indices] = True
+            temp_data['error_frame'].loc[list(loss_indices)] = True
     temp_data['target_horizontal_velocity'] = (
             temp_data['target_horizontal_angle'].diff(1).apply(correct_angle) / temp_data['timestamp'].diff(1))
     return temp_data
@@ -232,12 +231,15 @@ def without_cursor_file(subject, posture, cursor_type, repetition):
     return output
 
 
-def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False):
+def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False,targetType=None):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
     if secondstudy:
         root = Path(__file__).resolve().parent / 'SecondStudy' / str(subject)
+        trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}_STYLE{str(targetType)}'
+    else:
+        trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'
     if pilot: root = Path(__file__).resolve().parent / 'data' / (str(subject) + '_nocursor')
-    trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'
+
     files = root.rglob(trial_detail + '*.json')
     pickled_files = root.rglob(trial_detail + "*.pkl")
     try:  # for faster data import -> make/bring compressed version
@@ -247,7 +249,7 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                 if reset:
                     os.remove(pickled_file.absolute())
                     print('remove file and re-made', pickled_file.name)
-                    output = read_hololens_data(subject, posture, cursor_type, repetition)
+                    output = read_hololens_data(subject, posture, cursor_type, repetition, reset, pilot, secondstudy)
                     # drop_index = output[
                     #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
                     #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
@@ -321,7 +323,13 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                                           (output.target_position_z - output.origin_z) ** 2).apply(math.sqrt)
                     output['max_angle'] = (default_target_radius / output['distance']).apply(math.asin).apply(
                         math.degrees)
-                    output['success'] = output.angle < output.max_angle
+                    if secondstudy:
+                        # menu style !!!
+                        # output['success'] = output.target_name.str.contains(str(t))
+                        output['success'] = output.apply(
+                            lambda x: str(x.end_num) in str(x.target_name), axis=1)
+                    else:
+                        output['success'] = output.angle < output.max_angle
                     output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
                     output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
                     output['target_horizontal_velocity'] = (
@@ -341,9 +349,12 @@ def correct_angle(angle):
     return angle
 
 
-def split_target(data):
+def split_target(data,secondStudy=False):
     output = []
-    data = data[data['step_num'] != 0]
+    if secondStudy:
+        pass
+    else:
+        data = data[data['step_num'] != 0]
     # first_end_num = data['end_num'].values[0]
     # for i in range(len(data) - 1):
     #     if data['end_num'].values[i] == first_end_num:
@@ -354,8 +365,12 @@ def split_target(data):
     #         # print(i, data['timestamp'].values[i],data['end_num'].values[i],first_end_num)
     #         data=data.drop([x for x in range(i)])
     #         break
-    for target_num in range(9):
-        output.append(data[data['end_num'] == target_num])
+    if secondStudy:
+        for target_num in range(8):
+            output.append(data[data['end_num'] == target_num])
+    else:
+        for target_num in range(9):
+            output.append(data[data['end_num'] == target_num])
     return output
 
 

@@ -25,9 +25,9 @@ pd.set_option('mode.chained_assignment', None)
 
 # %%
 # dd=summarize_subject(2, resetFile=False, suffix='Triangle' + str(5), fnc=TriangleDataframe, arg=5)
-for t in np.arange(5, 65, 5):
-    for i in range(24):
-        summarize_subject(i, resetFile=False, suffix='Moving' + str(t), fnc=MovingAverage, arg=t)
+# for t in np.arange(5, 65, 5):
+for i in range(24):
+    summarize_subject(i,savefile=True,resetFile=True,repetitions=range(10))
 # %%
 dfs = []
 data = visualize_summary(show_plot=False, subjects=range(24))
@@ -228,9 +228,9 @@ for i in t.values:
 for i in [1, 3]:
     summarize_subject(i, resetFile=False)
 # summary = summarize_subject(6)
-
-# summary = visualize_summary(show_plot=False)
-# summary.to_csv('BasicRawSummary.csv')
+#%%
+summary = visualize_summary(show_plot=False)
+summary.to_csv('BasicRawSummary.csv')
 # errors = summary[summary.error.isna() == False]
 # print('\nError trial counts')
 # print(errors.groupby(errors['error']).subject_num.count())
@@ -238,7 +238,7 @@ for i in [1, 3]:
 import seaborn as sns
 
 summary = pd.read_csv('BasicRawSummary.csv')
-summary = summary[summary.error.isna()]
+# summary = summary[summary.error.isna()]
 # summary=summary[(summary.posture=='WALK')]
 # for trial in summary.sort_values(by=['std_offset'],ascending=False).head(3).iterrows():
 #     trial = trial[1]
@@ -255,7 +255,7 @@ summary = summary[summary.error.isna()]
 #     plt.show()
 sns.boxplot(data=summary, hue='cursor_type',
             x='posture',
-            y='std_offset',
+            y='longest_dwell_time',
             showfliers=False,
             showmeans=True,
             )
