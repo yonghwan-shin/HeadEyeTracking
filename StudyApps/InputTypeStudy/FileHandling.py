@@ -122,9 +122,15 @@ def check_loss(temp_data, cursor_type):
 
 def validate_trial_data(data, cursor_type, posture):
     # if there is a sudden target-shift occurs
+
     if cursor_type == 'EYE':
-        # drop_index = temp_data[(temp_data['ray_direction_x'] == 0) & (temp_data['ray_direction_y'] == 0) & (
-        #         temp_data['ray_direction_z'] == 0)].index
+        drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
+                data['direction_z'] == 0)].index
+        # if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
+        if len(drop_index) > 0:
+            # if len(drop_index) > 0 and len(drop_index) > 0:
+            return False, 'eyeloss'
+
         data['check_eye'] = data.latestEyeGazeDirection_x.diff(1)
         eye_index = data[data.check_eye == 0].index
         invalidate_index = data[data.isEyeTrackingEnabledAndValid == False].index
@@ -138,17 +144,19 @@ def validate_trial_data(data, cursor_type, posture):
         # for i in range(-loss_interval, loss_interval + 1):
         #     if len(data) + i in loss_indices:
         #         loss_indices.remove(len(data) + i)
-        if len(eye_index) > len(data.index) / 3:
+        if len(eye_index) > 100:
             # if len(drop_index) > 0 and len(drop_index) > 0:
             # print('eye loss')
-            return False, 'loss'
+            return False, 'eyelossinterval'
     else:
         drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
                 data['direction_z'] == 0)].index
-        if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
+        # if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
+        if len(drop_index) > 0:
             # if len(drop_index) > 0 and len(drop_index) > 0:
             return False, 'loss'
-    if len(data[data['error_frame'] == True]) > len(data.index) * 2 / 3:
+    # if len(data[data['error_frame'] == True]) > len(data.index) * 2 / 3:
+    if len(data[data['error_frame'] == True]) > 40:
         # print(len(data['error_frame']) , len(data.index))
         return False, 'LOSS'
     if posture == 'WALK':
@@ -231,7 +239,8 @@ def without_cursor_file(subject, posture, cursor_type, repetition):
     return output
 
 
-def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False,targetType=None):
+def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False,
+                       targetType=None):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
     if secondstudy:
         root = Path(__file__).resolve().parent / 'SecondStudy' / str(subject)
@@ -323,13 +332,13 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                                           (output.target_position_z - output.origin_z) ** 2).apply(math.sqrt)
                     output['max_angle'] = (default_target_radius / output['distance']).apply(math.asin).apply(
                         math.degrees)
-                    if secondstudy:
+                    # if secondstudy:
                         # menu style !!!
                         # output['success'] = output.target_name.str.contains(str(t))
-                        output['success'] = output.apply(
-                            lambda x: str(x.end_num) in str(x.target_name), axis=1)
-                    else:
-                        output['success'] = output.angle < output.max_angle
+                    output['success'] = output.apply(
+                        lambda x: str(x.end_num) in str(x.target_name), axis=1)
+                    # else:
+                    #     output['success'] = output.angle <= output.max_angle
                     output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
                     output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
                     output['target_horizontal_velocity'] = (
@@ -349,7 +358,7 @@ def correct_angle(angle):
     return angle
 
 
-def split_target(data,secondStudy=False):
+def split_target(data, secondStudy=False):
     output = []
     if secondStudy:
         pass
@@ -446,3 +455,15 @@ def change_angle(a):
     if a > 180:
         a = a - 360
     return a
+def timeit(func):
+    """
+    Decorator for measuring function's running time.
+    """
+    def measure_time(*args, **kw):
+        start_time = time.time()
+        result = func(*args, **kw)
+        print("Processing time of %s(): %.2f seconds."
+              % (func.__qualname__, time.time() - start_time))
+        return result
+
+    return measure_time

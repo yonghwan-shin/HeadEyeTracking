@@ -1,4 +1,5 @@
 import math
+import time
 
 import matplotlib.patches
 import pandas as pd
@@ -203,9 +204,9 @@ def visualize_offsets(show_plot=True):
             plt.show()
     return summary_dataframe
 
-
+@timeit
 def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, postures=None, targets=range(8),
-                           repetitions=None):
+                           repetitions=None,saveFile=True):
     if repetitions is None:
         repetitions = [0, 1, 2, 3, 4, 5]
     if postures is None:
@@ -279,7 +280,7 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, postures
                     'mean_offset_vertical': mean_offset_vertical,
                     'std_offset_horizontal': std_offset_horizontal,
                     'std_offset_vertical': std_offset_vertical,
-                    "success_trial": longest_dwell_time >= 1.0 - 2 / 60
+                    "success_trial": longest_dwell_time >= 1.0 - 3 / 60
                 }
                 summary.loc[len(summary)] = trial_summary
 
@@ -296,9 +297,12 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, postures
                 summary.loc[len(summary)] = error_trial_summary
                 print(sub_num, pos, ct, rep, tt, t, e.args)
     final_summary = summary.groupby([summary['cursor_type'], summary['target_type']]).mean()
+    if saveFile:
+        final_summary.to_csv('second_summary' + str(sub_num) + '.csv')
+        summary.to_csv('second_Rawsummary' + str(sub_num) + '.csv')
     return summary, final_summary
 
-
+@timeit
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
                       repetitions=None, pilot=False, savefile=True, resetFile=False, secondstudy=False, fnc=None,
                       suffix="", arg=None):
@@ -326,7 +330,7 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                  'movement_length',
                  'entering_position',
                  'walking_speed', 'total_time', 'success_trial',
-                                                'error'])
+                                                'error','error_frame_count'])
     for cursor_type in cursorTypes:
         for rep in repetitions:
             for pos in postures:
@@ -357,7 +361,8 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
                         #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
                         temp_data = check_loss(temp_data, cursor_type)
-                        # temp_data = temp_data.drop(drop_index)
+                        trial_summary['error_frame_count'] = len(temp_data[temp_data['error_frame'] == True])
+                        # # temp_data = temp_data.drop(drop_index)
                         validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                         if not validate:  # in case of invalid trial.
                             trial_summary['error'] = reason
@@ -378,27 +383,27 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
 
                         success_dwells = []
 
-                        if "STICKY" in cursor_type:  # try another approach
-                            score_columns = ['score' + str(tn) for tn in range(8)]
-                            scores = pd.DataFrame(temp_data.scores.to_list(), columns=score_columns,
-                                                  index=temp_data.index)
-                            temp_data = pd.concat([temp_data, scores], axis=1)
-                            temp_data['selected_target'] = temp_data.scores.apply(np.argmax)
-                            temp_data['stick_success'] = temp_data['selected_target'] == t
-                            for k, g in itertools.groupby(temp_data.iterrows(),
-                                                          key=lambda row: row[1]['stick_success']):
-                                if k == True:
-                                    df = pd.DataFrame([r[1] for r in g])
-                                    success_dwells.append(df)
-                        else:
+                        # if "STICKY" in cursor_type:  # try another approach
+                        #     score_columns = ['score' + str(tn) for tn in range(8)]
+                        #     scores = pd.DataFrame(temp_data.scores.to_list(), columns=score_columns,
+                        #                           index=temp_data.index)
+                        #     temp_data = pd.concat([temp_data, scores], axis=1)
+                        #     temp_data['selected_target'] = temp_data.scores.apply(np.argmax)
+                        #     temp_data['stick_success'] = temp_data['selected_target'] == t
+                        #     for k, g in itertools.groupby(temp_data.iterrows(),
+                        #                                   key=lambda row: row[1]['stick_success']):
+                        #         if k == True:
+                        #             df = pd.DataFrame([r[1] for r in g])
+                        #             success_dwells.append(df)
+                        # else:
                             # temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
-                            for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
-                                # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
-                                # print(k, [t[0] for t in g])
-                                if k == True:
-                                    # if k == 'Target_' + str(t):
-                                    df = pd.DataFrame([r[1] for r in g])
-                                    success_dwells.append(df)
+                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                            # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
+                            # print(k, [t[0] for t in g])
+                            if k == True:
+                                # if k == 'Target_' + str(t):
+                                df = pd.DataFrame([r[1] for r in g])
+                                success_dwells.append(df)
                         time_sum = 0
                         times = []
                         for dw in success_dwells:
@@ -411,8 +416,8 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         target_in_mean_time = time_sum / target_in_count
                         # TODO
                         longest_dwell_time = max(times)
-                        if longest_dwell_time >= 1:
-                            longest_dwell_time = 1.0
+                        # if longest_dwell_time >= 1:
+                        #     longest_dwell_time = 1.0
                         targeting = temp_data[temp_data.timestamp <= initial_contact_time]
                         movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(
                             1) ** 2).apply(math.sqrt)
@@ -902,7 +907,7 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
     summary.to_csv('target_size_Rawsummary' + str(target_size) + '.csv')
     return summary
 
-
+@timeit
 def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=range(9),
                         repetitions=None, subjects=range(24)):
     if postures is None:
@@ -947,49 +952,15 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
                                     temp_data['direction_z'] == 0)].index
 
-                            temp_data['error_frame'] = False
-                            if cursor_type == 'EYE':
-                                temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
-                                eye_index = temp_data[temp_data.check_eye == 0].index
-                                loss_interval = 3
-                                loss_indices = []
-                                for i in range(-loss_interval, loss_interval + 1):
-                                    loss_indices += list(eye_index + i)
-                                loss_indices = set(loss_indices)
-                                # for i in range(-loss_interval, loss_interval + 1):
-                                #     if len(temp_data) + i in loss_indices:
-                                #         loss_indices.remove(len(temp_data) + i)
-                                for i in range(loss_interval + 1):
-                                    if len(temp_data) + i in loss_indices:
-                                        loss_indices.remove(len(temp_data) + i)
-                                    if -i in loss_indices:
-                                        loss_indices.remove(-i)
-
-                                temp_data.loc[loss_indices] = np.nan
-                                temp_data = temp_data.interpolate()
-
-                                temp_data['error_frame'].loc[loss_indices] = True
-                            else:
-                                if len(drop_index) > 0:
-                                    loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
-                                    if len(temp_data) in loss_indices:
-                                        loss_indices.remove(len(temp_data))
-                                    if len(temp_data) + 1 in loss_indices:
-                                        loss_indices.remove(len(temp_data) + 1)
-                                    temp_data.loc[loss_indices] = np.nan
-                                    temp_data = temp_data.interpolate()
-
-                                    temp_data['error_frame'].loc[loss_indices] = True
-                            # temp_data = temp_data.drop(drop_index)
+                            temp_data = check_loss(temp_data, cursor_type)
+                            trial_summary['error_frame_count'] = len(temp_data[temp_data['error_frame'] == True])
+                            # # temp_data = temp_data.drop(drop_index)
                             validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                             if not validate:  # in case of invalid trial.
                                 trial_summary['error'] = reason
+                                print(sub_num, pos, cursor_type, rep, t, reason)
                                 summary.loc[len(summary)] = trial_summary
                                 continue
-                                # if reason == 'jump':
-                                #     pass
-                                # else:
-                                #     continue
                             temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
                                 1) / temp_data.timestamp.diff(1)
                             temp_data['cursor_speed'] = abs(
@@ -1433,3 +1404,4 @@ def MovingAverage(data, window):
     data['abs_horizontal_offset'] = data['horizontal_offset'].apply(abs)
     data['abs_vertical_offset'] = data['vertical_offset'].apply(abs)
     return data
+

@@ -23,13 +23,14 @@ pio.renderers.default = 'browser'
 
 pd.set_option('mode.chained_assignment', None)
 # %%
-d = read_hololens_data(subject=0, posture='STAND', cursor_type='NEWSPEEDSTICKY', repetition=0, secondstudy=True,
+d = read_hololens_data(subject=1, posture='STAND', cursor_type='NEWSPEEDSTICKY', repetition=1, secondstudy=True,
                        targetType='GRID', reset=False)
 s = split_target(d, True)
 
 # data = read_hololens_data(sub_num, pos, ct, rep, secondstudy=True, targetType=tt)
 # %%
-data = s[5]
+t=3
+data = s[t]
 data.reset_index(inplace=True)
 data.timestamp -= data.timestamp.values[0]
 data[['score_0', 'score_1', 'score_2', 'score_3'
@@ -41,15 +42,16 @@ scores = pd.DataFrame(data.scores.to_list(), columns=score_columns,
                       index=data.index)
 data = pd.concat([data, scores], axis=1)
 data['selected_target'] = data.scores.apply(np.argmax)
-data['stick_success'] = data['selected_target'] == 5
+data['stick_success'] = data['selected_target'] == t
 for k, g in itertools.groupby(data.iterrows(),
                               key=lambda row: row[1]['stick_success']):
     if k == True:
         df = pd.DataFrame([r[1] for r in g])
+        print(df.timestamp.values[0])
         # success_dwells.append(df)
 for c in ['score_0', 'score_1', 'score_2', 'score_3'
     , 'score_4', 'score_5', 'score_6', 'score_7']:
-    if c=='score_5':
+    if c=='score_'+str(t):
         plt.plot(data.timestamp,data[c],'r-')
     else:
         plt.plot(data.timestamp, data[c], 'k-')
@@ -58,9 +60,11 @@ plt.plot(data.timestamp,data.selected_target);plt.show()
 # %%
 # rep_small = [0, 2, 4, 6, 8]
 subjects = [1]
-summary,final_summary = summarize_second_study(sub_num=0, cursorTypes=['HEAD', 'NEWSPEED', 'NEWSTICKY', 'NEWSPEEDSTICKY'],
-                                 postures=['STAND'], targetTypes=['GRID'], repetitions=[0]
-                                 )
+for s in subjects:
+    summary,final_summary = summarize_second_study(sub_num=s, cursorTypes=['HEAD', 'NEWSPEED', 'NEWSTICKY', 'NEWSPEEDSTICKY'],
+                                     postures=['STAND'], targetTypes=['GRID'], repetitions=[0,1,2,3,4]
+                                     )
+
 # %%
 summary = pd.read_csv('second_Rawsummary1.csv')
 
@@ -71,12 +75,15 @@ import seaborn as sns
 # sns.histplot(data=summary, x="longest_dwell_time", hue="cursor_type")
 sns.boxplot(data=summary, x='cursor_type', y='longest_dwell_time')
 plt.show()
+sns.boxplot(data=summary, x='cursor_type', y='initial_contact_time')
+plt.show()
 # for ct in ['HEAD','NEWSPEED','NEWSTICKY','NEWSPEEDSTICKY']:
 #     plt.hist(summary[summary.cursor_type==ct].longest_dwell_time,bins=50,label=ct)
 # plt.legend()
 # plt.show()
+# summary.groupby([summary.posture,summary.cursor_type]).success_trial.mean()
 # %%
-data = read_hololens_data(subject=1, posture='WALK', cursor_type='NEWSTICKY', repetition=0, secondstudy=True)
+data = read_hololens_data(subject=0, posture='STAND', cursor_type='NEWSTICKY', repetition=0, secondstudy=True)
 splited_data = split_target(data)
 temp = splited_data[1]
 # temp.reset_index(drop=True)

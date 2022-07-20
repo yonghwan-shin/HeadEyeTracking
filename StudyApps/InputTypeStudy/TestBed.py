@@ -27,7 +27,7 @@ pd.set_option('mode.chained_assignment', None)
 # dd=summarize_subject(2, resetFile=False, suffix='Triangle' + str(5), fnc=TriangleDataframe, arg=5)
 # for t in np.arange(5, 65, 5):
 for i in range(24):
-    summarize_subject(i,savefile=True,resetFile=True,repetitions=range(10))
+    summarize_subject(i, savefile=True, resetFile=True, repetitions=range(10))
 # %%
 dfs = []
 data = visualize_summary(show_plot=False, subjects=range(24))
@@ -48,60 +48,6 @@ remove_columns = ['Unnamed: 0', 'subject_num', 'repetition', 'target_num']
 for removal in remove_columns:
     parameters.remove(removal)
 # %%
-
-# parameters=['mean_offset']
-# for p in parameters:
-fig = px.bar(fs, x='window', y=parameters, barmode='group', facet_col='posture', facet_row='cursor_type')
-fig.show()
-
-# fig = px.bar(plot_df, x='dwell_time', y=['success_rate', 'required_target_size', 'first_dwell_time',
-#                                          'mean_final_speed'], barmode='group', facet_col='posture',
-#              facet_row='cursor_type',
-#              title='target_size')
-# %%
-# 20 WALK EYE 6 6
-# 14 WALK HEAD 4 2
-# 15 WALK HAND 6 3
-# 17 WALK EYE 4 2
-# 0 WALK EYE 8 8
-# temp_data = get_one_trial(20, 'WALK', 'EYE', 6, 6)
-# temp_data = get_one_trial(14 ,'WALK', 'HEAD', 4, 2)
-# temp_data = get_one_trial(15 ,'WALK', 'HAND', 6, 3)
-# temp_data = get_one_trial(17 ,'WALK', 'EYE', 4, 2)
-# temp_data=check_loss(temp_data,'EYE')
-temp_data = get_one_trial(0, 'WALK', 'HEAD', 8, 7)
-
-# temp_data = read_hololens_data(22, 'WALK', 'EYE', 5, reset=True)
-
-# temp_data= get_one_trial(22,'WALK','HEAD',5,8)
-plt.plot(temp_data.timestamp,temp_data.head_forward_y)
-plt.plot(temp_data.timestamp,temp_data.direction_y)
-plt.show()
-plt.plot(temp_data.timestamp, temp_data.horizontal_offset, 'b-', label='H')
-plt.plot(temp_data.timestamp, temp_data.vertical_offset, 'r-', label='V')
-plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance, 'c-', label='A', alpha=0.5)
-plt.plot(temp_data.timestamp, temp_data.max_angle, 'k--')
-plt.plot(temp_data.timestamp, -temp_data.max_angle, 'k--')
-# plt.plot(temp_data.timestamp,temp_data.target_horizontal_velocity)
-# plt.ylim(-15,15)
-plt.axhline(0)
-plt.axhline(temp_data.cursor_angular_distance.mean())
-plt.legend()
-plt.show()
-
-
-def c(a):
-    if a < -90:
-        return a + 360
-    else:
-        return a
-
-
-# plt.plot(temp_data.timestamp,temp_data.horizontal_offset,'b-',label='H')
-# plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle.apply(c), 'r-', label='V')
-# plt.plot(temp_data.timestamp, temp_data.target_horizontal_angle, 'b-', label='T')
-# plt.legend()
-# plt.show()
 
 # %%
 # data = read_hololens_data(11, 'STAND', 'EYE', 7)
@@ -225,10 +171,8 @@ for i in t.values:
 # collect_offsets()
 # %%
 # for t in np.arange(5, 65, 5):
-for i in [1, 3]:
-    summarize_subject(i, resetFile=False)
-# summary = summarize_subject(6)
-#%%
+
+# %%
 summary = visualize_summary(show_plot=False)
 summary.to_csv('BasicRawSummary.csv')
 # errors = summary[summary.error.isna() == False]
@@ -238,26 +182,41 @@ summary.to_csv('BasicRawSummary.csv')
 import seaborn as sns
 
 summary = pd.read_csv('BasicRawSummary.csv')
-# summary = summary[summary.error.isna()]
-# summary=summary[(summary.posture=='WALK')]
-# for trial in summary.sort_values(by=['std_offset'],ascending=False).head(3).iterrows():
-#     trial = trial[1]
-#     temp_data = get_one_trial(trial.subject_num, trial.posture, trial.cursor_type, trial.repetition, trial.target_num)
-#     plt.plot(temp_data.timestamp, temp_data.horizontal_offset)
-#     plt.plot(temp_data.timestamp, temp_data.vertical_offset)
-#     plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance,'+')
-#     plt.title(str(trial.subject_num) +  trial.posture +  trial.cursor_type + str(trial.repetition) + str(trial.target_num))
-#     plt.show()
-#     plt.plot(temp_data.timestamp, temp_data.target_horizontal_angle)
-#     plt.plot(temp_data.timestamp, temp_data.cursor_horizontal_angle)
-#     plt.plot(temp_data.timestamp, temp_data.target_vertical_angle, '.')
-#     plt.plot(temp_data.timestamp, temp_data.cursor_vertical_angle, '.')
-#     plt.show()
-sns.boxplot(data=summary, hue='cursor_type',
-            x='posture',
-            y='longest_dwell_time',
-            showfliers=False,
-            showmeans=True,
+summary = summary[summary.error.isna()]
+# summary=summary[summary.longest_dwell_time <=1.1]
+for c in ['mean_offset', 'std_offset', 'initial_contact_time',
+          'target_in_count',  'longest_dwell_time', ]:
+    sns.boxplot(data=summary, x='cursor_type',
+                hue='posture',
+                y=c,
+                showfliers=False,
+                showmeans=True,
+                meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                           'markersize': '10'},
+                )
+    plt.show()
+# sns.histplot(summary[summary.posture == 'WALK'], x="longest_dwell_time", hue="cursor_type",
+#              multiple="dodge", shrink=.8,bins=25,kde=True,alpha=0.05,
+#              cumulative=False, stat="density", element="step", fill=True)
+# plt.show()
+# %% success rate plot?
+d = []
+summary = summary[summary.error.isna()]
+for dt in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+    summary[str(int(dt * 1000))] = summary['longest_dwell_time'] > dt - 2 / 60
+    dd = summary.groupby([summary.posture, summary.cursor_type]).mean()[str(int(dt * 1000))]
+    d.append(dd)
+    # print(dt, '\n', )
+sR = pd.DataFrame(d)
+sR.plot();
+plt.show()
+# %%
+# sns.catplot(x='cursor_type', y='mean_offset', hue='posture', data=summary, kind='box', showfliers=True, showmeans=True,
+#                 meanprops={'marker': 'o', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '10'})
+sns.boxplot(data=summary, x='cursor_type', y='mean_offset', hue='posture', showfliers=False, showmeans=True,
+            meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                       'markersize': '10'},
+            palette='Set1', width=0.8
             )
 plt.show()
 # %%basic performance results : maybe table?
