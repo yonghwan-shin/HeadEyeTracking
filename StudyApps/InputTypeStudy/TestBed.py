@@ -48,38 +48,99 @@ remove_columns = ['Unnamed: 0', 'subject_num', 'repetition', 'target_num']
 for removal in remove_columns:
     parameters.remove(removal)
 # %%
+for p in [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]:
+    a=test_score_parameter(param=p, postures=['WALK'])
+    # print(a)
+#%%
+data=[]
+for p in [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]:
+    data.append(pd.read_csv('ParamRawsummary'+str(p)+'.csv'))
+data=pd.concat(data)
+output = data.groupby([data.cursor_type,data.parameter]).mean()
+# %%
+data = read_hololens_data(0, 'WALK', 'HEAD', 6)
+splited_data = split_target(data)
+t = 1
+temp_data = splited_data[t]
+temp_data.reset_index(inplace=True)
+temp_data.timestamp -= temp_data.timestamp.values[0]
+grid_size = 4.5
+point = np.array([
+    (-grid_size, grid_size), (0, grid_size), (grid_size, grid_size),
+    (-grid_size, 0), (0, 0), (grid_size, 0),
+    (-grid_size, -grid_size), (0, -grid_size), (grid_size, -grid_size)
+])
+point_x = np.array([
+    -grid_size, 0, grid_size,
+    -grid_size, 0, grid_size,
+    -grid_size, 0, grid_size
+])
+point_y = np.array([
+    grid_size, grid_size, grid_size,
+    0, 0, 0,
+    -grid_size, -grid_size, -grid_size
+])
+max_distance = grid_size * 4
+temp_data['distances'] = temp_data.apply(
+    lambda x: np.sqrt((point_x - x.horizontal_offset) ** 2 + (point_y - x.vertical_offset) ** 2), axis=1)
+temp_data['s_contribute'] = (1 - temp_data.distances / max_distance).apply(np.clip, args=(0, 1))
+# temp_data = temp_data.assign(score=np.array([0,0,0,0,0,0,0,0,0]))
+temp_data['score'] = [np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])] * len(temp_data)
+param = 0.025
+for index, row in temp_data.iterrows():
+    if index == 0: continue
+    temp_data['score'][index] = temp_data['score'][index - 1] * (1 - param) + temp_data['s_contribute'][index] * (param)
+temp_data['selected_target'] = temp_data.score.apply(np.argmax)
+temp_data['stick_success'] = temp_data['selected_target'] == 4
+for k, g in itertools.groupby(temp_data.iterrows(),
+                              key=lambda row: row[1]['stick_success']):
+    if k == True:
+        df = pd.DataFrame([r[1] for r in g])
+        print(df.timestamp.values[-1] - df.timestamp.values[0])
+
+# temp_data[['score_0', 'score_1', 'score_2', 'score_3'
+#     , 'score_4', 'score_5', 'score_6', 'score_7', 'score_8']] = pd.DataFrame(temp_data.score.tolist(),
+#                                                                              index=temp_data.index)
+# for c in ['score_0', 'score_1', 'score_2', 'score_3'
+#     , 'score_4', 'score_5', 'score_6', 'score_7', 'score_8']:
+#     if c == 'score_' + str(4):
+#         plt.plot(temp_data.timestamp, temp_data[c], 'r-')
+#     else:
+#         plt.plot(temp_data.timestamp, temp_data[c], 'k-')
+#
+# plt.title(str(param))
+# plt.show()
 
 # %%
-# data = read_hololens_data(11, 'STAND', 'EYE', 7)
 # temp_data = get_one_trial(20,'WALK','EYE',5,2)
-summary = pd.read_csv("BasicRawSummary.csv")
-jumps = summary[summary.error == 'jump']
-for trial in jumps.head(3).iterrows():
-    trial = trial[1]
-    temp_data = get_one_trial(trial.subject_num, trial.posture, trial.cursor_type, trial.repetition, trial.target_num)
-    outlier = list(temp_data[(abs(temp_data.target_horizontal_velocity) > 10 * 57.296)].index)
-    outlier = [x for x in outlier if x > 5]
-    outlier_timestamp = temp_data.iloc[outlier].timestamp.values
-    plt.plot(temp_data.timestamp, temp_data.angle, 'r:')
-    plt.plot(temp_data.timestamp, temp_data.max_angle, 'b:')
-    corr_data = check_loss(temp_data, trial.cursor_type)
-    corr_data['target_horizontal_velocity'] = (
-            corr_data['target_horizontal_angle'].diff(1).apply(correct_angle) / corr_data['timestamp'].diff(1))
-    outlier = list(corr_data[(abs(corr_data.target_horizontal_velocity) > 10 * 57.296)].index)
-    outlier = [x for x in outlier if x > 5]
-    corr_outlier_timestamp = corr_data.iloc[outlier].timestamp.values
-    plt.plot(corr_data.timestamp, corr_data.angle, 'r')
-    plt.plot(corr_data.timestamp, corr_data.max_angle, 'b')
-    plt.title(str(corr_outlier_timestamp))
-    # for ol in outlier_timestamp:
-    #     plt.axvline(ol)
-    for ol in corr_outlier_timestamp:
-        plt.axvline(ol)
-    plt.show()
-
-    # plt.plot(corr_data.timestamp,abs(corr_data.target_horizontal_velocity))
-    plt.plot(corr_data.timestamp, corr_data.target_horizontal_velocity)
-    plt.show()
+# summary = pd.read_csv("BasicRawSummary.csv")
+# jumps = summary[summary.error == 'jump']
+# for trial in jumps.head(3).iterrows():
+#     trial = trial[1]
+#     temp_data = get_one_trial(trial.subject_num, trial.posture, trial.cursor_type, trial.repetition, trial.target_num)
+#     outlier = list(temp_data[(abs(temp_data.target_horizontal_velocity) > 10 * 57.296)].index)
+#     outlier = [x for x in outlier if x > 5]
+#     outlier_timestamp = temp_data.iloc[outlier].timestamp.values
+#     plt.plot(temp_data.timestamp, temp_data.angle, 'r:')
+#     plt.plot(temp_data.timestamp, temp_data.max_angle, 'b:')
+#     corr_data = check_loss(temp_data, trial.cursor_type)
+#     corr_data['target_horizontal_velocity'] = (
+#             corr_data['target_horizontal_angle'].diff(1).apply(correct_angle) / corr_data['timestamp'].diff(1))
+#     outlier = list(corr_data[(abs(corr_data.target_horizontal_velocity) > 10 * 57.296)].index)
+#     outlier = [x for x in outlier if x > 5]
+#     corr_outlier_timestamp = corr_data.iloc[outlier].timestamp.values
+#     plt.plot(corr_data.timestamp, corr_data.angle, 'r')
+#     plt.plot(corr_data.timestamp, corr_data.max_angle, 'b')
+#     plt.title(str(corr_outlier_timestamp))
+#     # for ol in outlier_timestamp:
+#     #     plt.axvline(ol)
+#     for ol in corr_outlier_timestamp:
+#         plt.axvline(ol)
+#     plt.show()
+#
+#     # plt.plot(corr_data.timestamp,abs(corr_data.target_horizontal_velocity))
+#     plt.plot(corr_data.timestamp, corr_data.target_horizontal_velocity)
+#     plt.show()
 # %% see eye-errors
 repetitions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -185,7 +246,7 @@ summary = pd.read_csv('BasicRawSummary.csv')
 summary = summary[summary.error.isna()]
 # summary=summary[summary.longest_dwell_time <=1.1]
 for c in ['mean_offset', 'std_offset', 'initial_contact_time',
-          'target_in_count',  'longest_dwell_time', ]:
+          'target_in_count', 'longest_dwell_time', ]:
     sns.boxplot(data=summary, x='cursor_type',
                 hue='posture',
                 y=c,

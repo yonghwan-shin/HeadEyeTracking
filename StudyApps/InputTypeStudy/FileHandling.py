@@ -456,6 +456,7 @@ def change_angle(a):
         a = a - 360
     return a
 def timeit(func):
+    import time
     """
     Decorator for measuring function's running time.
     """
