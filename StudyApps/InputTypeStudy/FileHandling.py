@@ -238,12 +238,87 @@ def without_cursor_file(subject, posture, cursor_type, repetition):
         print(e.args)
     return output
 
+def read_second_data(subject,cursor_type,target_type,repetition,target_num,save_file=False):
+    root = Path(__file__).resolve().parent / 'SecondStudy' / (str(target_type)+"_data") / str(subject)
+    trial_detail = f'subject{str(subject)}_postureWALK_cursor{str(cursor_type)}_repetition{str(repetition)}_STYLE{str(target_type)}_NUM{target_num}'
+    files = root.rglob(trial_detail + '*.json')
+    pickled_files = root.rglob(trial_detail + "*.pkl")
+    try:
+        for file in files:
+            if trial_detail in file.name:
+                with open(file) as f:  # found exact file
+                    # output = pd.DataFrame(json.load(f))
+                    output = pd.read_json(f)
+                    target_position = pd.json_normalize(output.target_position, sep='_').rename(
+                        columns={'x': 'target_position_x', 'y': 'target_position_y', 'z': 'target_position_z'})
+                    head = pd.json_normalize(output.headData, sep='_')
+                    cursor = pd.json_normalize(output.cursorData, sep='_')
+                    output.drop(['target_position', 'headData', 'cursorData'], axis='columns', inplace=True)
+                    output = pd.concat([output, target_position, head, cursor], axis=1)
+                    output['cursor_rotation'] = output.apply(
+                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                    output['target_rotation'] = output.apply(
+                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+                                              x.target_position_z - x.origin_z), axis=1)
+                    output['head_rotation'] = output.apply(
+                        lambda x: asSpherical(x.head_forward_x, x.head_forward_y, x.head_forward_z), axis=1)
+
+                    output['head_horizontal_angle'] = output.apply(
+                        lambda x: x.head_rotation[1], axis=1
+                    )
+                    output['head_vertical_angle'] = output.apply(
+                        lambda x: x.head_rotation[0], axis=1
+                    )
+                    output['cursor_horizontal_angle'] = output.apply(
+                        lambda x: x.cursor_rotation[1], axis=1
+                    )
+                    output['cursor_vertical_angle'] = output.apply(
+                        lambda x: x.cursor_rotation[0], axis=1
+                    )
+                    output['target_horizontal_angle'] = output.apply(
+                        lambda x: x.target_rotation[1], axis=1
+                    )
+                    output['target_vertical_angle'] = output.apply(
+                        lambda x: x.target_rotation[0], axis=1
+                    )
+                    output['horizontal_offset'] = (
+                            output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
+                    output['vertical_offset'] = (
+                            output.target_vertical_angle - output.cursor_vertical_angle).apply(correct_angle)
+
+                    output['angle'] = (output.horizontal_offset ** 2 + output.vertical_offset ** 2).apply(
+                        math.sqrt)
+                    output['distance'] = ((output.target_position_x - output.origin_x) ** 2 + (
+                            output.target_position_y - output.origin_y) ** 2 +
+                                          (output.target_position_z - output.origin_z) ** 2).apply(math.sqrt)
+                    output['max_angle'] = (default_target_radius / output['distance']).apply(math.asin).apply(
+                        math.degrees)
+                    # if secondstudy:
+                    # menu style !!!
+                    # output['success'] = output.target_name.str.contains(str(t))
+                    output['success'] = output.apply(
+                        lambda x: str(x.end_num) in str(x.target_name), axis=1)
+                    # else:
+                    #     output['success'] = output.angle <= output.max_angle
+                    output['abs_horizontal_offset'] = output['horizontal_offset'].apply(abs)
+                    output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
+                    output['target_horizontal_velocity'] = (
+                            output['target_horizontal_angle'].diff(1) / output['timestamp'].diff(1))
+                    if(save_file):
+                        print(str(root / (file.name.split('.')[0] + ".pkl")))
+                        output.to_pickle(path=str(root / (file.name.split('.')[0] + ".pkl")))
+                    return output
+    except Exception as e:
+        print('error in reading file', e.args)
+
 
 def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False,
                        targetType=None):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
     if secondstudy:
         root = Path(__file__).resolve().parent / 'SecondStudy' / str(subject)
+
+
         trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}_STYLE{str(targetType)}'
     else:
         trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}'

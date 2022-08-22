@@ -1,0 +1,8238 @@
+[
+  {
+    "target_position": {
+      "x": -9.900679,
+      "y": 0.04092049,
+      "z": 3.95849586
+    },
+    "target_plane_position": {
+      "x": -9.900668,
+      "y": 0.0,
+      "z": 3.958648
+    },
+    "cursor_angular_distance": 1.890723,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.352753,
+    "headData": {
+      "head_position": {
+        "x": -10.03228,
+        "y": -0.00802567,
+        "z": 1.97664416
+      },
+      "head_rotation": {
+        "x": 359.456665,
+        "y": 4.171209,
+        "z": 0.5200304
+      },
+      "head_forward": {
+        "x": 0.07273377,
+        "y": 0.009482962,
+        "z": 0.9973063
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.03228,
+        "y": -0.00802567,
+        "z": 1.97664416
+      },
+      "direction": {
+        "x": 0.03464784,
+        "y": 0.0152699724,
+        "z": 0.999283
+      },
+      "headDirection": {
+        "x": 0.07273377,
+        "y": 0.009482962,
+        "z": 0.9973063
+      },
+      "target_name": "DwellTarget",
+      "eyeSpeed": 6.996694,
+      "maxDistance": 2.04028,
+      "moveDistance": 0.123522624,
+      "newDistance": 0.0,
+      "ratio": 0.0605419949,
+      "boost": 1.3601867,
+      "eye_origin": {
+        "x": -10.0202608,
+        "y": -0.009221539,
+        "z": 1.98445773
+      },
+      "eye_direction": {
+        "x": 0.0524580963,
+        "y": -0.0485810563,
+        "z": 0.9974407
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -10.0202608,
+        "y": -0.009221539,
+        "z": 1.98445773
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.0524581335,
+        "y": -0.0485810563,
+        "z": 0.997440755
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.19140625,
+        "y": 3.31714
+      },
+      "filteredEye": {
+        "x": 0.0364929363,
+        "y": -0.0274808,
+        "z": 0.998956
+      },
+      "distances": [
+        18.0527248,
+        17.2222233,
+        16.6603661,
+        16.4031181,
+        16.46879,
+        16.8534431,
+        17.5318546,
+        18.4638767
+      ],
+      "scores": [
+        0.11769785,
+        0.230156258,
+        0.182954356,
+        0.07686359,
+        0.005254221,
+        0.00100858219,
+        5.64591246E-05,
+        9.38441531E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -10.1190567,
+      "y": 0.0409204438,
+      "z": 3.9745965
+    },
+    "target_plane_position": {
+      "x": -10.1190634,
+      "y": 0.0,
+      "z": 3.97476053
+    },
+    "cursor_angular_distance": 4.776104,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.3689,
+    "headData": {
+      "head_position": {
+        "x": -10.0275869,
+        "y": -0.007749211,
+        "z": 1.990303
+      },
+      "head_rotation": {
+        "x": 359.756348,
+        "y": 4.540877,
+        "z": 0.8824355
+      },
+      "head_forward": {
+        "x": 0.0791696,
+        "y": 0.004252746,
+        "z": 0.9968521
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.0275869,
+        "y": -0.007749211,
+        "z": 1.990303
+      },
+      "direction": {
+        "x": 0.03675095,
+        "y": 0.0149512105,
+        "z": 0.9992127
+      },
+      "headDirection": {
+        "x": 0.0791696,
+        "y": 0.004252746,
+        "z": 0.9968521
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 8.10372,
+      "maxDistance": 2.2101,
+      "moveDistance": 0.121941991,
+      "newDistance": 0.0,
+      "ratio": 0.055174876,
+      "boost": 1.4734,
+      "eye_origin": {
+        "x": -10.0155687,
+        "y": -0.008945452,
+        "z": 1.99802756
+      },
+      "eye_direction": {
+        "x": 0.0611422472,
+        "y": -0.0549687222,
+        "z": 0.9966143
+      },
+      "eye_target_name": "MenuTarget_5",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -10.0155687,
+        "y": -0.008945452,
+        "z": 1.99802756
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.0611422956,
+        "y": -0.05496873,
+        "z": 0.996614337
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.19140625,
+        "y": 3.31714
+      },
+      "filteredEye": {
+        "x": 0.0371320434,
+        "y": -0.02832519,
+        "z": 0.9989089
+      },
+      "distances": [
+        8.805647,
+        6.94232225,
+        5.421047,
+        4.62465525,
+        4.932805,
+        6.181679,
+        7.929221,
+        9.900396
+      ],
+      "scores": [
+        0.114166915,
+        0.223251581,
+        0.177465737,
+        0.07680976,
+        0.005499765,
+        0.0009783248,
+        5.476535E-05,
+        9.102883E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -10.0949726,
+      "y": 0.0409204662,
+      "z": 3.98900867
+    },
+    "target_plane_position": {
+      "x": -10.0949783,
+      "y": 0.0,
+      "z": 3.98916721
+    },
+    "cursor_angular_distance": 4.35055161,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.384827,
+    "headData": {
+      "head_position": {
+        "x": -10.02282,
+        "y": -0.008044727,
+        "z": 2.00391364
+      },
+      "head_rotation": {
+        "x": 359.857849,
+        "y": 4.965048,
+        "z": 1.15009832
+      },
+      "head_forward": {
+        "x": 0.0865477547,
+        "y": 0.00248109316,
+        "z": 0.9962446
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.02282,
+        "y": -0.008044727,
+        "z": 2.00391364
+      },
+      "direction": {
+        "x": 0.0389079377,
+        "y": 0.0144083137,
+        "z": 0.999138951
+      },
+      "headDirection": {
+        "x": 0.0865477547,
+        "y": 0.00248109316,
+        "z": 0.9962446
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 7.44459438,
+      "maxDistance": 2.51022053,
+      "moveDistance": 0.127510771,
+      "newDistance": 0.0,
+      "ratio": 0.0507966429,
+      "boost": 1.67348039,
+      "eye_origin": {
+        "x": -10.0107365,
+        "y": -0.009203155,
+        "z": 2.011545
+      },
+      "eye_direction": {
+        "x": 0.06878595,
+        "y": -0.0568205342,
+        "z": 0.996012032
+      },
+      "eye_target_name": "MenuTarget_5",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -10.0107365,
+        "y": -0.009203155,
+        "z": 2.011545
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.06878593,
+        "y": -0.0568205342,
+        "z": 0.996012032
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.0826416,
+        "y": 3.37841868
+      },
+      "filteredEye": {
+        "x": 0.0380934,
+        "y": -0.0293916613,
+        "z": 0.9988419
+      },
+      "distances": [
+        8.610166,
+        6.683691,
+        5.07396746,
+        4.19889975,
+        4.52398252,
+        5.8515625,
+        7.66805267,
+        9.687568
+      ],
+      "scores": [
+        0.110741913,
+        0.216554046,
+        0.172141775,
+        0.0793120638,
+        0.008190878,
+        0.0009489751,
+        5.31223923E-05,
+        8.829797E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -10.0706091,
+      "y": 0.04092044,
+      "z": 4.003178
+    },
+    "target_plane_position": {
+      "x": -10.0706129,
+      "y": 0.0,
+      "z": 4.00334263
+    },
+    "cursor_angular_distance": 3.92964482,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.4009,
+    "headData": {
+      "head_position": {
+        "x": -10.0179415,
+        "y": -0.008673871,
+        "z": 2.01716828
+      },
+      "head_rotation": {
+        "x": 359.9758,
+        "y": 5.46813154,
+        "z": 1.40539467
+      },
+      "head_forward": {
+        "x": 0.0952920839,
+        "y": 0.000422112469,
+        "z": 0.995449245
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.0179415,
+        "y": -0.008673871,
+        "z": 2.01716828
+      },
+      "direction": {
+        "x": 0.04116347,
+        "y": 0.0138449315,
+        "z": 0.9990566
+      },
+      "headDirection": {
+        "x": 0.0952920839,
+        "y": 0.000422112469,
+        "z": 0.995449245
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 8.159087,
+      "maxDistance": 2.81890345,
+      "moveDistance": 0.133286342,
+      "newDistance": 0.0,
+      "ratio": 0.0472830459,
+      "boost": 1.879269,
+      "eye_origin": {
+        "x": -10.0051041,
+        "y": -0.009815182,
+        "z": 2.02463126
+      },
+      "eye_direction": {
+        "x": 0.07654657,
+        "y": -0.05162547,
+        "z": 0.9957286
+      },
+      "eye_target_name": "MenuTarget_5",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -10.0051041,
+        "y": -0.009815182,
+        "z": 2.02463126
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.07654662,
+        "y": -0.05162547,
+        "z": 0.9957286
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.0826416,
+        "y": 3.37841725
+      },
+      "filteredEye": {
+        "x": 0.0393223874,
+        "y": -0.0304898135,
+        "z": 0.9987613
+      },
+      "distances": [
+        8.447897,
+        6.457799,
+        4.751678,
+        3.77745366,
+        4.112375,
+        5.52250957,
+        7.407667,
+        9.473386
+      ],
+      "scores": [
+        0.107419662,
+        0.210057437,
+        0.168467462,
+        0.08426798,
+        0.0132709034,
+        0.000920505845,
+        5.152872E-05,
+        8.564903E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -10.0458107,
+      "y": 0.040920388,
+      "z": 4.01679659
+    },
+    "target_plane_position": {
+      "x": -10.0458136,
+      "y": 0.0,
+      "z": 4.016974
+    },
+    "cursor_angular_distance": 3.51992035,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.417,
+    "headData": {
+      "head_position": {
+        "x": -10.0127792,
+        "y": -0.009507398,
+        "z": 2.03074861
+      },
+      "head_rotation": {
+        "x": 0.005993898,
+        "y": 6.053793,
+        "z": 1.61162472
+      },
+      "head_forward": {
+        "x": 0.105462134,
+        "y": -0.000104613253,
+        "z": 0.99442333
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.0127792,
+        "y": -0.009507398,
+        "z": 2.03074861
+      },
+      "direction": {
+        "x": 0.0435878821,
+        "y": 0.0132453321,
+        "z": 0.998961866
+      },
+      "headDirection": {
+        "x": 0.105462134,
+        "y": -0.000104613253,
+        "z": 0.99442333
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 8.863112,
+      "maxDistance": 3.202285,
+      "moveDistance": 0.143199265,
+      "newDistance": 0.0,
+      "ratio": 0.0447178371,
+      "boost": 2.1348567,
+      "eye_origin": {
+        "x": -9.99986,
+        "y": -0.010609651,
+        "z": 2.038079
+      },
+      "eye_direction": {
+        "x": 0.08690405,
+        "y": -0.05221834,
+        "z": 0.9948472
+      },
+      "eye_target_name": "MenuTarget_5",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.99986,
+        "y": -0.010609651,
+        "z": 2.038079
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.08690406,
+        "y": -0.0522183441,
+        "z": 0.9948472
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.14508057,
+        "y": 2.95622468
+      },
+      "filteredEye": {
+        "x": 0.0408127978,
+        "y": -0.03133635,
+        "z": 0.9986753
+      },
+      "distances": [
+        8.315951,
+        6.264066,
+        4.45663166,
+        3.36202526,
+        3.70126343,
+        5.200327,
+        7.154068,
+        9.263847
+      ],
+      "scores": [
+        0.104197077,
+        0.203755721,
+        0.16667366,
+        0.09156779,
+        0.0206651967,
+        0.0008928907,
+        4.998286E-05,
+        8.307956E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -10.0204926,
+      "y": 0.04092031,
+      "z": 4.03053951
+    },
+    "target_plane_position": {
+      "x": -10.0204935,
+      "y": 0.0,
+      "z": 4.030734
+    },
+    "cursor_angular_distance": 3.106586,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.434082,
+    "headData": {
+      "head_position": {
+        "x": -10.0079746,
+        "y": -0.0102426941,
+        "z": 2.044158
+      },
+      "head_rotation": {
+        "x": 359.9518,
+        "y": 6.655729,
+        "z": 1.80669522
+      },
+      "head_forward": {
+        "x": 0.115903258,
+        "y": 0.000840908033,
+        "z": 0.993260145
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.0079746,
+        "y": -0.0102426941,
+        "z": 2.044158
+      },
+      "direction": {
+        "x": 0.04630407,
+        "y": 0.0126612009,
+        "z": 0.9988472
+      },
+      "headDirection": {
+        "x": 0.115903258,
+        "y": 0.000840908033,
+        "z": 0.993260145
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 9.391219,
+      "maxDistance": 3.6365273,
+      "moveDistance": 0.15931958,
+      "newDistance": 0.0,
+      "ratio": 0.04381091,
+      "boost": 2.42435145,
+      "eye_origin": {
+        "x": -9.99574,
+        "y": -0.0112678576,
+        "z": 2.05145979
+      },
+      "eye_direction": {
+        "x": 0.0998288244,
+        "y": -0.043420624,
+        "z": 0.9940568
+      },
+      "eye_target_name": "MenuTarget_5",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.99574,
+        "y": -0.0112678576,
+        "z": 2.05145979
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.0998288,
+        "y": -0.04342062,
+        "z": 0.994056761
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.14508057,
+        "y": 2.95622683
+      },
+      "filteredEye": {
+        "x": 0.0426585637,
+        "y": -0.03217322,
+        "z": 0.9985716
+      },
+      "distances": [
+        8.21293449,
+        6.10425568,
+        4.19666052,
+        2.963194,
+        3.302627,
+        4.89737034,
+        6.918123,
+        9.068696
+      ],
+      "scores": [
+        0.101071171,
+        0.197643057,
+        0.16649349,
+        0.1010416,
+        0.0302294772,
+        0.001481882,
+        4.84833763E-05,
+        8.05871764E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.995598,
+      "y": 0.0409202352,
+      "z": 4.0439105
+    },
+    "target_plane_position": {
+      "x": -9.995597,
+      "y": 0.0,
+      "z": 4.04412
+    },
+    "cursor_angular_distance": 2.72354555,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.4519,
+    "headData": {
+      "head_position": {
+        "x": -10.00354,
+        "y": -0.0109873572,
+        "z": 2.057662
+      },
+      "head_rotation": {
+        "x": 359.66217,
+        "y": 7.23475,
+        "z": 1.90710747
+      },
+      "head_forward": {
+        "x": 0.125932753,
+        "y": 0.00589644769,
+        "z": 0.992021263
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -10.00354,
+        "y": -0.0109873572,
+        "z": 2.057662
+      },
+      "direction": {
+        "x": 0.049412813,
+        "y": 0.0121354237,
+        "z": 0.998704731
+      },
+      "headDirection": {
+        "x": 0.125932753,
+        "y": 0.00589644769,
+        "z": 0.992021263
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 11.145009,
+      "maxDistance": 4.0583024,
+      "moveDistance": 0.180831835,
+      "newDistance": 0.0,
+      "ratio": 0.04455849,
+      "boost": 2.705535,
+      "eye_origin": {
+        "x": -9.991232,
+        "y": -0.0119487951,
+        "z": 2.06484532
+      },
+      "eye_direction": {
+        "x": 0.10997238,
+        "y": -0.03839804,
+        "z": 0.9931927
+      },
+      "eye_target_name": "MenuTarget_5",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.991232,
+        "y": -0.0119487951,
+        "z": 2.06484532
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.109972395,
+        "y": -0.03839804,
+        "z": 0.9931927
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.00057983,
+        "y": 2.50647736
+      },
+      "filteredEye": {
+        "x": 0.0449483171,
+        "y": -0.0326252542,
+        "z": 0.9984564
+      },
+      "distances": [
+        8.132191,
+        5.974779,
+        3.97542381,
+        2.59434962,
+        2.93544984,
+        4.632062,
+        6.71545267,
+        8.902164
+      ],
+      "scores": [
+        0.09803904,
+        0.191713765,
+        0.167646155,
+        0.112444252,
+        0.0417098962,
+        0.00364505337,
+        4.7028876E-05,
+        7.81695633E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.9713,
+      "y": 0.0409201533,
+      "z": 4.05717754
+    },
+    "target_plane_position": {
+      "x": -9.971296,
+      "y": 0.0,
+      "z": 4.057402
+    },
+    "cursor_angular_distance": 2.39596224,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.467316,
+    "headData": {
+      "head_position": {
+        "x": -9.998798,
+        "y": -0.0115840556,
+        "z": 2.07104921
+      },
+      "head_rotation": {
+        "x": 359.420868,
+        "y": 7.74490166,
+        "z": 1.9322753
+      },
+      "head_forward": {
+        "x": 0.13475588,
+        "y": 0.0101076625,
+        "z": 0.990827262
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.998798,
+        "y": -0.0115840556,
+        "z": 2.07104921
+      },
+      "direction": {
+        "x": 0.05301525,
+        "y": 0.0118438518,
+        "z": 0.9985235
+      },
+      "headDirection": {
+        "x": 0.13475588,
+        "y": 0.0101076625,
+        "z": 0.990827262
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 11.7178612,
+      "maxDistance": 4.41654539,
+      "moveDistance": 0.207339615,
+      "newDistance": 0.0,
+      "ratio": 0.04694611,
+      "boost": 2.94436359,
+      "eye_origin": {
+        "x": -9.987988,
+        "y": -0.012096677,
+        "z": 2.07817245
+      },
+      "eye_direction": {
+        "x": 0.0966888443,
+        "y": 0.0336173438,
+        "z": 0.9947468
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.987988,
+        "y": -0.012096677,
+        "z": 2.07817245
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.09668885,
+        "y": 0.0336173438,
+        "z": 0.9947468
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -1.00057983,
+        "y": 2.50647926
+      },
+      "filteredEye": {
+        "x": 0.0475531965,
+        "y": -0.0328588746,
+        "z": 0.998328149
+      },
+      "distances": [
+        8.066697,
+        5.86989,
+        3.79214716,
+        2.264167,
+        2.614192,
+        4.41552544,
+        6.55463552,
+        8.771762
+      ],
+      "scores": [
+        0.09509787,
+        0.185962364,
+        0.1698639,
+        0.125485927,
+        0.05477345,
+        0.00704254862,
+        4.561801E-05,
+        7.58244767E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.94693851,
+      "y": 0.0409200862,
+      "z": 4.07013941
+    },
+    "target_plane_position": {
+      "x": -9.946933,
+      "y": 0.0,
+      "z": 4.0703764
+    },
+    "cursor_angular_distance": 2.105149,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.485,
+    "headData": {
+      "head_position": {
+        "x": -9.994162,
+        "y": -0.01245852,
+        "z": 2.0853126
+      },
+      "head_rotation": {
+        "x": 358.920746,
+        "y": 8.251184,
+        "z": 1.82880306
+      },
+      "head_forward": {
+        "x": 0.143487632,
+        "y": 0.01883521,
+        "z": 0.989472866
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.994162,
+        "y": -0.01245852,
+        "z": 2.0853126
+      },
+      "direction": {
+        "x": 0.05724242,
+        "y": 0.0117562069,
+        "z": 0.998291135
+      },
+      "headDirection": {
+        "x": 0.143487632,
+        "y": 0.01883521,
+        "z": 0.989472866
+      },
+      "target_name": "MenuTarget_1",
+      "eyeSpeed": 15.3264885,
+      "maxDistance": 4.70648527,
+      "moveDistance": 0.242616728,
+      "newDistance": 0.0,
+      "ratio": 0.05154945,
+      "boost": 3.137657,
+      "eye_origin": {
+        "x": -9.983285,
+        "y": -0.012914299,
+        "z": 2.09234357
+      },
+      "eye_direction": {
+        "x": 0.10546913,
+        "y": 0.0424021333,
+        "z": 0.9935182
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.983285,
+        "y": -0.012914299,
+        "z": 2.09234357
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.10546916,
+        "y": 0.0424021333,
+        "z": 0.9935182
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.145935,
+        "y": -1.420929
+      },
+      "filteredEye": {
+        "x": 0.0495251268,
+        "y": -0.0302037913,
+        "z": 0.99831605
+      },
+      "distances": [
+        8.010993,
+        5.783944,
+        3.64309025,
+        1.97823346,
+        2.34868741,
+        4.2516017,
+        6.437636,
+        8.678966
+      ],
+      "scores": [
+        0.09224494,
+        0.1803835,
+        0.172909439,
+        0.139851943,
+        0.06903812,
+        0.011321662,
+        4.424947E-05,
+        7.35497451E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.922985,
+      "y": 0.04091998,
+      "z": 4.083791
+    },
+    "target_plane_position": {
+      "x": -9.922976,
+      "y": 0.0,
+      "z": 4.08404541
+    },
+    "cursor_angular_distance": 1.8602531,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.504333,
+    "headData": {
+      "head_position": {
+        "x": -9.98994,
+        "y": -0.0140587222,
+        "z": 2.09989381
+      },
+      "head_rotation": {
+        "x": 358.4142,
+        "y": 8.744282,
+        "z": 1.63287
+      },
+      "head_forward": {
+        "x": 0.151966527,
+        "y": 0.027673658,
+        "z": 0.9879981
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.98994,
+        "y": -0.0140587222,
+        "z": 2.09989381
+      },
+      "direction": {
+        "x": 0.0622136,
+        "y": 0.0121656889,
+        "z": 0.99798876
+      },
+      "headDirection": {
+        "x": 0.151966527,
+        "y": 0.027673658,
+        "z": 0.9879981
+      },
+      "target_name": "MenuTarget_2",
+      "eyeSpeed": 16.6238461,
+      "maxDistance": 4.985309,
+      "moveDistance": 0.2863172,
+      "newDistance": 0.0,
+      "ratio": 0.0574321859,
+      "boost": 3.3235395,
+      "eye_origin": {
+        "x": -9.979844,
+        "y": -0.0144620808,
+        "z": 2.10703945
+      },
+      "eye_direction": {
+        "x": 0.114102267,
+        "y": 0.0451548547,
+        "z": 0.9924423
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.979844,
+        "y": -0.0144620808,
+        "z": 2.10703945
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.114102289,
+        "y": 0.0451548547,
+        "z": 0.9924423
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.145935,
+        "y": -1.420929
+      },
+      "filteredEye": {
+        "x": 0.05177127,
+        "y": -0.0273039714,
+        "z": 0.998285651
+      },
+      "distances": [
+        7.957098,
+        5.708117,
+        3.520143,
+        1.73911345,
+        2.14940262,
+        4.14411163,
+        6.366581,
+        8.626164
+      ],
+      "scores": [
+        0.08947759,
+        0.174972,
+        0.1766013,
+        0.1552217,
+        0.08407056,
+        0.0161173437,
+        4.29219872E-05,
+        7.13432541E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.899931,
+      "y": 0.0409197621,
+      "z": 4.097579
+    },
+    "target_plane_position": {
+      "x": -9.899918,
+      "y": 0.0,
+      "z": 4.09786654
+    },
+    "cursor_angular_distance": 1.68202484,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.51712,
+    "headData": {
+      "head_position": {
+        "x": -9.985444,
+        "y": -0.015952209,
+        "z": 2.11418915
+      },
+      "head_rotation": {
+        "x": 358.063354,
+        "y": 9.200426,
+        "z": 1.55387557
+      },
+      "head_forward": {
+        "x": 0.1597972,
+        "y": 0.03379465,
+        "z": 0.9865712
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.985444,
+        "y": -0.015952209,
+        "z": 2.11418915
+      },
+      "direction": {
+        "x": 0.0679799,
+        "y": 0.0131623782,
+        "z": 0.9975999
+      },
+      "headDirection": {
+        "x": 0.1597972,
+        "y": 0.03379465,
+        "z": 0.9865712
+      },
+      "target_name": "MenuTarget_2",
+      "eyeSpeed": 17.7092857,
+      "maxDistance": 5.25176764,
+      "moveDistance": 0.3360263,
+      "newDistance": 0.0,
+      "ratio": 0.06398347,
+      "boost": 3.5011785,
+      "eye_origin": {
+        "x": -9.975292,
+        "y": -0.0163150951,
+        "z": 2.121257
+      },
+      "eye_direction": {
+        "x": 0.121975996,
+        "y": 0.05131967,
+        "z": 0.9912054
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.975292,
+        "y": -0.0163150951,
+        "z": 2.121257
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.121976033,
+        "y": 0.0513196737,
+        "z": 0.9912054
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.154358,
+        "y": -1.06524658
+      },
+      "filteredEye": {
+        "x": 0.0542740636,
+        "y": -0.0244099125,
+        "z": 0.998227656
+      },
+      "distances": [
+        7.908772,
+        5.64503765,
+        3.42445517,
+        1.55280387,
+        2.01479721,
+        4.08240652,
+        6.33091068,
+        8.602932
+      ],
+      "scores": [
+        0.0867932662,
+        0.16972284,
+        0.180756539,
+        0.171248227,
+        0.09945967,
+        0.0211393852,
+        4.163433E-05,
+        6.920296E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.876848,
+      "y": 0.04091947,
+      "z": 4.110912
+    },
+    "target_plane_position": {
+      "x": -9.87683,
+      "y": 0.0,
+      "z": 4.11123753
+    },
+    "cursor_angular_distance": 1.52726245,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.535126,
+    "headData": {
+      "head_position": {
+        "x": -9.981607,
+        "y": -0.0185332112,
+        "z": 2.12851834
+      },
+      "head_rotation": {
+        "x": 357.794159,
+        "y": 9.591386,
+        "z": 1.44149816
+      },
+      "head_forward": {
+        "x": 0.166497052,
+        "y": 0.0384895,
+        "z": 0.985290468
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.981607,
+        "y": -0.0185332112,
+        "z": 2.12851834
+      },
+      "direction": {
+        "x": 0.07454994,
+        "y": 0.0146381045,
+        "z": 0.9971099
+      },
+      "headDirection": {
+        "x": 0.166497052,
+        "y": 0.0384895,
+        "z": 0.985290468
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 27.3215981,
+      "maxDistance": 5.430871,
+      "moveDistance": 0.386838257,
+      "newDistance": 0.0,
+      "ratio": 0.0712295,
+      "boost": 3.62058067,
+      "eye_origin": {
+        "x": -9.971899,
+        "y": -0.0189204738,
+        "z": 2.135634
+      },
+      "eye_direction": {
+        "x": 0.127493948,
+        "y": 0.0418497,
+        "z": 0.990956
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.971899,
+        "y": -0.0189204738,
+        "z": 2.135634
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.127493918,
+        "y": 0.0418497026,
+        "z": 0.990956068
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.154358,
+        "y": -1.06524658
+      },
+      "filteredEye": {
+        "x": 0.0569934919,
+        "y": -0.0213849861,
+        "z": 0.9981455
+      },
+      "distances": [
+        7.85445452,
+        5.58110666,
+        3.33923721,
+        1.40569556,
+        1.940679,
+        4.063848,
+        6.3301053,
+        8.610577
+      ],
+      "scores": [
+        0.08418947,
+        0.164631158,
+        0.185298413,
+        0.187676609,
+        0.114831813,
+        0.0261221174,
+        4.03853E-05,
+        6.712687E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.855125,
+      "y": 0.0409190133,
+      "z": 4.124135
+    },
+    "target_plane_position": {
+      "x": -9.855102,
+      "y": 0.0,
+      "z": 4.12451363
+    },
+    "cursor_angular_distance": 1.41277742,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.5514,
+    "headData": {
+      "head_position": {
+        "x": -9.977694,
+        "y": -0.0204348955,
+        "z": 2.14304686
+      },
+      "head_rotation": {
+        "x": 357.648956,
+        "y": 9.873037,
+        "z": 1.38296223
+      },
+      "head_forward": {
+        "x": 0.1713212,
+        "y": 0.04102198,
+        "z": 0.9843608
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.977694,
+        "y": -0.0204348955,
+        "z": 2.14304686
+      },
+      "direction": {
+        "x": 0.0817019045,
+        "y": 0.016491808,
+        "z": 0.9965204
+      },
+      "headDirection": {
+        "x": 0.1713212,
+        "y": 0.04102198,
+        "z": 0.9843608
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.4086971,
+      "maxDistance": 5.48658752,
+      "moveDistance": 0.42466405,
+      "newDistance": 0.0,
+      "ratio": 0.0774003938,
+      "boost": 3.657725,
+      "eye_origin": {
+        "x": -9.968392,
+        "y": -0.0207643975,
+        "z": 2.15049481
+      },
+      "eye_direction": {
+        "x": 0.131710246,
+        "y": 0.0444619171,
+        "z": 0.990290642
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.968392,
+        "y": -0.0207643975,
+        "z": 2.15049481
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.131710261,
+        "y": 0.0444619171,
+        "z": 0.990290642
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.25256348,
+        "y": -0.25112915
+      },
+      "filteredEye": {
+        "x": 0.0598238744,
+        "y": -0.018858863,
+        "z": 0.9980308
+      },
+      "distances": [
+        7.808011,
+        5.529071,
+        3.27434826,
+        1.30326259,
+        1.90803325,
+        4.066979,
+        6.34399748,
+        8.62942
+      ],
+      "scores": [
+        0.08166379,
+        0.159692228,
+        0.190093368,
+        0.204226732,
+        0.129938662,
+        0.03093658,
+        3.91737449E-05,
+        6.511307E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.834077,
+      "y": 0.0409186371,
+      "z": 4.13746452
+    },
+    "target_plane_position": {
+      "x": -9.834047,
+      "y": 0.0,
+      "z": 4.13788176
+    },
+    "cursor_angular_distance": 1.32795393,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.567566,
+    "headData": {
+      "head_position": {
+        "x": -9.97403049,
+        "y": -0.0228144657,
+        "z": 2.15803075
+      },
+      "head_rotation": {
+        "x": 357.3806,
+        "y": 10.1062078,
+        "z": 1.38780713
+      },
+      "head_forward": {
+        "x": 0.175290063,
+        "y": 0.04570076,
+        "z": 0.983455539
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.97403049,
+        "y": -0.0228144657,
+        "z": 2.15803075
+      },
+      "direction": {
+        "x": 0.08926726,
+        "y": 0.0185605772,
+        "z": 0.995834768
+      },
+      "headDirection": {
+        "x": 0.175290063,
+        "y": 0.04570076,
+        "z": 0.983455539
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 27.4510689,
+      "maxDistance": 5.371041,
+      "moveDistance": 0.4510954,
+      "newDistance": 0.0,
+      "ratio": 0.08398659,
+      "boost": 3.580694,
+      "eye_origin": {
+        "x": -9.962661,
+        "y": -0.023195697,
+        "z": 2.16478467
+      },
+      "eye_direction": {
+        "x": 0.133029744,
+        "y": 0.0502315052,
+        "z": 0.9898383
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.962661,
+        "y": -0.023195697,
+        "z": 2.16478467
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.133029714,
+        "y": 0.0502315052,
+        "z": 0.9898383
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.28933716,
+        "y": -0.254486084
+      },
+      "filteredEye": {
+        "x": 0.06271046,
+        "y": -0.0163289271,
+        "z": 0.997898161
+      },
+      "distances": [
+        7.73690128,
+        5.455353,
+        3.19561434,
+        1.21996975,
+        1.93148017,
+        4.114565,
+        6.397979,
+        8.686159
+      ],
+      "scores": [
+        0.07921387,
+        0.15490146,
+        0.1952169,
+        0.220780119,
+        0.144451618,
+        0.0353210941,
+        3.79985322E-05,
+        6.315968E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.813816,
+      "y": 0.0409181081,
+      "z": 4.151135
+    },
+    "target_plane_position": {
+      "x": -9.813779,
+      "y": 0.0,
+      "z": 4.15160036
+    },
+    "cursor_angular_distance": 1.2757957,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.584442,
+    "headData": {
+      "head_position": {
+        "x": -9.970086,
+        "y": -0.0254777651,
+        "z": 2.17297173
+      },
+      "head_rotation": {
+        "x": 357.3487,
+        "y": 10.3156042,
+        "z": 1.4515729
+      },
+      "head_forward": {
+        "x": 0.1788785,
+        "y": 0.0462577343,
+        "z": 0.982783139
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.970086,
+        "y": -0.0254777651,
+        "z": 2.17297173
+      },
+      "direction": {
+        "x": 0.09716704,
+        "y": 0.0210496467,
+        "z": 0.9950455
+      },
+      "headDirection": {
+        "x": 0.1788785,
+        "y": 0.0462577343,
+        "z": 0.982783139
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 28.39476,
+      "maxDistance": 5.218456,
+      "moveDistance": 0.476711065,
+      "newDistance": 0.0,
+      "ratio": 0.09135098,
+      "boost": 3.47897053,
+      "eye_origin": {
+        "x": -9.958691,
+        "y": -0.0258431491,
+        "z": 2.1796844
+      },
+      "eye_direction": {
+        "x": 0.136636645,
+        "y": 0.0507403128,
+        "z": 0.989320934
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.958691,
+        "y": -0.0258431491,
+        "z": 2.1796844
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.136636615,
+        "y": 0.0507403128,
+        "z": 0.989320934
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.44165039,
+        "y": -0.3215027
+      },
+      "filteredEye": {
+        "x": 0.0655351058,
+        "y": -0.0136689851,
+        "z": 0.9977566
+      },
+      "distances": [
+        7.66008949,
+        5.37796831,
+        3.11772013,
+        1.16011548,
+        1.98425925,
+        4.181607,
+        6.468084,
+        8.757597
+      ],
+      "scores": [
+        0.07683746,
+        0.150254413,
+        0.200654075,
+        0.237196028,
+        0.158212528,
+        0.0391718224,
+        3.685858E-05,
+        6.126489E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.794005,
+      "y": 0.0409174524,
+      "z": 4.164682
+    },
+    "target_plane_position": {
+      "x": -9.79396,
+      "y": 0.0,
+      "z": 4.165201
+    },
+    "cursor_angular_distance": 1.23859465,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.6015,
+    "headData": {
+      "head_position": {
+        "x": -9.966281,
+        "y": -0.0277210847,
+        "z": 2.18803835
+      },
+      "head_rotation": {
+        "x": 357.267578,
+        "y": 10.5066786,
+        "z": 1.54771018
+      },
+      "head_forward": {
+        "x": 0.1821428,
+        "y": 0.0476719365,
+        "z": 0.982115746
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.966281,
+        "y": -0.0277210847,
+        "z": 2.18803835
+      },
+      "direction": {
+        "x": 0.105316348,
+        "y": 0.02356074,
+        "z": 0.994159639
+      },
+      "headDirection": {
+        "x": 0.1821428,
+        "y": 0.0476719365,
+        "z": 0.982115746
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 28.82221,
+      "maxDistance": 4.95108032,
+      "moveDistance": 0.491216034,
+      "newDistance": 0.0,
+      "ratio": 0.0992139056,
+      "boost": 3.30072021,
+      "eye_origin": {
+        "x": -9.95538,
+        "y": -0.0281003248,
+        "z": 2.19482017
+      },
+      "eye_direction": {
+        "x": 0.136748314,
+        "y": 0.0499892756,
+        "z": 0.989343762
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.95538,
+        "y": -0.0281003248,
+        "z": 2.19482017
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.136748359,
+        "y": 0.0499892756,
+        "z": 0.9893437
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.44165039,
+        "y": -0.3215027
+      },
+      "filteredEye": {
+        "x": 0.06839135,
+        "y": -0.0110945879,
+        "z": 0.99759686
+      },
+      "distances": [
+        7.594607,
+        5.31396961,
+        3.05780673,
+        1.13728821,
+        2.04985023,
+        4.25035763,
+        6.53687048,
+        8.826169
+      ],
+      "scores": [
+        0.07453234,
+        0.145746782,
+        0.206287608,
+        0.25325644,
+        0.171167046,
+        0.04249452,
+        3.57528224E-05,
+        5.942694E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.775262,
+      "y": 0.04091684,
+      "z": 4.17832565
+    },
+    "target_plane_position": {
+      "x": -9.77520752,
+      "y": 0.0,
+      "z": 4.17889
+    },
+    "cursor_angular_distance": 1.211923,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.619,
+    "headData": {
+      "head_position": {
+        "x": -9.962985,
+        "y": -0.029109,
+        "z": 2.20292354
+      },
+      "head_rotation": {
+        "x": 357.508118,
+        "y": 10.6534691,
+        "z": 1.6886313
+      },
+      "head_forward": {
+        "x": 0.184693739,
+        "y": 0.0434779935,
+        "z": 0.981833935
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.962985,
+        "y": -0.029109,
+        "z": 2.20292354
+      },
+      "direction": {
+        "x": 0.113554776,
+        "y": 0.0261432845,
+        "z": 0.993187666
+      },
+      "headDirection": {
+        "x": 0.184693739,
+        "y": 0.0434779935,
+        "z": 0.981833935
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 30.3752289,
+      "maxDistance": 4.6661067,
+      "moveDistance": 0.497802526,
+      "newDistance": 0.0,
+      "ratio": 0.106684774,
+      "boost": 3.1107378,
+      "eye_origin": {
+        "x": -9.952062,
+        "y": -0.0295012,
+        "z": 2.20967364
+      },
+      "eye_direction": {
+        "x": 0.139315128,
+        "y": 0.04568733,
+        "z": 0.9891936
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.952062,
+        "y": -0.0295012,
+        "z": 2.20967364
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.139315113,
+        "y": 0.04568733,
+        "z": 0.9891936
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.62911987,
+        "y": -0.206878662
+      },
+      "filteredEye": {
+        "x": 0.0711372048,
+        "y": -0.00865264,
+        "z": 0.997429
+      },
+      "distances": [
+        7.51749945,
+        5.240338,
+        2.994279,
+        1.1403811,
+        2.144936,
+        4.342486,
+        6.62655354,
+        8.91447
+      ],
+      "scores": [
+        0.0722963661,
+        0.141374379,
+        0.212133318,
+        0.268816471,
+        0.183162436,
+        0.0451647677,
+        3.46802371E-05,
+        5.764413E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.757938,
+      "y": 0.04091644,
+      "z": 4.19178629
+    },
+    "target_plane_position": {
+      "x": -9.757877,
+      "y": 0.0,
+      "z": 4.19237852
+    },
+    "cursor_angular_distance": 1.22780418,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.6366,
+    "headData": {
+      "head_position": {
+        "x": -9.959443,
+        "y": -0.0292227753,
+        "z": 2.21834
+      },
+      "head_rotation": {
+        "x": 357.617676,
+        "y": 10.8264875,
+        "z": 1.79003167
+      },
+      "head_forward": {
+        "x": 0.187673062,
+        "y": 0.0415674075,
+        "z": 0.9813516
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.959443,
+        "y": -0.0292227753,
+        "z": 2.21834
+      },
+      "direction": {
+        "x": 0.121586591,
+        "y": 0.02810001,
+        "z": 0.9921829
+      },
+      "headDirection": {
+        "x": 0.187673062,
+        "y": 0.0415674075,
+        "z": 0.9813516
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 26.3727074,
+      "maxDistance": 4.246347,
+      "moveDistance": 0.477135837,
+      "newDistance": 0.0,
+      "ratio": 0.112363838,
+      "boost": 2.830898,
+      "eye_origin": {
+        "x": -9.947946,
+        "y": -0.0296534989,
+        "z": 2.224958
+      },
+      "eye_direction": {
+        "x": 0.140163153,
+        "y": 0.040628098,
+        "z": 0.9892945
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.947946,
+        "y": -0.0296534989,
+        "z": 2.224958
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.140163124,
+        "y": 0.0406280942,
+        "z": 0.9892945
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.62911987,
+        "y": -0.206878662
+      },
+      "filteredEye": {
+        "x": 0.0738752037,
+        "y": -0.00647999439,
+        "z": 0.997246444
+      },
+      "distances": [
+        7.45419359,
+        5.181529,
+        2.94809318,
+        1.16851878,
+        2.23747158,
+        4.427221,
+        6.70756245,
+        8.993375
+      ],
+      "scores": [
+        0.07012748,
+        0.137133151,
+        0.218080774,
+        0.283740878,
+        0.194242746,
+        0.0472465,
+        3.363983E-05,
+        5.591481E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.741579,
+      "y": 0.0409164056,
+      "z": 4.20583725
+    },
+    "target_plane_position": {
+      "x": -9.741514,
+      "y": 0.0,
+      "z": 4.20643139
+    },
+    "cursor_angular_distance": 1.28466117,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.652832,
+    "headData": {
+      "head_position": {
+        "x": -9.956233,
+        "y": -0.0313366354,
+        "z": 2.23338938
+      },
+      "head_rotation": {
+        "x": 357.697235,
+        "y": 10.89705,
+        "z": 1.92886424
+      },
+      "head_forward": {
+        "x": 0.18889223,
+        "y": 0.04017987,
+        "z": 0.9811755
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.956233,
+        "y": -0.0313366354,
+        "z": 2.23338938
+      },
+      "direction": {
+        "x": 0.129386261,
+        "y": 0.0296902657,
+        "z": 0.9911496
+      },
+      "headDirection": {
+        "x": 0.18889223,
+        "y": 0.04017987,
+        "z": 0.9811755
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 27.2233276,
+      "maxDistance": 3.91451645,
+      "moveDistance": 0.459909767,
+      "newDistance": 0.0,
+      "ratio": 0.117488272,
+      "boost": 2.60967755,
+      "eye_origin": {
+        "x": -9.944725,
+        "y": -0.0317550264,
+        "z": 2.239991
+      },
+      "eye_direction": {
+        "x": 0.141395,
+        "y": 0.0391255058,
+        "z": 0.9891798
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.944725,
+        "y": -0.0317550264,
+        "z": 2.239991
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.141394973,
+        "y": 0.0391255058,
+        "z": 0.9891798
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.76046753,
+        "y": -0.0351257324
+      },
+      "filteredEye": {
+        "x": 0.07653653,
+        "y": -0.00459625851,
+        "z": 0.9970562
+      },
+      "distances": [
+        7.37977552,
+        5.113892,
+        2.89874268,
+        1.22061121,
+        2.35443044,
+        4.53306532,
+        6.8079505,
+        9.090835
+      ],
+      "scores": [
+        0.06802366,
+        0.133019164,
+        0.2241459,
+        0.297904968,
+        0.204288885,
+        0.0486307144,
+        3.26306363E-05,
+        5.42373641E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.726382,
+      "y": 0.04091575,
+      "z": 4.219492
+    },
+    "target_plane_position": {
+      "x": -9.726309,
+      "y": 0.0,
+      "z": 4.220129
+    },
+    "cursor_angular_distance": 1.34987712,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.6693,
+    "headData": {
+      "head_position": {
+        "x": -9.952743,
+        "y": -0.03247441,
+        "z": 2.2484355
+      },
+      "head_rotation": {
+        "x": 357.99585,
+        "y": 10.93687,
+        "z": 2.009196
+      },
+      "head_forward": {
+        "x": 0.189611241,
+        "y": 0.03497181,
+        "z": 0.9812362
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.952743,
+        "y": -0.03247441,
+        "z": 2.2484355
+      },
+      "direction": {
+        "x": 0.136643767,
+        "y": 0.0309709832,
+        "z": 0.9901359
+      },
+      "headDirection": {
+        "x": 0.189611241,
+        "y": 0.03497181,
+        "z": 0.9812362
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.92868,
+      "maxDistance": 3.50939155,
+      "moveDistance": 0.426225632,
+      "newDistance": 0.0,
+      "ratio": 0.121452861,
+      "boost": 2.33959436,
+      "eye_origin": {
+        "x": -9.942224,
+        "y": -0.0329785421,
+        "z": 2.25520253
+      },
+      "eye_direction": {
+        "x": 0.135761738,
+        "y": 0.0233766884,
+        "z": 0.99046576
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.942224,
+        "y": -0.0329785421,
+        "z": 2.25520253
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.135761768,
+        "y": 0.0233766884,
+        "z": 0.9904657
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.76046753,
+        "y": -0.0351257324
+      },
+      "filteredEye": {
+        "x": 0.07914025,
+        "y": -0.00284772483,
+        "z": 0.996859431
+      },
+      "distances": [
+        7.3790307,
+        5.11875534,
+        2.91805983,
+        1.28952634,
+        2.40338469,
+        4.56523,
+        6.833715,
+        9.113329
+      ],
+      "scores": [
+        0.06598295,
+        0.129028589,
+        0.229913175,
+        0.311230659,
+        0.213739917,
+        0.0497804135,
+        3.1651718E-05,
+        5.2610244E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.71165848,
+      "y": 0.0409153774,
+      "z": 4.233183
+    },
+    "target_plane_position": {
+      "x": -9.711578,
+      "y": 0.0,
+      "z": 4.23384237
+    },
+    "cursor_angular_distance": 1.41194618,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.685455,
+    "headData": {
+      "head_position": {
+        "x": -9.949001,
+        "y": -0.0340191722,
+        "z": 2.26361942
+      },
+      "head_rotation": {
+        "x": 358.092346,
+        "y": 11.0745258,
+        "z": 2.12088752
+      },
+      "head_forward": {
+        "x": 0.191979215,
+        "y": 0.0332888849,
+        "z": 0.980834246
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.949001,
+        "y": -0.0340191722,
+        "z": 2.26361942
+      },
+      "direction": {
+        "x": 0.143204764,
+        "y": 0.0314698,
+        "z": 0.9891925
+      },
+      "headDirection": {
+        "x": 0.191979215,
+        "y": 0.0332888849,
+        "z": 0.980834246
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 23.30222,
+      "maxDistance": 3.08622813,
+      "moveDistance": 0.380866259,
+      "newDistance": 0.0,
+      "ratio": 0.123408332,
+      "boost": 2.05748534,
+      "eye_origin": {
+        "x": -9.938468,
+        "y": -0.0345204324,
+        "z": 2.27035975
+      },
+      "eye_direction": {
+        "x": 0.1381712,
+        "y": 0.0215893276,
+        "z": 0.990173042
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.938468,
+        "y": -0.0345204324,
+        "z": 2.27035975
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.1381712,
+        "y": 0.0215893276,
+        "z": 0.990173042
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.152649,
+        "y": 0.5515083
+      },
+      "filteredEye": {
+        "x": 0.0814112648,
+        "y": -0.00179888355,
+        "z": 0.996679
+      },
+      "distances": [
+        7.39252663,
+        5.13644743,
+        2.94590116,
+        1.344648,
+        2.42946625,
+        4.576971,
+        6.84019852,
+        9.117144
+      ],
+      "scores": [
+        0.06400347,
+        0.125157729,
+        0.235340372,
+        0.323825866,
+        0.222750932,
+        0.05082518,
+        3.070217E-05,
+        5.103194E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.696975,
+      "y": 0.0409148522,
+      "z": 4.246975
+    },
+    "target_plane_position": {
+      "x": -9.696887,
+      "y": 0.0,
+      "z": 4.24766541
+    },
+    "cursor_angular_distance": 1.44333589,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.702362,
+    "headData": {
+      "head_position": {
+        "x": -9.944964,
+        "y": -0.0324789658,
+        "z": 2.278315
+      },
+      "head_rotation": {
+        "x": 358.5692,
+        "y": 11.12985,
+        "z": 2.299575
+      },
+      "head_forward": {
+        "x": 0.192973018,
+        "y": 0.0249691065,
+        "z": 0.98088634
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.944964,
+        "y": -0.0324789658,
+        "z": 2.278315
+      },
+      "direction": {
+        "x": 0.149323866,
+        "y": 0.0317015238,
+        "z": 0.9882799
+      },
+      "headDirection": {
+        "x": 0.192973018,
+        "y": 0.0249691065,
+        "z": 0.98088634
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 22.3954639,
+      "maxDistance": 2.837453,
+      "moveDistance": 0.354724318,
+      "newDistance": 0.0,
+      "ratio": 0.12501505,
+      "boost": 1.8916353,
+      "eye_origin": {
+        "x": -9.934447,
+        "y": -0.03305537,
+        "z": 2.28505349
+      },
+      "eye_direction": {
+        "x": 0.128901392,
+        "y": 0.009152978,
+        "z": 0.9916152
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.934447,
+        "y": -0.03305537,
+        "z": 2.28505349
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.1289014,
+        "y": 0.009152978,
+        "z": 0.9916152
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.152649,
+        "y": 0.5515081
+      },
+      "filteredEye": {
+        "x": 0.0836877748,
+        "y": -0.00086341775,
+        "z": 0.9964917
+      },
+      "distances": [
+        7.429699,
+        5.17615652,
+        2.990812,
+        1.38903046,
+        2.42462778,
+        4.55853128,
+        6.81727839,
+        9.092044
+      ],
+      "scores": [
+        0.0620833635,
+        0.121403,
+        0.2403353,
+        0.335776925,
+        0.231520653,
+        0.0519492365,
+        2.97811057E-05,
+        4.95009829E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.682524,
+      "y": 0.0409153774,
+      "z": 4.26035166
+    },
+    "target_plane_position": {
+      "x": -9.682437,
+      "y": 0.0,
+      "z": 4.26101
+    },
+    "cursor_angular_distance": 1.48318934,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.717316,
+    "headData": {
+      "head_position": {
+        "x": -9.940152,
+        "y": -0.0321268924,
+        "z": 2.29394865
+      },
+      "head_rotation": {
+        "x": 358.4184,
+        "y": 11.3743591,
+        "z": 2.38918447
+      },
+      "head_forward": {
+        "x": 0.197143525,
+        "y": 0.0276006758,
+        "z": 0.979986
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.940152,
+        "y": -0.0321268924,
+        "z": 2.29394865
+      },
+      "direction": {
+        "x": 0.154783517,
+        "y": 0.0308654234,
+        "z": 0.987466037
+      },
+      "headDirection": {
+        "x": 0.197143525,
+        "y": 0.0276006758,
+        "z": 0.979986
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 18.3833179,
+      "maxDistance": 2.56582451,
+      "moveDistance": 0.3198793,
+      "newDistance": 0.0,
+      "ratio": 0.1246692,
+      "boost": 1.71054971,
+      "eye_origin": {
+        "x": -9.92969,
+        "y": -0.03290038,
+        "z": 2.30039716
+      },
+      "eye_direction": {
+        "x": 0.134294987,
+        "y": 0.0126888845,
+        "z": 0.990860164
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.92969,
+        "y": -0.03290038,
+        "z": 2.30039716
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.134294987,
+        "y": 0.0126888836,
+        "z": 0.990860164
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.75692749,
+        "y": 0.753287
+      },
+      "filteredEye": {
+        "x": 0.0854998752,
+        "y": -0.000462781,
+        "z": 0.996338069
+      },
+      "distances": [
+        7.436431,
+        5.184024,
+        3.00139666,
+        1.40527785,
+        2.43035245,
+        4.55964851,
+        6.81673145,
+        9.090683
+      ],
+      "scores": [
+        0.0602208637,
+        0.117760912,
+        0.245116875,
+        0.347271949,
+        0.239992931,
+        0.05303287,
+        2.88876727E-05,
+        4.80159542E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.667287,
+      "y": 0.0409154929,
+      "z": 4.27458429
+    },
+    "target_plane_position": {
+      "x": -9.667197,
+      "y": 0.0,
+      "z": 4.275235
+    },
+    "cursor_angular_distance": 1.48411274,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.735016,
+    "headData": {
+      "head_position": {
+        "x": -9.93564,
+        "y": -0.03146953,
+        "z": 2.3077848
+      },
+      "head_rotation": {
+        "x": 358.774658,
+        "y": 11.7033281,
+        "z": 2.22893167
+      },
+      "head_forward": {
+        "x": 0.202797785,
+        "y": 0.0213848315,
+        "z": 0.9789871
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.93564,
+        "y": -0.03146953,
+        "z": 2.3077848
+      },
+      "direction": {
+        "x": 0.160055563,
+        "y": 0.0304634254,
+        "z": 0.9866377
+      },
+      "headDirection": {
+        "x": 0.202797785,
+        "y": 0.0213848315,
+        "z": 0.9789871
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 19.191803,
+      "maxDistance": 2.471797,
+      "moveDistance": 0.306638032,
+      "newDistance": 0.0,
+      "ratio": 0.1240547,
+      "boost": 1.6478647,
+      "eye_origin": {
+        "x": -9.925141,
+        "y": -0.0321078077,
+        "z": 2.314448
+      },
+      "eye_direction": {
+        "x": 0.135510057,
+        "y": 0.00452626124,
+        "z": 0.9907657
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.925141,
+        "y": -0.0321078077,
+        "z": 2.314448
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.135510087,
+        "y": 0.00452626124,
+        "z": 0.990765631
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.68823242,
+        "y": 0.6983048
+      },
+      "filteredEye": {
+        "x": 0.0874560252,
+        "y": 6.328906E-05,
+        "z": 0.9961684
+      },
+      "distances": [
+        7.44995451,
+        5.197764,
+        3.01499748,
+        1.41277742,
+        2.42228532,
+        4.54868126,
+        6.804954,
+        9.078548
+      ],
+      "scores": [
+        0.05841424,
+        0.114228085,
+        0.2496734,
+        0.358377129,
+        0.24825944,
+        0.0541498,
+        2.80210425E-05,
+        4.65754766E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.65241051,
+      "y": 0.0409157053,
+      "z": 4.286978
+    },
+    "target_plane_position": {
+      "x": -9.652319,
+      "y": 0.0,
+      "z": 4.2876153
+    },
+    "cursor_angular_distance": 1.47432292,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.7529,
+    "headData": {
+      "head_position": {
+        "x": -9.930153,
+        "y": -0.02284102,
+        "z": 2.32398963
+      },
+      "head_rotation": {
+        "x": 358.9623,
+        "y": 12.158206,
+        "z": 1.86529779
+      },
+      "head_forward": {
+        "x": 0.21057722,
+        "y": 0.0181102268,
+        "z": 0.9774095
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.930153,
+        "y": -0.02284102,
+        "z": 2.32398963
+      },
+      "direction": {
+        "x": 0.165313721,
+        "y": 0.0293533988,
+        "z": 0.985804
+      },
+      "headDirection": {
+        "x": 0.21057722,
+        "y": 0.0181102268,
+        "z": 0.9774095
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 19.1263885,
+      "maxDistance": 2.541835,
+      "moveDistance": 0.311593771,
+      "newDistance": 0.0,
+      "ratio": 0.122586146,
+      "boost": 1.69455671,
+      "eye_origin": {
+        "x": -9.919606,
+        "y": -0.0235642325,
+        "z": 2.33056927
+      },
+      "eye_direction": {
+        "x": 0.143268973,
+        "y": 0.00169227528,
+        "z": 0.9896824
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.919606,
+        "y": -0.0235642325,
+        "z": 2.33056927
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.143268958,
+        "y": 0.0016922754,
+        "z": 0.9896824
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.95007324,
+        "y": 0.810261965
+      },
+      "filteredEye": {
+        "x": 0.08938223,
+        "y": 0.000241819,
+        "z": 0.995997369
+      },
+      "distances": [
+        7.49504232,
+        5.242357,
+        3.0573585,
+        1.4295764,
+        2.388435,
+        4.507543,
+        6.76213455,
+        9.035094
+      ],
+      "scores": [
+        0.0566618145,
+        0.110801242,
+        0.253839046,
+        0.369048357,
+        0.256481051,
+        0.0554800481,
+        2.71804129E-05,
+        4.51782142E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.636286,
+      "y": 0.0409181044,
+      "z": 4.30181026
+    },
+    "target_plane_position": {
+      "x": -9.636217,
+      "y": 0.0,
+      "z": 4.30227232
+    },
+    "cursor_angular_distance": 1.52032745,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.770966,
+    "headData": {
+      "head_position": {
+        "x": -9.92447948,
+        "y": -0.0260512,
+        "z": 2.33858633
+      },
+      "head_rotation": {
+        "x": 358.4107,
+        "y": 12.8721294,
+        "z": 1.48019516
+      },
+      "head_forward": {
+        "x": 0.22269024,
+        "y": 0.027734695,
+        "z": 0.974494636
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.92447948,
+        "y": -0.0260512,
+        "z": 2.33858633
+      },
+      "direction": {
+        "x": 0.1707682,
+        "y": 0.0280068982,
+        "z": 0.984913051
+      },
+      "headDirection": {
+        "x": 0.22269024,
+        "y": 0.027734695,
+        "z": 0.974494636
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 17.9175186,
+      "maxDistance": 2.71534,
+      "moveDistance": 0.3259234,
+      "newDistance": 0.0,
+      "ratio": 0.120030425,
+      "boost": 1.81022656,
+      "eye_origin": {
+        "x": -9.914387,
+        "y": -0.0267556254,
+        "z": 2.34517956
+      },
+      "eye_direction": {
+        "x": 0.160159484,
+        "y": 0.009464454,
+        "z": 0.987045765
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.914387,
+        "y": -0.0267556254,
+        "z": 2.34517956
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.160159454,
+        "y": 0.009464455,
+        "z": 0.9870458
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.95007324,
+        "y": 0.810261965
+      },
+      "filteredEye": {
+        "x": 0.0915428847,
+        "y": 0.000299854262,
+        "z": 0.9958011
+      },
+      "distances": [
+        7.33034372,
+        5.08153,
+        2.911209,
+        1.40235043,
+        2.5344317,
+        4.672693,
+        6.93081331,
+        9.204962
+      ],
+      "scores": [
+        0.05496196,
+        0.10747721,
+        0.258756638,
+        0.379562825,
+        0.263580024,
+        0.05577949,
+        2.63650018E-05,
+        4.38228682E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.619971,
+      "y": 0.0409173,
+      "z": 4.31472969
+    },
+    "target_plane_position": {
+      "x": -9.61989,
+      "y": 0.0,
+      "z": 4.3152566
+    },
+    "cursor_angular_distance": 1.54535043,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.7858,
+    "headData": {
+      "head_position": {
+        "x": -9.91960049,
+        "y": -0.0251234174,
+        "z": 2.35170341
+      },
+      "head_rotation": {
+        "x": 359.579376,
+        "y": 13.3151426,
+        "z": 1.46147132
+      },
+      "head_forward": {
+        "x": 0.230300725,
+        "y": 0.007340962,
+        "z": 0.973091841
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.91960049,
+        "y": -0.0251234174,
+        "z": 2.35170341
+      },
+      "direction": {
+        "x": 0.176926538,
+        "y": 0.0279788356,
+        "z": 0.9838262
+      },
+      "headDirection": {
+        "x": 0.230300725,
+        "y": 0.007340962,
+        "z": 0.973091841
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 20.6459732,
+      "maxDistance": 3.0345428,
+      "moveDistance": 0.358303338,
+      "newDistance": 0.0,
+      "ratio": 0.1180749,
+      "boost": 2.02302861,
+      "eye_origin": {
+        "x": -9.90946,
+        "y": -0.0260073524,
+        "z": 2.35820317
+      },
+      "eye_direction": {
+        "x": 0.16777724,
+        "y": -0.0108700562,
+        "z": 0.985765
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.90946,
+        "y": -0.0260073524,
+        "z": 2.35820317
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.16777724,
+        "y": -0.0108700572,
+        "z": 0.98576504
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.68170166,
+        "y": 0.949047565
+      },
+      "filteredEye": {
+        "x": 0.094296366,
+        "y": 0.0006665007,
+        "z": 0.995543957
+      },
+      "distances": [
+        7.431416,
+        5.184969,
+        3.01700974,
+        1.46833777,
+        2.48506474,
+        4.59866047,
+        6.84933949,
+        9.12001
+      ],
+      "scores": [
+        0.0533131026,
+        0.1042529,
+        0.2628919,
+        0.389365941,
+        0.270762235,
+        0.0565141477,
+        2.55740524E-05,
+        4.25081822E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.604507,
+      "y": 0.04091754,
+      "z": 4.326206
+    },
+    "target_plane_position": {
+      "x": -9.604426,
+      "y": 0.0,
+      "z": 4.32671356
+    },
+    "cursor_angular_distance": 1.60875988,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.802368,
+    "headData": {
+      "head_position": {
+        "x": -9.91387,
+        "y": -0.0198003761,
+        "z": 2.36719871
+      },
+      "head_rotation": {
+        "x": 359.1196,
+        "y": 13.6509094,
+        "z": 1.632059
+      },
+      "head_forward": {
+        "x": 0.235977769,
+        "y": 0.0153654162,
+        "z": 0.971636951
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.91387,
+        "y": -0.0198003761,
+        "z": 2.36719871
+      },
+      "direction": {
+        "x": 0.183162227,
+        "y": 0.0255845077,
+        "z": 0.982749641
+      },
+      "headDirection": {
+        "x": 0.235977769,
+        "y": 0.0153654162,
+        "z": 0.971636951
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 24.45535,
+      "maxDistance": 3.336363,
+      "moveDistance": 0.38765043,
+      "newDistance": 0.0,
+      "ratio": 0.116189525,
+      "boost": 2.224242,
+      "eye_origin": {
+        "x": -9.903784,
+        "y": -0.0206225552,
+        "z": 2.373679
+      },
+      "eye_direction": {
+        "x": 0.172250748,
+        "y": 0.0009897638,
+        "z": 0.9850527
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.903784,
+        "y": -0.0206225552,
+        "z": 2.373679
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.172250777,
+        "y": 0.0009897638,
+        "z": 0.985052645
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.68170166,
+        "y": 0.949046
+      },
+      "filteredEye": {
+        "x": 0.09724611,
+        "y": 0.0002050603,
+        "z": 0.9952603
+      },
+      "distances": [
+        7.550812,
+        5.306774,
+        3.14105415,
+        1.54952359,
+        2.429305,
+        4.51166964,
+        6.75322437,
+        9.019772
+      ],
+      "scores": [
+        0.0517137125,
+        0.101125315,
+        0.266158819,
+        0.398387849,
+        0.278063536,
+        0.0577487051,
+        2.48068318E-05,
+        4.12329371E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.588247,
+      "y": 0.0409187675,
+      "z": 4.340103
+    },
+    "target_plane_position": {
+      "x": -9.5881815,
+      "y": 0.0,
+      "z": 4.34050274
+    },
+    "cursor_angular_distance": 1.68446624,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.817322,
+    "headData": {
+      "head_position": {
+        "x": -9.907765,
+        "y": -0.0197712053,
+        "z": 2.38071227
+      },
+      "head_rotation": {
+        "x": 359.0019,
+        "y": 13.9444857,
+        "z": 1.62473559
+      },
+      "head_forward": {
+        "x": 0.240945086,
+        "y": 0.0174193513,
+        "z": 0.9703824
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.907765,
+        "y": -0.0197712053,
+        "z": 2.38071227
+      },
+      "direction": {
+        "x": 0.1892062,
+        "y": 0.0244243741,
+        "z": 0.9816335
+      },
+      "headDirection": {
+        "x": 0.240945086,
+        "y": 0.0174193513,
+        "z": 0.9703824
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 22.4400253,
+      "maxDistance": 3.147716,
+      "moveDistance": 0.358369529,
+      "newDistance": 0.0,
+      "ratio": 0.113850653,
+      "boost": 2.09847736,
+      "eye_origin": {
+        "x": -9.897681,
+        "y": -0.02100321,
+        "z": 2.38668585
+      },
+      "eye_direction": {
+        "x": 0.17596741,
+        "y": -0.000167558159,
+        "z": 0.984396
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.897681,
+        "y": -0.02100321,
+        "z": 2.38668585
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.1759674,
+        "y": -0.0001675582,
+        "z": 0.984396
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.754425,
+        "y": 0.715267658
+      },
+      "filteredEye": {
+        "x": 0.100257337,
+        "y": 0.000236474487,
+        "z": 0.99496156
+      },
+      "distances": [
+        7.476274,
+        5.23809433,
+        3.088891,
+        1.57408249,
+        2.52623224,
+        4.608532,
+        6.847707,
+        9.11261749
+      ],
+      "scores": [
+        0.0501623042,
+        0.09809156,
+        0.2696407,
+        0.40699172,
+        0.284564227,
+        0.0583650544,
+        2.40626268E-05,
+        3.999595E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.571371,
+      "y": 0.04091877,
+      "z": 4.351809
+    },
+    "target_plane_position": {
+      "x": -9.571303,
+      "y": 0.0,
+      "z": 4.35220766
+    },
+    "cursor_angular_distance": 1.7161181,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.835083,
+    "headData": {
+      "head_position": {
+        "x": -9.901027,
+        "y": -0.0165391024,
+        "z": 2.39458132
+      },
+      "head_rotation": {
+        "x": 359.5392,
+        "y": 14.044693,
+        "z": 1.852488
+      },
+      "head_forward": {
+        "x": 0.242670834,
+        "y": 0.008042338,
+        "z": 0.970075369
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.901027,
+        "y": -0.0165391024,
+        "z": 2.39458132
+      },
+      "direction": {
+        "x": 0.195041,
+        "y": 0.0236415043,
+        "z": 0.980510056
+      },
+      "headDirection": {
+        "x": 0.242670834,
+        "y": 0.008042338,
+        "z": 0.970075369
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 21.0980625,
+      "maxDistance": 3.06049442,
+      "moveDistance": 0.343399525,
+      "newDistance": 0.0,
+      "ratio": 0.112203941,
+      "boost": 2.04032969,
+      "eye_origin": {
+        "x": -9.891271,
+        "y": -0.016372472,
+        "z": 2.401586
+      },
+      "eye_direction": {
+        "x": 0.185970426,
+        "y": -0.005246928,
+        "z": 0.9825414
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.891271,
+        "y": -0.016372472,
+        "z": 2.401586
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.1859704,
+        "y": -0.0052469275,
+        "z": 0.9825414
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.83703613,
+        "y": 0.8971489
+      },
+      "filteredEye": {
+        "x": 0.103297323,
+        "y": 0.0002203379,
+        "z": 0.9946505
+      },
+      "distances": [
+        7.52506542,
+        5.28824234,
+        3.14068031,
+        1.610948,
+        2.50858259,
+        4.576458,
+        6.8110323,
+        9.0738945
+      ],
+      "scores": [
+        0.0486574359,
+        0.09514882,
+        0.272707433,
+        0.41511628,
+        0.290975839,
+        0.0591553561,
+        2.33407482E-05,
+        3.87960739E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.55369,
+      "y": 0.04091937,
+      "z": 4.363846
+    },
+    "target_plane_position": {
+      "x": -9.553631,
+      "y": 0.0,
+      "z": 4.364179
+    },
+    "cursor_angular_distance": 1.70765865,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.8513,
+    "headData": {
+      "head_position": {
+        "x": -9.893835,
+        "y": -0.0117492024,
+        "z": 2.40950537
+      },
+      "head_rotation": {
+        "x": 358.8926,
+        "y": 14.3450794,
+        "z": 1.82828987
+      },
+      "head_forward": {
+        "x": 0.2477151,
+        "y": 0.0193263441,
+        "z": 0.968640149
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.893835,
+        "y": -0.0117492024,
+        "z": 2.40950537
+      },
+      "direction": {
+        "x": 0.200357646,
+        "y": 0.0219115838,
+        "z": 0.9794777
+      },
+      "headDirection": {
+        "x": 0.2477151,
+        "y": 0.0193263441,
+        "z": 0.968640149
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 19.2675323,
+      "maxDistance": 2.93351531,
+      "moveDistance": 0.325756758,
+      "newDistance": 0.0,
+      "ratio": 0.111046553,
+      "boost": 1.95567691,
+      "eye_origin": {
+        "x": -9.884195,
+        "y": -0.0125376331,
+        "z": 2.415995
+      },
+      "eye_direction": {
+        "x": 0.191064626,
+        "y": 0.00357857649,
+        "z": 0.9815709
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.884195,
+        "y": -0.0125376331,
+        "z": 2.415995
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.191064656,
+        "y": 0.003578577,
+        "z": 0.981570959
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.349884,
+        "y": 0.6527606
+      },
+      "filteredEye": {
+        "x": 0.106618606,
+        "y": 1.64736036E-06,
+        "z": 0.9943
+      },
+      "distances": [
+        7.5300703,
+        5.292465,
+        3.142861,
+        1.60547209,
+        2.49881029,
+        4.567761,
+        6.80302238,
+        9.066204
+      ],
+      "scores": [
+        0.0471977144,
+        0.09229436,
+        0.275669038,
+        0.42303,
+        0.2972537,
+        0.059974134,
+        2.26405264E-05,
+        3.76321935E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.53535652,
+      "y": 0.0409200639,
+      "z": 4.376872
+    },
+    "target_plane_position": {
+      "x": -9.535314,
+      "y": 0.0,
+      "z": 4.37710857
+    },
+    "cursor_angular_distance": 1.70375776,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.867645,
+    "headData": {
+      "head_position": {
+        "x": -9.886129,
+        "y": -0.0105882594,
+        "z": 2.42359042
+      },
+      "head_rotation": {
+        "x": 358.710663,
+        "y": 14.5599108,
+        "z": 1.8837899
+      },
+      "head_forward": {
+        "x": 0.2513286,
+        "y": 0.0225015432,
+        "z": 0.9676402
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.886129,
+        "y": -0.0105882594,
+        "z": 2.42359042
+      },
+      "direction": {
+        "x": 0.205591246,
+        "y": 0.0216296874,
+        "z": 0.97839874
+      },
+      "headDirection": {
+        "x": 0.2513286,
+        "y": 0.0225015432,
+        "z": 0.9676402
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 18.687109,
+      "maxDistance": 2.7877605,
+      "moveDistance": 0.306595117,
+      "newDistance": 0.0,
+      "ratio": 0.109979,
+      "boost": 1.858507,
+      "eye_origin": {
+        "x": -9.877095,
+        "y": -0.0113503467,
+        "z": 2.43020272
+      },
+      "eye_direction": {
+        "x": 0.201655,
+        "y": 0.009151582,
+        "z": 0.979413867
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.877095,
+        "y": -0.0113503467,
+        "z": 2.43020272
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.201655015,
+        "y": 0.009151582,
+        "z": 0.979413867
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.357483,
+        "y": 0.7938256
+      },
+      "filteredEye": {
+        "x": 0.110011883,
+        "y": 0.000144744932,
+        "z": 0.9939303
+      },
+      "distances": [
+        7.40811729,
+        5.17172575,
+        3.02937746,
+        1.56310391,
+        2.58399272,
+        4.67591953,
+        6.91707373,
+        9.182668
+      ],
+      "scores": [
+        0.0457817838,
+        0.08952553,
+        0.279222727,
+        0.430960476,
+        0.302832127,
+        0.0601193942,
+        2.19613121E-05,
+        3.650323E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.516209,
+      "y": 0.040920198,
+      "z": 4.38886261
+    },
+    "target_plane_position": {
+      "x": -9.516169,
+      "y": 0.0,
+      "z": 4.38907528
+    },
+    "cursor_angular_distance": 1.66694844,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.8842,
+    "headData": {
+      "head_position": {
+        "x": -9.877776,
+        "y": -0.008022328,
+        "z": 2.43866014
+      },
+      "head_rotation": {
+        "x": 358.295349,
+        "y": 14.9153528,
+        "z": 1.9368242
+      },
+      "head_forward": {
+        "x": 0.257277817,
+        "y": 0.02974737,
+        "z": 0.9658795
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.877776,
+        "y": -0.008022328,
+        "z": 2.43866014
+      },
+      "direction": {
+        "x": 0.210630685,
+        "y": 0.02172766,
+        "z": 0.977324069
+      },
+      "headDirection": {
+        "x": 0.257277817,
+        "y": 0.02974737,
+        "z": 0.9658795
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 18.0101871,
+      "maxDistance": 2.69275451,
+      "moveDistance": 0.2952864,
+      "newDistance": 0.0,
+      "ratio": 0.109659605,
+      "boost": 1.79516971,
+      "eye_origin": {
+        "x": -9.868699,
+        "y": -0.008714852,
+        "z": 2.44522071
+      },
+      "eye_direction": {
+        "x": 0.207715318,
+        "y": 0.0163426138,
+        "z": 0.9780528
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.868699,
+        "y": -0.008714852,
+        "z": 2.44522071
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.2077153,
+        "y": 0.0163426138,
+        "z": 0.9780528
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.94927979,
+        "y": 0.6667696
+      },
+      "filteredEye": {
+        "x": 0.113696583,
+        "y": 0.000505102857,
+        "z": 0.9935154
+      },
+      "distances": [
+        7.36241961,
+        5.123423,
+        2.97657466,
+        1.51929736,
+        2.59306669,
+        4.700363,
+        6.9467,
+        9.214798
+      ],
+      "scores": [
+        0.0444083326,
+        0.0868397653,
+        0.282986581,
+        0.438915879,
+        0.308188766,
+        0.0601136349,
+        2.13024741E-05,
+        3.54081322E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.495835,
+      "y": 0.0409204438,
+      "z": 4.40168428
+    },
+    "target_plane_position": {
+      "x": -9.495804,
+      "y": 0.0,
+      "z": 4.40184546
+    },
+    "cursor_angular_distance": 1.61483061,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.902374,
+    "headData": {
+      "head_position": {
+        "x": -9.869543,
+        "y": -0.008204749,
+        "z": 2.45273161
+      },
+      "head_rotation": {
+        "x": 357.847137,
+        "y": 15.2599964,
+        "z": 2.03680182
+      },
+      "head_forward": {
+        "x": 0.2630138,
+        "y": 0.0375659019,
+        "z": 0.9640604
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.869543,
+        "y": -0.008204749,
+        "z": 2.45273161
+      },
+      "direction": {
+        "x": 0.215790689,
+        "y": 0.0226131,
+        "z": 0.976177633
+      },
+      "headDirection": {
+        "x": 0.2630138,
+        "y": 0.0375659019,
+        "z": 0.9640604
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 18.5313873,
+      "maxDistance": 2.79028726,
+      "moveDistance": 0.3070757,
+      "newDistance": 0.0,
+      "ratio": 0.110051647,
+      "boost": 1.86019146,
+      "eye_origin": {
+        "x": -9.861244,
+        "y": -0.008828351,
+        "z": 2.45946884
+      },
+      "eye_direction": {
+        "x": 0.217981189,
+        "y": 0.0221900344,
+        "z": 0.9757007
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.861244,
+        "y": -0.008828351,
+        "z": 2.45946884
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.217981189,
+        "y": 0.0221900344,
+        "z": 0.9757007
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.94927979,
+        "y": 0.6667703
+      },
+      "filteredEye": {
+        "x": 0.117478386,
+        "y": 0.00113880774,
+        "z": 0.9930748
+      },
+      "distances": [
+        7.231258,
+        4.990926,
+        2.84571934,
+        1.458308,
+        2.66931844,
+        4.80383253,
+        7.05816364,
+        9.329992
+      ],
+      "scores": [
+        0.0430760831,
+        0.08428902,
+        0.2874227,
+        0.446998566,
+        0.3129272,
+        0.0594872348,
+        2.06634013E-05,
+        3.43458879E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.475252,
+      "y": 0.04092043,
+      "z": 4.413309
+    },
+    "target_plane_position": {
+      "x": -9.475219,
+      "y": 0.0,
+      "z": 4.41347361
+    },
+    "cursor_angular_distance": 1.5719676,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.919281,
+    "headData": {
+      "head_position": {
+        "x": -9.86084652,
+        "y": -0.009555357,
+        "z": 2.46691775
+      },
+      "head_rotation": {
+        "x": 357.906952,
+        "y": 15.6569262,
+        "z": 2.070061
+      },
+      "head_forward": {
+        "x": 0.2696966,
+        "y": 0.0365225449,
+        "z": 0.9622525
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.86084652,
+        "y": -0.009555357,
+        "z": 2.46691775
+      },
+      "direction": {
+        "x": 0.221086964,
+        "y": 0.0242842231,
+        "z": 0.974951565
+      },
+      "headDirection": {
+        "x": 0.2696966,
+        "y": 0.0365225449,
+        "z": 0.9622525
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 19.36455,
+      "maxDistance": 2.92201519,
+      "moveDistance": 0.325863,
+      "newDistance": 0.0,
+      "ratio": 0.111519955,
+      "boost": 1.94801009,
+      "eye_origin": {
+        "x": -9.852502,
+        "y": -0.0101844361,
+        "z": 2.473596
+      },
+      "eye_direction": {
+        "x": 0.224750131,
+        "y": 0.02112035,
+        "z": 0.9741875
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.852502,
+        "y": -0.0101844361,
+        "z": 2.473596
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.224750131,
+        "y": 0.02112035,
+        "z": 0.974187553
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.69555664,
+        "y": 0.7837706
+      },
+      "filteredEye": {
+        "x": 0.121523812,
+        "y": 0.00198127,
+        "z": 0.992586553
+      },
+      "distances": [
+        7.132729,
+        4.89004469,
+        2.74266815,
+        1.40541708,
+        2.71994948,
+        4.87576151,
+        7.136936,
+        9.41198
+      ],
+      "scores": [
+        0.0417838022,
+        0.08242009,
+        0.292344,
+        0.455156118,
+        0.317219675,
+        0.05844805,
+        2.00435E-05,
+        3.33155128E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.454008,
+      "y": 0.040920306,
+      "z": 4.424902
+    },
+    "target_plane_position": {
+      "x": -9.453968,
+      "y": 0.0,
+      "z": 4.425093
+    },
+    "cursor_angular_distance": 1.53314531,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.935822,
+    "headData": {
+      "head_position": {
+        "x": -9.852073,
+        "y": -0.008671382,
+        "z": 2.48071837
+      },
+      "head_rotation": {
+        "x": 358.038177,
+        "y": 16.0746574,
+        "z": 1.930473
+      },
+      "head_forward": {
+        "x": 0.2767274,
+        "y": 0.0342335626,
+        "z": 0.9603385
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.852073,
+        "y": -0.008671382,
+        "z": 2.48071837
+      },
+      "direction": {
+        "x": 0.22664769,
+        "y": 0.0256800056,
+        "z": 0.973638058
+      },
+      "headDirection": {
+        "x": 0.2767274,
+        "y": 0.0342335626,
+        "z": 0.9603385
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 18.4917488,
+      "maxDistance": 2.96306181,
+      "moveDistance": 0.337001532,
+      "newDistance": 0.0,
+      "ratio": 0.113734223,
+      "boost": 1.97537458,
+      "eye_origin": {
+        "x": -9.843743,
+        "y": -0.00934823,
+        "z": 2.48734045
+      },
+      "eye_direction": {
+        "x": 0.220270678,
+        "y": 0.0126120131,
+        "z": 0.975357234
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.843743,
+        "y": -0.00934823,
+        "z": 2.48734045
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.2202707,
+        "y": 0.0126120141,
+        "z": 0.9753573
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -2.69555664,
+        "y": 0.7837709
+      },
+      "filteredEye": {
+        "x": 0.125680268,
+        "y": 0.002747433,
+        "z": 0.992067
+      },
+      "distances": [
+        7.084518,
+        4.839141,
+        2.68678713,
+        1.36587369,
+        2.73523545,
+        4.904126,
+        7.169845,
+        9.447041
+      ],
+      "scores": [
+        0.04053029,
+        0.08091264,
+        0.297452956,
+        0.4633062,
+        0.3212917,
+        0.0572698563,
+        1.94421955E-05,
+        3.231605E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.432555,
+      "y": 0.040920388,
+      "z": 4.436043
+    },
+    "target_plane_position": {
+      "x": -9.432518,
+      "y": 0.0,
+      "z": 4.43621635
+    },
+    "cursor_angular_distance": 1.51994133,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.9545,
+    "headData": {
+      "head_position": {
+        "x": -9.842784,
+        "y": -0.007827204,
+        "z": 2.49458766
+      },
+      "head_rotation": {
+        "x": 358.223267,
+        "y": 16.5720463,
+        "z": 1.708881
+      },
+      "head_forward": {
+        "x": 0.2850837,
+        "y": 0.03100505,
+        "z": 0.958001
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.842784,
+        "y": -0.007827204,
+        "z": 2.49458766
+      },
+      "direction": {
+        "x": 0.232456654,
+        "y": 0.0266703367,
+        "z": 0.972240865
+      },
+      "headDirection": {
+        "x": 0.2850837,
+        "y": 0.03100505,
+        "z": 0.958001
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 21.7102489,
+      "maxDistance": 3.00934339,
+      "moveDistance": 0.3469931,
+      "newDistance": 0.0,
+      "ratio": 0.115305252,
+      "boost": 2.006229,
+      "eye_origin": {
+        "x": -9.834402,
+        "y": -0.008555717,
+        "z": 2.50113869
+      },
+      "eye_direction": {
+        "x": 0.228658155,
+        "y": 0.00961346,
+        "z": 0.973459363
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.834402,
+        "y": -0.008555717,
+        "z": 2.50113869
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.22865817,
+        "y": 0.00961346,
+        "z": 0.9734593
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.3888855,
+        "y": 1.12237954
+      },
+      "filteredEye": {
+        "x": 0.129487053,
+        "y": 0.003142579,
+        "z": 0.991576135
+      },
+      "distances": [
+        6.99849129,
+        4.75225544,
+        2.60165763,
+        1.34115076,
+        2.79295182,
+        4.97523832,
+        7.2451086,
+        9.524232
+      ],
+      "scores": [
+        0.03931438,
+        0.07997173,
+        0.302919418,
+        0.471360117,
+        0.324895233,
+        0.0557003319,
+        1.88589311E-05,
+        3.13465677E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.410731,
+      "y": 0.04092046,
+      "z": 4.447199
+    },
+    "target_plane_position": {
+      "x": -9.410697,
+      "y": 0.0,
+      "z": 4.44735527
+    },
+    "cursor_angular_distance": 1.51620293,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.966827,
+    "headData": {
+      "head_position": {
+        "x": -9.833796,
+        "y": -0.00812947,
+        "z": 2.50812149
+      },
+      "head_rotation": {
+        "x": 358.303223,
+        "y": 17.10591,
+        "z": 1.58341742
+      },
+      "head_forward": {
+        "x": 0.294009984,
+        "y": 0.0296098664,
+        "z": 0.9553436
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.833796,
+        "y": -0.00812947,
+        "z": 2.50812149
+      },
+      "direction": {
+        "x": 0.238747671,
+        "y": 0.027189685,
+        "z": 0.970700741
+      },
+      "headDirection": {
+        "x": 0.294009984,
+        "y": 0.0296098664,
+        "z": 0.9553436
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 20.66109,
+      "maxDistance": 3.133941,
+      "moveDistance": 0.3722849,
+      "newDistance": 0.0,
+      "ratio": 0.11879129,
+      "boost": 2.089294,
+      "eye_origin": {
+        "x": -9.826103,
+        "y": -0.008894492,
+        "z": 2.51482415
+      },
+      "eye_direction": {
+        "x": 0.232014135,
+        "y": 0.0110258535,
+        "z": 0.972649932
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.826103,
+        "y": -0.008894492,
+        "z": 2.51482415
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.232014149,
+        "y": 0.0110258544,
+        "z": 0.972649932
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.3888855,
+        "y": 1.12237859
+      },
+      "filteredEye": {
+        "x": 0.133480042,
+        "y": 0.003402081,
+        "z": 0.991045654
+      },
+      "distances": [
+        6.94624853,
+        4.70157146,
+        2.55757236,
+        1.35031188,
+        2.842209,
+        5.02827454,
+        7.29882574,
+        9.57823849
+      ],
+      "scores": [
+        0.03813495,
+        0.07936315,
+        0.308486432,
+        0.479117453,
+        0.328095138,
+        0.0540293232,
+        1.82931635E-05,
+        3.04061729E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.389317,
+      "y": 0.0409204327,
+      "z": 4.45793533
+    },
+    "target_plane_position": {
+      "x": -9.389279,
+      "y": 0.0,
+      "z": 4.45809746
+    },
+    "cursor_angular_distance": 1.54522371,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 468.982147,
+    "headData": {
+      "head_position": {
+        "x": -9.825167,
+        "y": -0.008682739,
+        "z": 2.52091837
+      },
+      "head_rotation": {
+        "x": 358.532928,
+        "y": 17.5231361,
+        "z": 1.57691491
+      },
+      "head_forward": {
+        "x": 0.3009922,
+        "y": 0.0256022252,
+        "z": 0.9532829
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.825167,
+        "y": -0.008682739,
+        "z": 2.52091837
+      },
+      "direction": {
+        "x": 0.245553151,
+        "y": 0.0274906885,
+        "z": 0.968993068
+      },
+      "headDirection": {
+        "x": 0.3009922,
+        "y": 0.0256022252,
+        "z": 0.9532829
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 28.52368,
+      "maxDistance": 3.28961945,
+      "moveDistance": 0.40238443,
+      "newDistance": 0.0,
+      "ratio": 0.122319445,
+      "boost": 2.19307971,
+      "eye_origin": {
+        "x": -9.817426,
+        "y": -0.009482979,
+        "z": 2.52756119
+      },
+      "eye_direction": {
+        "x": 0.2390995,
+        "y": 0.007032468,
+        "z": 0.970969558
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.817426,
+        "y": -0.009482979,
+        "z": 2.52756119
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.2390995,
+        "y": 0.007032468,
+        "z": 0.9709696
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.717682,
+        "y": 0.9592131
+      },
+      "filteredEye": {
+        "x": 0.137448087,
+        "y": 0.00370775163,
+        "z": 0.990502
+      },
+      "distances": [
+        6.945091,
+        4.704071,
+        2.56994081,
+        1.38818491,
+        2.86737418,
+        5.04659367,
+        7.31415844,
+        9.592021
+      ],
+      "scores": [
+        0.0369909033,
+        0.07875784,
+        0.313812226,
+        0.48641482,
+        0.331048042,
+        0.0524084456,
+        1.7744369E-05,
+        2.949399E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.368214,
+      "y": 0.0409203842,
+      "z": 4.46783447
+    },
+    "target_plane_position": {
+      "x": -9.368173,
+      "y": 0.0,
+      "z": 4.46800756
+    },
+    "cursor_angular_distance": 1.6042527,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.00058,
+    "headData": {
+      "head_position": {
+        "x": -9.816116,
+        "y": -0.00864565652,
+        "z": 2.534147
+      },
+      "head_rotation": {
+        "x": 358.679077,
+        "y": 17.8335285,
+        "z": 1.59448051
+      },
+      "head_forward": {
+        "x": 0.306171,
+        "y": 0.0230523814,
+        "z": 0.95169735
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.816116,
+        "y": -0.00864565652,
+        "z": 2.534147
+      },
+      "direction": {
+        "x": 0.252666265,
+        "y": 0.0272550154,
+        "z": 0.967169344
+      },
+      "headDirection": {
+        "x": 0.306171,
+        "y": 0.0230523814,
+        "z": 0.95169735
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 26.81377,
+      "maxDistance": 3.303694,
+      "moveDistance": 0.420952439,
+      "newDistance": 0.0,
+      "ratio": 0.127418712,
+      "boost": 2.20246267,
+      "eye_origin": {
+        "x": -9.80747,
+        "y": -0.009459931,
+        "z": 2.54048085
+      },
+      "eye_direction": {
+        "x": 0.240672156,
+        "y": 0.005926865,
+        "z": 0.9705884
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.80747,
+        "y": -0.009459931,
+        "z": 2.54048085
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.240672156,
+        "y": 0.005926865,
+        "z": 0.9705884
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.717682,
+        "y": 0.959212661
+      },
+      "filteredEye": {
+        "x": 0.1415433,
+        "y": 0.003841532,
+        "z": 0.9899246
+      },
+      "distances": [
+        6.9846034,
+        4.74809027,
+        2.62383318,
+        1.43871868,
+        2.86826134,
+        5.03341532,
+        7.29576063,
+        9.570826
+      ],
+      "scores": [
+        0.0358811766,
+        0.0779065639,
+        0.3186549,
+        0.49319008,
+        0.333907038,
+        0.0508361943,
+        1.72120381E-05,
+        2.860917E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.346388,
+      "y": 0.040920388,
+      "z": 4.478021
+    },
+    "target_plane_position": {
+      "x": -9.346346,
+      "y": 0.0,
+      "z": 4.47819328
+    },
+    "cursor_angular_distance": 1.6696465,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.016,
+    "headData": {
+      "head_position": {
+        "x": -9.806083,
+        "y": -0.009658696,
+        "z": 2.54743862
+      },
+      "head_rotation": {
+        "x": 358.748047,
+        "y": 18.1221714,
+        "z": 1.63024437
+      },
+      "head_forward": {
+        "x": 0.310969979,
+        "y": 0.0218488462,
+        "z": 0.95016855
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.806083,
+        "y": -0.009658696,
+        "z": 2.54743862
+      },
+      "direction": {
+        "x": 0.259772837,
+        "y": 0.0267052352,
+        "z": 0.965300262
+      },
+      "headDirection": {
+        "x": 0.310969979,
+        "y": 0.0218488462,
+        "z": 0.95016855
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 23.7414379,
+      "maxDistance": 3.20069528,
+      "moveDistance": 0.4222019,
+      "newDistance": 0.0,
+      "ratio": 0.13190943,
+      "boost": 2.133797,
+      "eye_origin": {
+        "x": -9.797406,
+        "y": -0.0104795555,
+        "z": 2.553727
+      },
+      "eye_direction": {
+        "x": 0.245571285,
+        "y": 0.00468331343,
+        "z": 0.9693672
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.797406,
+        "y": -0.0104795555,
+        "z": 2.553727
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.245571271,
+        "y": 0.00468331343,
+        "z": 0.969367266
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.93322754,
+        "y": 0.8692428
+      },
+      "filteredEye": {
+        "x": 0.145536974,
+        "y": 0.00392571464,
+        "z": 0.989345
+      },
+      "distances": [
+        7.02364445,
+        4.79068375,
+        2.67378783,
+        1.48068047,
+        2.864847,
+        5.017197,
+        7.274863,
+        9.547505
+      ],
+      "scores": [
+        0.0348047428,
+        0.07682527,
+        0.323052526,
+        0.499510318,
+        0.336700737,
+        0.04931111,
+        1.66956779E-05,
+        2.77508974E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.323081,
+      "y": 0.0409202948,
+      "z": 4.488036
+    },
+    "target_plane_position": {
+      "x": -9.323033,
+      "y": 0.0,
+      "z": 4.488228
+    },
+    "cursor_angular_distance": 1.697659,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.0341,
+    "headData": {
+      "head_position": {
+        "x": -9.795897,
+        "y": -0.0110917892,
+        "z": 2.560501
+      },
+      "head_rotation": {
+        "x": 358.905579,
+        "y": 18.4497814,
+        "z": 1.75012314
+      },
+      "head_forward": {
+        "x": 0.316415638,
+        "y": 0.019099921,
+        "z": 0.948428333
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.795897,
+        "y": -0.0110917892,
+        "z": 2.560501
+      },
+      "direction": {
+        "x": 0.2668188,
+        "y": 0.0260455869,
+        "z": 0.9633945
+      },
+      "headDirection": {
+        "x": 0.316415638,
+        "y": 0.019099921,
+        "z": 0.948428333
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 26.1334019,
+      "maxDistance": 3.07179546,
+      "moveDistance": 0.419914782,
+      "newDistance": 0.0,
+      "ratio": 0.136700109,
+      "boost": 2.04786372,
+      "eye_origin": {
+        "x": -9.786872,
+        "y": -0.0119167389,
+        "z": 2.56663036
+      },
+      "eye_direction": {
+        "x": 0.2505184,
+        "y": -0.000121019315,
+        "z": 0.9681118
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.786872,
+        "y": -0.0119167389,
+        "z": 2.56663036
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.2505184,
+        "y": -0.000121019315,
+        "z": 0.9681118
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.933197,
+        "y": 0.8692437
+      },
+      "filteredEye": {
+        "x": 0.149568245,
+        "y": 0.003956809,
+        "z": 0.9887435
+      },
+      "distances": [
+        7.09456253,
+        4.862444,
+        2.74423766,
+        1.5041517,
+        2.82195735,
+        4.961397,
+        7.21490669,
+        9.48564148
+      ],
+      "scores": [
+        0.0337606,
+        0.07534585,
+        0.326895535,
+        0.505500138,
+        0.339667976,
+        0.0480633937,
+        1.61948083E-05,
+        2.69183715E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.298921,
+      "y": 0.0409201421,
+      "z": 4.49753666
+    },
+    "target_plane_position": {
+      "x": -9.298864,
+      "y": 0.0,
+      "z": 4.49775648
+    },
+    "cursor_angular_distance": 1.69869614,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.0504,
+    "headData": {
+      "head_position": {
+        "x": -9.785848,
+        "y": -0.0116825178,
+        "z": 2.57354927
+      },
+      "head_rotation": {
+        "x": 359.113037,
+        "y": 18.7190075,
+        "z": 1.88302708
+      },
+      "head_forward": {
+        "x": 0.320888758,
+        "y": 0.0154796932,
+        "z": 0.9469904
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.785848,
+        "y": -0.0116825178,
+        "z": 2.57354927
+      },
+      "direction": {
+        "x": 0.2738658,
+        "y": 0.0250692125,
+        "z": 0.961441
+      },
+      "headDirection": {
+        "x": 0.320888758,
+        "y": 0.0154796932,
+        "z": 0.9469904
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 24.5456562,
+      "maxDistance": 2.99512863,
+      "moveDistance": 0.422709435,
+      "newDistance": 0.0,
+      "ratio": 0.14113231,
+      "boost": 1.99675238,
+      "eye_origin": {
+        "x": -9.776788,
+        "y": -0.01252332,
+        "z": 2.57963061
+      },
+      "eye_direction": {
+        "x": 0.255105674,
+        "y": -0.003892595,
+        "z": 0.9669053
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.776788,
+        "y": -0.01252332,
+        "z": 2.57963061
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.2551057,
+        "y": -0.00389259541,
+        "z": 0.966905355
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.97396851,
+        "y": 0.9779403
+      },
+      "filteredEye": {
+        "x": 0.153637633,
+        "y": 0.0037944708,
+        "z": 0.98811996
+      },
+      "distances": [
+        7.190638,
+        4.956696,
+        2.82916212,
+        1.51038361,
+        2.74352431,
+        4.870897,
+        7.121333,
+        9.390738
+      ],
+      "scores": [
+        0.0327477828,
+        0.0733453,
+        0.330113679,
+        0.511272848,
+        0.3430168,
+        0.0473961122,
+        1.57089653E-05,
+        2.611082E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.27453,
+      "y": 0.040920075,
+      "z": 4.506836
+    },
+    "target_plane_position": {
+      "x": -9.274469,
+      "y": 0.0,
+      "z": 4.507067
+    },
+    "cursor_angular_distance": 1.69685185,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.0675,
+    "headData": {
+      "head_position": {
+        "x": -9.775482,
+        "y": -0.0127795963,
+        "z": 2.5863502
+      },
+      "head_rotation": {
+        "x": 359.254669,
+        "y": 18.8219967,
+        "z": 2.029395
+      },
+      "head_forward": {
+        "x": 0.3226018,
+        "y": 0.0130078848,
+        "z": 0.9464454
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.775482,
+        "y": -0.0127795963,
+        "z": 2.5863502
+      },
+      "direction": {
+        "x": 0.280691028,
+        "y": 0.02368987,
+        "z": 0.9595057
+      },
+      "headDirection": {
+        "x": 0.3226018,
+        "y": 0.0130078848,
+        "z": 0.9464454
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.94339,
+      "maxDistance": 2.87187624,
+      "moveDistance": 0.4140876,
+      "newDistance": 0.0,
+      "ratio": 0.144187137,
+      "boost": 1.91458416,
+      "eye_origin": {
+        "x": -9.766723,
+        "y": -0.0136234155,
+        "z": 2.59251046
+      },
+      "eye_direction": {
+        "x": 0.256934971,
+        "y": -0.009423233,
+        "z": 0.9663828
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.766723,
+        "y": -0.0136234155,
+        "z": 2.59251046
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.256934971,
+        "y": -0.009423233,
+        "z": 0.966382742
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.97396851,
+        "y": 0.9779405
+      },
+      "filteredEye": {
+        "x": 0.157729089,
+        "y": 0.00348771154,
+        "z": 0.9874762
+      },
+      "distances": [
+        7.280793,
+        5.04282665,
+        2.90144277,
+        1.498547,
+        2.65380073,
+        4.77401161,
+        7.02364445,
+        9.293119
+      ],
+      "scores": [
+        0.03176535,
+        0.0711449459,
+        0.3328016,
+        0.5169434,
+        0.3468035,
+        0.04733016,
+        1.5237697E-05,
+        2.53274948E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.24974,
+      "y": 0.0409199372,
+      "z": 4.515741
+    },
+    "target_plane_position": {
+      "x": -9.249671,
+      "y": 0.0,
+      "z": 4.515993
+    },
+    "cursor_angular_distance": 1.68155932,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.084717,
+    "headData": {
+      "head_position": {
+        "x": -9.764181,
+        "y": -0.0142727,
+        "z": 2.59914017
+      },
+      "head_rotation": {
+        "x": 359.429749,
+        "y": 19.0087547,
+        "z": 1.98830521
+      },
+      "head_forward": {
+        "x": 0.325696468,
+        "y": 0.009952571,
+        "z": 0.945422
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.764181,
+        "y": -0.0142727,
+        "z": 2.59914017
+      },
+      "direction": {
+        "x": 0.28687495,
+        "y": 0.0221259184,
+        "z": 0.9577124
+      },
+      "headDirection": {
+        "x": 0.325696468,
+        "y": 0.009952571,
+        "z": 0.945422
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 21.9565125,
+      "maxDistance": 2.58876061,
+      "moveDistance": 0.3796361,
+      "newDistance": 0.0,
+      "ratio": 0.146647826,
+      "boost": 1.72584045,
+      "eye_origin": {
+        "x": -9.755402,
+        "y": -0.0151474718,
+        "z": 2.60526943
+      },
+      "eye_direction": {
+        "x": 0.2600574,
+        "y": -0.0124221928,
+        "z": 0.9655132
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.755402,
+        "y": -0.0151474718,
+        "z": 2.60526943
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.2600574,
+        "y": -0.0124221938,
+        "z": 0.9655133
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.97674561,
+        "y": 1.14348328
+      },
+      "filteredEye": {
+        "x": 0.161729783,
+        "y": 0.00297187,
+        "z": 0.9868306
+      },
+      "distances": [
+        7.38777447,
+        5.14193773,
+        2.97723222,
+        1.45763671,
+        2.52041459,
+        4.64063835,
+        6.8929,
+        9.164246
+      ],
+      "scores": [
+        0.03081239,
+        0.0690106,
+        0.334954172,
+        0.5226893,
+        0.3512769,
+        0.04806643,
+        1.47805667E-05,
+        2.45676716E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.2236,
+      "y": 0.04091973,
+      "z": 4.52439451
+    },
+    "target_plane_position": {
+      "x": -9.223521,
+      "y": 0.0,
+      "z": 4.524676
+    },
+    "cursor_angular_distance": 1.6321882,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.101654,
+    "headData": {
+      "head_position": {
+        "x": -9.75260448,
+        "y": -0.0159546155,
+        "z": 2.61190844
+      },
+      "head_rotation": {
+        "x": 359.603149,
+        "y": 19.337244,
+        "z": 1.85621214
+      },
+      "head_forward": {
+        "x": 0.3311199,
+        "y": 0.006926301,
+        "z": 0.9435633
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.75260448,
+        "y": -0.0159546155,
+        "z": 2.61190844
+      },
+      "direction": {
+        "x": 0.292693436,
+        "y": 0.02031424,
+        "z": 0.9559905
+      },
+      "headDirection": {
+        "x": 0.3311199,
+        "y": 0.006926301,
+        "z": 0.9435633
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 21.1619873,
+      "maxDistance": 2.4353404,
+      "moveDistance": 0.3628333,
+      "newDistance": 0.0,
+      "ratio": 0.148986682,
+      "boost": 1.62356031,
+      "eye_origin": {
+        "x": -9.743368,
+        "y": -0.0169388447,
+        "z": 2.61780429
+      },
+      "eye_direction": {
+        "x": 0.268525928,
+        "y": -0.014953102,
+        "z": 0.9631564
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.743368,
+        "y": -0.0169388447,
+        "z": 2.61780429
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.268525928,
+        "y": -0.014953102,
+        "z": 0.9631564
+      },
+      "eyeTimestamp": "8/15/2022 8:25:17 AM",
+      "eyeonly": {
+        "x": -3.97674561,
+        "y": 1.14348423
+      },
+      "filteredEye": {
+        "x": 0.165695861,
+        "y": 0.0023565758,
+        "z": 0.9861741
+      },
+      "distances": [
+        7.51449633,
+        5.258367,
+        3.06452155,
+        1.402211,
+        2.34677,
+        4.47247,
+        6.73033,
+        9.00512
+      ],
+      "scores": [
+        0.029888019,
+        0.0669402853,
+        0.3365184,
+        0.5285953,
+        0.356657982,
+        0.04978962,
+        1.433715E-05,
+        2.38306427E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.196847,
+      "y": 0.04091947,
+      "z": 4.53280067
+    },
+    "target_plane_position": {
+      "x": -9.196756,
+      "y": 0.0,
+      "z": 4.53311443
+    },
+    "cursor_angular_distance": 1.58819222,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.1166,
+    "headData": {
+      "head_position": {
+        "x": -9.741186,
+        "y": -0.0174078532,
+        "z": 2.62418413
+      },
+      "head_rotation": {
+        "x": 359.6724,
+        "y": 19.7282467,
+        "z": 1.71657276
+      },
+      "head_forward": {
+        "x": 0.3375539,
+        "y": 0.00571773853,
+        "z": 0.9412888
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.741186,
+        "y": -0.0174078532,
+        "z": 2.62418413
+      },
+      "direction": {
+        "x": 0.2985584,
+        "y": 0.0182851031,
+        "z": 0.954216063
+      },
+      "headDirection": {
+        "x": 0.3375539,
+        "y": 0.00571773853,
+        "z": 0.9412888
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 22.90362,
+      "maxDistance": 2.437911,
+      "moveDistance": 0.369830221,
+      "newDistance": 0.0,
+      "ratio": 0.151699632,
+      "boost": 1.62527406,
+      "eye_origin": {
+        "x": -9.731956,
+        "y": -0.0183492023,
+        "z": 2.630053
+      },
+      "eye_direction": {
+        "x": 0.2745595,
+        "y": -0.0160523485,
+        "z": 0.9614361
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.731956,
+        "y": -0.0183492023,
+        "z": 2.630053
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.274559528,
+        "y": -0.0160523523,
+        "z": 0.961436152
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.7979126,
+        "y": 1.13044047
+      },
+      "filteredEye": {
+        "x": 0.169846237,
+        "y": 0.00166455272,
+        "z": 0.985469162
+      },
+      "distances": [
+        7.65949965,
+        5.39354134,
+        3.17255783,
+        1.36701941,
+        2.15385962,
+        4.28550863,
+        6.5493083,
+        8.827793
+      ],
+      "scores": [
+        0.0289913788,
+        0.06493208,
+        0.337387532,
+        0.5345354,
+        0.3630351,
+        0.05258288,
+        1.39070362E-05,
+        2.31157244E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.169992,
+      "y": 0.0409192219,
+      "z": 4.540512
+    },
+    "target_plane_position": {
+      "x": -9.16989,
+      "y": 0.0,
+      "z": 4.5408535
+    },
+    "cursor_angular_distance": 1.554819,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.134552,
+    "headData": {
+      "head_position": {
+        "x": -9.729935,
+        "y": -0.01823761,
+        "z": 2.63622713
+      },
+      "head_rotation": {
+        "x": 359.601471,
+        "y": 20.1008263,
+        "z": 1.73049831
+      },
+      "head_forward": {
+        "x": 0.343664944,
+        "y": 0.00695562828,
+        "z": 0.9390666
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.729935,
+        "y": -0.01823761,
+        "z": 2.63622713
+      },
+      "direction": {
+        "x": 0.3046015,
+        "y": 0.016351331,
+        "z": 0.9523394
+      },
+      "headDirection": {
+        "x": 0.343664944,
+        "y": 0.00695562828,
+        "z": 0.9390666
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 22.7855282,
+      "maxDistance": 2.46172,
+      "moveDistance": 0.379106075,
+      "newDistance": 0.0,
+      "ratio": 0.154000491,
+      "boost": 1.64114666,
+      "eye_origin": {
+        "x": -9.720991,
+        "y": -0.0191610511,
+        "z": 2.64216518
+      },
+      "eye_direction": {
+        "x": 0.2847126,
+        "y": -0.004349471,
+        "z": 0.9586031
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.720991,
+        "y": -0.0191610511,
+        "z": 2.64216518
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.284712583,
+        "y": -0.004349471,
+        "z": 0.9586031
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.8263855,
+        "y": 1.13263047
+      },
+      "filteredEye": {
+        "x": 0.174074411,
+        "y": 0.000956093951,
+        "z": 0.984732032
+      },
+      "distances": [
+        7.79507971,
+        5.520912,
+        3.27793384,
+        1.354797,
+        1.97238791,
+        4.111422,
+        6.3813777,
+        8.663335
+      ],
+      "scores": [
+        0.028121639,
+        0.06298412,
+        0.337598324,
+        0.5403706,
+        0.37030974,
+        0.05633686,
+        1.34898255E-05,
+        2.24222532E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.14314651,
+      "y": 0.04091907,
+      "z": 4.54782
+    },
+    "target_plane_position": {
+      "x": -9.143037,
+      "y": 0.0,
+      "z": 4.548177
+    },
+    "cursor_angular_distance": 1.560974,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.15152,
+    "headData": {
+      "head_position": {
+        "x": -9.71827,
+        "y": -0.0204563,
+        "z": 2.64825654
+      },
+      "head_rotation": {
+        "x": 359.284821,
+        "y": 20.3814316,
+        "z": 1.85490823
+      },
+      "head_forward": {
+        "x": 0.34824115,
+        "y": 0.0124820126,
+        "z": 0.937321842
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.71827,
+        "y": -0.0204563,
+        "z": 2.64825654
+      },
+      "direction": {
+        "x": 0.310755223,
+        "y": 0.0148818092,
+        "z": 0.9503734
+      },
+      "headDirection": {
+        "x": 0.34824115,
+        "y": 0.0124820126,
+        "z": 0.937321842
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 22.3128548,
+      "maxDistance": 2.42446613,
+      "moveDistance": 0.3795835,
+      "newDistance": 0.0,
+      "ratio": 0.156563744,
+      "boost": 1.61631072,
+      "eye_origin": {
+        "x": -9.709295,
+        "y": -0.0213182587,
+        "z": 2.654154
+      },
+      "eye_direction": {
+        "x": 0.289430767,
+        "y": 0.00103175652,
+        "z": 0.957198441
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.709295,
+        "y": -0.0213182587,
+        "z": 2.654154
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.289430767,
+        "y": 0.00103175652,
+        "z": 0.957198441
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.577057,
+        "y": 0.539263368
+      },
+      "filteredEye": {
+        "x": 0.178544343,
+        "y": 0.0007440563,
+        "z": 0.9839316
+      },
+      "distances": [
+        7.88861752,
+        5.607871,
+        3.34813714,
+        1.33954477,
+        1.82831275,
+        3.98133063,
+        6.258304,
+        8.544012
+      ],
+      "scores": [
+        0.0272779912,
+        0.0610945933,
+        0.337381572,
+        0.5461222,
+        0.378230572,
+        0.0607587732,
+        1.30851313E-05,
+        2.17495867E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.115673,
+      "y": 0.04091863,
+      "z": 4.55487728
+    },
+    "target_plane_position": {
+      "x": -9.115547,
+      "y": 0.0,
+      "z": 4.55527639
+    },
+    "cursor_angular_distance": 1.5418005,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.168182,
+    "headData": {
+      "head_position": {
+        "x": -9.706081,
+        "y": -0.022968743,
+        "z": 2.65979719
+      },
+      "head_rotation": {
+        "x": 359.1621,
+        "y": 20.6637478,
+        "z": 1.93332374
+      },
+      "head_forward": {
+        "x": 0.3528452,
+        "y": 0.0146234706,
+        "z": 0.935567439
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.706081,
+        "y": -0.022968743,
+        "z": 2.65979719
+      },
+      "direction": {
+        "x": 0.31673,
+        "y": 0.0145029807,
+        "z": 0.9484048
+      },
+      "headDirection": {
+        "x": 0.3528452,
+        "y": 0.0146234706,
+        "z": 0.935567439
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 21.2504959,
+      "maxDistance": 2.27847123,
+      "moveDistance": 0.361086875,
+      "newDistance": 0.0,
+      "ratio": 0.1584777,
+      "boost": 1.51898086,
+      "eye_origin": {
+        "x": -9.696125,
+        "y": -0.0237874817,
+        "z": 2.6652956
+      },
+      "eye_direction": {
+        "x": 0.294333577,
+        "y": 0.00568112126,
+        "z": 0.9556859
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.696125,
+        "y": -0.0237874817,
+        "z": 2.6652956
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.294333577,
+        "y": 0.00568112032,
+        "z": 0.955685854
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.577057,
+        "y": 0.5392636
+      },
+      "filteredEye": {
+        "x": 0.183025524,
+        "y": 0.000755753135,
+        "z": 0.983107865
+      },
+      "distances": [
+        7.959071,
+        5.67191553,
+        3.39620948,
+        1.3116442,
+        1.69385064,
+        3.87009287,
+        6.15593624,
+        8.446037
+      ],
+      "scores": [
+        0.0264596529,
+        0.0592617579,
+        0.3368829,
+        0.5518687,
+        0.386720568,
+        0.0657154545,
+        1.26925779E-05,
+        2.10971E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.08741951,
+      "y": 0.0409180745,
+      "z": 4.561212
+    },
+    "target_plane_position": {
+      "x": -9.087275,
+      "y": 0.0,
+      "z": 4.561659
+    },
+    "cursor_angular_distance": 1.48094463,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.185883,
+    "headData": {
+      "head_position": {
+        "x": -9.693498,
+        "y": -0.02454066,
+        "z": 2.67138839
+      },
+      "head_rotation": {
+        "x": 359.009247,
+        "y": 21.03124,
+        "z": 2.00996637
+      },
+      "head_forward": {
+        "x": 0.3588233,
+        "y": 0.0172911156,
+        "z": 0.9332453
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.693498,
+        "y": -0.02454066,
+        "z": 2.67138839
+      },
+      "direction": {
+        "x": 0.322545856,
+        "y": 0.014523712,
+        "z": 0.9464423
+      },
+      "headDirection": {
+        "x": 0.3588233,
+        "y": 0.0172911156,
+        "z": 0.9332453
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 20.7997589,
+      "maxDistance": 2.19624162,
+      "moveDistance": 0.351686,
+      "newDistance": 0.0,
+      "ratio": 0.160130829,
+      "boost": 1.464161,
+      "eye_origin": {
+        "x": -9.683503,
+        "y": -0.025326563,
+        "z": 2.67682314
+      },
+      "eye_direction": {
+        "x": 0.300462157,
+        "y": 0.008261224,
+        "z": 0.953757942
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.683503,
+        "y": -0.025326563,
+        "z": 2.67682314
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.3004622,
+        "y": 0.008261224,
+        "z": 0.953757942
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.56115723,
+        "y": 0.390941441
+      },
+      "filteredEye": {
+        "x": 0.187525257,
+        "y": 0.000953008945,
+        "z": 0.982259333
+      },
+      "distances": [
+        8.015108,
+        5.72190332,
+        3.431309,
+        1.27610242,
+        1.56385481,
+        3.771332,
+        6.067211,
+        8.362034
+      ],
+      "scores": [
+        0.0256658643,
+        0.0574839078,
+        0.336188555,
+        0.55765605,
+        0.39573583,
+        0.071116,
+        1.23118007E-05,
+        2.04641879E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.058203,
+      "y": 0.04091769,
+      "z": 4.567277
+    },
+    "target_plane_position": {
+      "x": -9.05804348,
+      "y": 0.0,
+      "z": 4.567753
+    },
+    "cursor_angular_distance": 1.42106414,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.204163,
+    "headData": {
+      "head_position": {
+        "x": -9.680836,
+        "y": -0.0270697828,
+        "z": 2.682473
+      },
+      "head_rotation": {
+        "x": 358.470764,
+        "y": 21.4451828,
+        "z": 2.08085942
+      },
+      "head_forward": {
+        "x": 0.365480661,
+        "y": 0.0266870931,
+        "z": 0.9304363
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.680836,
+        "y": -0.0270697828,
+        "z": 2.682473
+      },
+      "direction": {
+        "x": 0.328429639,
+        "y": 0.01497153,
+        "z": 0.944409668
+      },
+      "headDirection": {
+        "x": 0.365480661,
+        "y": 0.0266870931,
+        "z": 0.9304363
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 20.8813362,
+      "maxDistance": 2.21761465,
+      "moveDistance": 0.357601583,
+      "newDistance": 0.0,
+      "ratio": 0.161255062,
+      "boost": 1.47840977,
+      "eye_origin": {
+        "x": -9.67015648,
+        "y": -0.02775475,
+        "z": 2.68759823
+      },
+      "eye_direction": {
+        "x": 0.310693651,
+        "y": 0.0172160473,
+        "z": 0.9503542
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.67015648,
+        "y": -0.02775475,
+        "z": 2.68759823
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.310693651,
+        "y": 0.0172160473,
+        "z": 0.9503542
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.56115723,
+        "y": 0.3909411
+      },
+      "filteredEye": {
+        "x": 0.192092955,
+        "y": 0.0012456635,
+        "z": 0.981375933
+      },
+      "distances": [
+        8.021327,
+        5.722691,
+        3.41959214,
+        1.2070694,
+        1.47750509,
+        3.72415257,
+        6.03058958,
+        8.330131
+      ],
+      "scores": [
+        0.02489589,
+        0.0557593927,
+        0.335585356,
+        0.563684,
+        0.404998749,
+        0.0766376,
+        1.19424467E-05,
+        1.98502633E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -9.028468,
+      "y": 0.040917024,
+      "z": 4.57249975
+    },
+    "target_plane_position": {
+      "x": -9.028288,
+      "y": 0.0,
+      "z": 4.57302332
+    },
+    "cursor_angular_distance": 1.2757957,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.219177,
+    "headData": {
+      "head_position": {
+        "x": -9.668257,
+        "y": -0.0285663288,
+        "z": 2.6934216
+      },
+      "head_rotation": {
+        "x": 358.371979,
+        "y": 21.9396152,
+        "z": 2.11287928
+      },
+      "head_forward": {
+        "x": 0.373478383,
+        "y": 0.02841033,
+        "z": 0.9272037
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.668257,
+        "y": -0.0285663288,
+        "z": 2.6934216
+      },
+      "direction": {
+        "x": 0.334501266,
+        "y": 0.0168810543,
+        "z": 0.942244
+      },
+      "headDirection": {
+        "x": 0.373478383,
+        "y": 0.02841033,
+        "z": 0.9272037
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 21.74706,
+      "maxDistance": 2.366123,
+      "moveDistance": 0.385210663,
+      "newDistance": 0.0,
+      "ratio": 0.162802473,
+      "boost": 1.57741535,
+      "eye_origin": {
+        "x": -9.657531,
+        "y": -0.0292319357,
+        "z": 2.69845581
+      },
+      "eye_direction": {
+        "x": 0.3188767,
+        "y": 0.0189041849,
+        "z": 0.947607636
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.657531,
+        "y": -0.0292319357,
+        "z": 2.69845581
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.318876743,
+        "y": 0.0189041868,
+        "z": 0.9476077
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.35839844,
+        "y": 0.418586284
+      },
+      "filteredEye": {
+        "x": 0.19689478,
+        "y": 0.00188503251,
+        "z": 0.980422854
+      },
+      "distances": [
+        7.973733,
+        5.67098236,
+        3.35806322,
+        1.10127342,
+        1.45333445,
+        3.73785019,
+        6.053269,
+        8.356702
+      ],
+      "scores": [
+        0.0241490137,
+        0.05408661,
+        0.335369438,
+        0.5701659,
+        0.41412878,
+        0.08191138,
+        1.1584174E-05,
+        1.9254756E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.998223,
+      "y": 0.0409166,
+      "z": 4.57722569
+    },
+    "target_plane_position": {
+      "x": -8.998028,
+      "y": 0.0,
+      "z": 4.57777643
+    },
+    "cursor_angular_distance": 1.08768535,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.23587,
+    "headData": {
+      "head_position": {
+        "x": -9.655334,
+        "y": -0.02776112,
+        "z": 2.704824
+      },
+      "head_rotation": {
+        "x": 357.970459,
+        "y": 22.3125668,
+        "z": 2.25910878
+      },
+      "head_forward": {
+        "x": 0.379420966,
+        "y": 0.03541462,
+        "z": 0.9245461
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.655334,
+        "y": -0.02776112,
+        "z": 2.704824
+      },
+      "direction": {
+        "x": 0.341000766,
+        "y": 0.0187929347,
+        "z": 0.939875
+      },
+      "headDirection": {
+        "x": 0.379420966,
+        "y": 0.03541462,
+        "z": 0.9245461
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.9440784,
+      "maxDistance": 2.4833312,
+      "moveDistance": 0.41121906,
+      "newDistance": 0.0,
+      "ratio": 0.165591717,
+      "boost": 1.65555418,
+      "eye_origin": {
+        "x": -9.644272,
+        "y": -0.0283294339,
+        "z": 2.70966482
+      },
+      "eye_direction": {
+        "x": 0.328531682,
+        "y": 0.0288581587,
+        "z": 0.9440519
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.644272,
+        "y": -0.0283294339,
+        "z": 2.70966482
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.328531682,
+        "y": 0.0288581587,
+        "z": 0.944052
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.35839844,
+        "y": 0.418585926
+      },
+      "filteredEye": {
+        "x": 0.201837018,
+        "y": 0.00256659952,
+        "z": 0.9794157
+      },
+      "distances": [
+        7.89950848,
+        5.593699,
+        3.27369046,
+        0.9825793,
+        1.4756496,
+        3.787807,
+        6.109745,
+        8.41605949
+      ],
+      "scores": [
+        0.0234245434,
+        0.0524640121,
+        0.3356662,
+        0.5771654,
+        0.422851026,
+        0.0867272,
+        1.12366488E-05,
+        1.86771132E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.966985,
+      "y": 0.04091683,
+      "z": 4.5820303
+    },
+    "target_plane_position": {
+      "x": -8.966789,
+      "y": 0.0,
+      "z": 4.5825634
+    },
+    "cursor_angular_distance": 0.9097822,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.253265,
+    "headData": {
+      "head_position": {
+        "x": -9.642369,
+        "y": -0.02938028,
+        "z": 2.71532035
+      },
+      "head_rotation": {
+        "x": 357.5022,
+        "y": 22.5928326,
+        "z": 2.32883573
+      },
+      "head_forward": {
+        "x": 0.383814842,
+        "y": 0.0435808674,
+        "z": 0.9223811
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.642369,
+        "y": -0.02938028,
+        "z": 2.71532035
+      },
+      "direction": {
+        "x": 0.347525269,
+        "y": 0.0215976853,
+        "z": 0.937421739
+      },
+      "headDirection": {
+        "x": 0.383814842,
+        "y": 0.0435808674,
+        "z": 0.9223811
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.8400517,
+      "maxDistance": 2.55443263,
+      "moveDistance": 0.430497944,
+      "newDistance": 0.0,
+      "ratio": 0.168529764,
+      "boost": 1.70295513,
+      "eye_origin": {
+        "x": -9.631275,
+        "y": -0.02986723,
+        "z": 2.72010851
+      },
+      "eye_direction": {
+        "x": 0.333050758,
+        "y": 0.03694798,
+        "z": 0.942184746
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.631275,
+        "y": -0.02986723,
+        "z": 2.72010851
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.3330508,
+        "y": 0.0369479842,
+        "z": 0.942184746
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.1355896,
+        "y": 0.249490827
+      },
+      "filteredEye": {
+        "x": 0.206976339,
+        "y": 0.00361951324,
+        "z": 0.978339255
+      },
+      "distances": [
+        7.710219,
+        5.402109,
+        3.07650757,
+        0.757439256,
+        1.62714469,
+        3.95972848,
+        6.286187,
+        8.594571
+      ],
+      "scores": [
+        0.0227218084,
+        0.05089009,
+        0.3371372,
+        0.5853058,
+        0.430402637,
+        0.09036701,
+        1.089955E-05,
+        1.81168E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.934717,
+      "y": 0.0409163572,
+      "z": 4.5853
+    },
+    "target_plane_position": {
+      "x": -8.93450451,
+      "y": 0.0,
+      "z": 4.585862
+    },
+    "cursor_angular_distance": 0.636736631,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.270355,
+    "headData": {
+      "head_position": {
+        "x": -9.628917,
+        "y": -0.0296501331,
+        "z": 2.725452
+      },
+      "head_rotation": {
+        "x": 357.547943,
+        "y": 22.9724445,
+        "z": 2.44338679
+      },
+      "head_forward": {
+        "x": 0.389931053,
+        "y": 0.0427834056,
+        "z": 0.919849634
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.628917,
+        "y": -0.0296501331,
+        "z": 2.725452
+      },
+      "direction": {
+        "x": 0.353806674,
+        "y": 0.0253755543,
+        "z": 0.9349742
+      },
+      "headDirection": {
+        "x": 0.389931053,
+        "y": 0.0427834056,
+        "z": 0.919849634
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.70431,
+      "maxDistance": 2.57936788,
+      "moveDistance": 0.442771465,
+      "newDistance": 0.0,
+      "ratio": 0.1716589,
+      "boost": 1.71957862,
+      "eye_origin": {
+        "x": -9.617831,
+        "y": -0.0301087536,
+        "z": 2.73019385
+      },
+      "eye_direction": {
+        "x": 0.3413473,
+        "y": 0.0308321454,
+        "z": 0.939431369
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.617831,
+        "y": -0.0301087536,
+        "z": 2.73019385
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.3413473,
+        "y": 0.0308321435,
+        "z": 0.9394314
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.1355896,
+        "y": 0.249490052
+      },
+      "filteredEye": {
+        "x": 0.2120939,
+        "y": 0.00495439535,
+        "z": 0.977236748
+      },
+      "distances": [
+        7.537312,
+        5.228097,
+        2.899553,
+        0.559531331,
+        1.78443491,
+        4.12450027,
+        6.452969,
+        8.762194
+      ],
+      "scores": [
+        0.0220401548,
+        0.04936339,
+        0.339625776,
+        0.594389439,
+        0.436783969,
+        0.09290901,
+        1.0572564E-05,
+        1.75732964E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.900759,
+      "y": 0.0409162752,
+      "z": 4.58753633
+    },
+    "target_plane_position": {
+      "x": -8.90053749,
+      "y": 0.0,
+      "z": 4.58810139
+    },
+    "cursor_angular_distance": 0.294750571,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.286865,
+    "headData": {
+      "head_position": {
+        "x": -9.61546,
+        "y": -0.0257021226,
+        "z": 2.73622751
+      },
+      "head_rotation": {
+        "x": 357.2482,
+        "y": 23.27251,
+        "z": 2.694587
+      },
+      "head_forward": {
+        "x": 0.394649267,
+        "y": 0.0480096266,
+        "z": 0.91757673
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.61546,
+        "y": -0.0257021226,
+        "z": 2.73622751
+      },
+      "direction": {
+        "x": 0.360165149,
+        "y": 0.0284204111,
+        "z": 0.9324555
+      },
+      "headDirection": {
+        "x": 0.394649267,
+        "y": 0.0480096266,
+        "z": 0.91757673
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.96781,
+      "maxDistance": 2.45566988,
+      "moveDistance": 0.42893818,
+      "newDistance": 0.0,
+      "ratio": 0.174672574,
+      "boost": 1.63711321,
+      "eye_origin": {
+        "x": -9.604341,
+        "y": -0.02607848,
+        "z": 2.74090672
+      },
+      "eye_direction": {
+        "x": 0.346246153,
+        "y": 0.03582441,
+        "z": 0.937459469
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.604341,
+        "y": -0.02607848,
+        "z": 2.74090672
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.346246153,
+        "y": 0.03582441,
+        "z": 0.937459469
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.028656,
+        "y": 0.553302467
+      },
+      "filteredEye": {
+        "x": 0.217342541,
+        "y": 0.00599167,
+        "z": 0.976077
+      },
+      "distances": [
+        7.37434959,
+        5.06681871,
+        2.743239,
+        0.4597013,
+        1.96572864,
+        4.297921,
+        6.62403727,
+        8.932128
+      ],
+      "scores": [
+        0.0213789511,
+        0.04788249,
+        0.342977583,
+        0.6037995,
+        0.441886067,
+        0.0943342149,
+        1.02553877E-05,
+        1.70460979E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.866132,
+      "y": 0.0409173928,
+      "z": 4.58998156
+    },
+    "target_plane_position": {
+      "x": -8.865934,
+      "y": 0.0,
+      "z": 4.590469
+    },
+    "cursor_angular_distance": 0.289391,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.304047,
+    "headData": {
+      "head_position": {
+        "x": -9.601879,
+        "y": -0.02774845,
+        "z": 2.745749
+      },
+      "head_rotation": {
+        "x": 356.657257,
+        "y": 23.6425724,
+        "z": 2.88363981
+      },
+      "head_forward": {
+        "x": 0.400347531,
+        "y": 0.058308538,
+        "z": 0.914506435
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.601879,
+        "y": -0.02774845,
+        "z": 2.745749
+      },
+      "direction": {
+        "x": 0.3663508,
+        "y": 0.0319111235,
+        "z": 0.9299293
+      },
+      "headDirection": {
+        "x": 0.400347531,
+        "y": 0.058308538,
+        "z": 0.914506435
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.2542477,
+      "maxDistance": 2.42712879,
+      "moveDistance": 0.431922585,
+      "newDistance": 0.0,
+      "ratio": 0.1779562,
+      "boost": 1.61808586,
+      "eye_origin": {
+        "x": -9.590042,
+        "y": -0.0279685967,
+        "z": 2.750055
+      },
+      "eye_direction": {
+        "x": 0.354750484,
+        "y": 0.03812793,
+        "z": 0.93418324
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.590042,
+        "y": -0.0279685967,
+        "z": 2.750055
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.354750484,
+        "y": 0.03812793,
+        "z": 0.93418324
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -3.028656,
+        "y": 0.5533027
+      },
+      "filteredEye": {
+        "x": 0.2225799,
+        "y": 0.007187602,
+        "z": 0.974887967
+      },
+      "distances": [
+        7.075624,
+        4.77516031,
+        2.47235131,
+        0.5135812,
+        2.32051849,
+        4.63240051,
+        6.95155525,
+        9.256228
+      ],
+      "scores": [
+        0.0207375828,
+        0.0477950573,
+        0.347854167,
+        0.6126041,
+        0.44470638,
+        0.09370979,
+        9.94772654E-06,
+        1.6534716E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.830821,
+      "y": 0.040916834,
+      "z": 4.59052563
+    },
+    "target_plane_position": {
+      "x": -8.830602,
+      "y": 0.0,
+      "z": 4.591049
+    },
+    "cursor_angular_distance": 0.5760729,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.320465,
+    "headData": {
+      "head_position": {
+        "x": -9.58851,
+        "y": -0.0249520112,
+        "z": 2.75488615
+      },
+      "head_rotation": {
+        "x": 357.40332,
+        "y": 23.9917259,
+        "z": 2.99581146
+      },
+      "head_forward": {
+        "x": 0.406187236,
+        "y": 0.0453053452,
+        "z": 0.9126661
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.58851,
+        "y": -0.0249520112,
+        "z": 2.75488615
+      },
+      "direction": {
+        "x": 0.372579366,
+        "y": 0.0367082059,
+        "z": 0.92727387
+      },
+      "headDirection": {
+        "x": 0.406187236,
+        "y": 0.0453053452,
+        "z": 0.9126661
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 28.378231,
+      "maxDistance": 2.61987638,
+      "moveDistance": 0.4754477,
+      "newDistance": 0.0,
+      "ratio": 0.181477159,
+      "boost": 1.7465843,
+      "eye_origin": {
+        "x": -9.576648,
+        "y": -0.0252673775,
+        "z": 2.75911546
+      },
+      "eye_direction": {
+        "x": 0.360641867,
+        "y": 0.0250327326,
+        "z": 0.9323684
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.576648,
+        "y": -0.0252673775,
+        "z": 2.75911546
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.360641867,
+        "y": 0.0250327326,
+        "z": 0.9323684
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.90145874,
+        "y": 1.0088743
+      },
+      "filteredEye": {
+        "x": 0.227954641,
+        "y": 0.00842846651,
+        "z": 0.973635256
+      },
+      "distances": [
+        6.88638067,
+        4.60023642,
+        2.34117532,
+        0.8038125,
+        2.60444,
+        4.885676,
+        7.1932025,
+        9.491733
+      ],
+      "scores": [
+        0.0201154556,
+        0.04875979,
+        0.3533715,
+        0.6194031,
+        0.445738554,
+        0.091584444,
+        9.649295E-06,
+        1.60386747E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.795178,
+      "y": 0.0409175865,
+      "z": 4.59025669
+    },
+    "target_plane_position": {
+      "x": -8.794976,
+      "y": 0.0,
+      "z": 4.59072542
+    },
+    "cursor_angular_distance": 0.9905132,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.336243,
+    "headData": {
+      "head_position": {
+        "x": -9.57418251,
+        "y": -0.0168391112,
+        "z": 2.76539946
+      },
+      "head_rotation": {
+        "x": 357.518951,
+        "y": 24.5269337,
+        "z": 3.03950667
+      },
+      "head_forward": {
+        "x": 0.41473186,
+        "y": 0.0432887971,
+        "z": 0.908913434
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.57418251,
+        "y": -0.0168391112,
+        "z": 2.76539946
+      },
+      "direction": {
+        "x": 0.3788288,
+        "y": 0.0383006074,
+        "z": 0.924673736
+      },
+      "headDirection": {
+        "x": 0.41473186,
+        "y": 0.0432887971,
+        "z": 0.908913434
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 24.8952465,
+      "maxDistance": 2.15667462,
+      "moveDistance": 0.398409516,
+      "newDistance": 0.0,
+      "ratio": 0.184733257,
+      "boost": 1.43778312,
+      "eye_origin": {
+        "x": -9.563555,
+        "y": -0.0171978045,
+        "z": 2.77009821
+      },
+      "eye_direction": {
+        "x": 0.37374267,
+        "y": 0.0204192437,
+        "z": 0.9273077
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.563555,
+        "y": -0.0171978045,
+        "z": 2.77009821
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.3737427,
+        "y": 0.0204192437,
+        "z": 0.927307665
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.90148926,
+        "y": 1.00887525
+      },
+      "filteredEye": {
+        "x": 0.2333499,
+        "y": 0.009096058,
+        "z": 0.9723503
+      },
+      "distances": [
+        6.75856638,
+        4.495752,
+        2.30859518,
+        1.13969457,
+        2.87037635,
+        5.11155462,
+        7.40258,
+        9.692336
+      ],
+      "scores": [
+        0.0195119921,
+        0.0503224842,
+        0.3589188,
+        0.623982847,
+        0.445144147,
+        0.0888369158,
+        9.359816E-06,
+        1.55575151E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.758071,
+      "y": 0.0409193225,
+      "z": 4.59093571
+    },
+    "target_plane_position": {
+      "x": -8.757931,
+      "y": 0.0,
+      "z": 4.59125042
+    },
+    "cursor_angular_distance": 1.27441454,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.353363,
+    "headData": {
+      "head_position": {
+        "x": -9.56066,
+        "y": -0.0168916844,
+        "z": 2.77440286
+      },
+      "head_rotation": {
+        "x": 357.5832,
+        "y": 25.1945267,
+        "z": 2.95298171
+      },
+      "head_forward": {
+        "x": 0.425314218,
+        "y": 0.0421686247,
+        "z": 0.904062867
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.56066,
+        "y": -0.0168916844,
+        "z": 2.77440286
+      },
+      "direction": {
+        "x": 0.3856496,
+        "y": 0.039246548,
+        "z": 0.9218101
+      },
+      "headDirection": {
+        "x": 0.425314218,
+        "y": 0.0421686247,
+        "z": 0.904062867
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 25.7823429,
+      "maxDistance": 2.264772,
+      "moveDistance": 0.427318156,
+      "newDistance": 0.0,
+      "ratio": 0.18868044,
+      "boost": 1.509848,
+      "eye_origin": {
+        "x": -9.549981,
+        "y": -0.0172715727,
+        "z": 2.778979
+      },
+      "eye_direction": {
+        "x": 0.3844989,
+        "y": 0.01936721,
+        "z": 0.9229223
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.549981,
+        "y": -0.0172715727,
+        "z": 2.778979
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.384498864,
+        "y": 0.01936721,
+        "z": 0.9229223
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.641327,
+        "y": 1.17015469
+      },
+      "filteredEye": {
+        "x": 0.239066,
+        "y": 0.009552997,
+        "z": 0.970956266
+      },
+      "distances": [
+        6.530418,
+        4.30165672,
+        2.22668624,
+        1.50636184,
+        3.24871731,
+        5.45761538,
+        7.73248529,
+        10.01292
+      ],
+      "scores": [
+        0.0189266335,
+        0.0530028678,
+        0.364791125,
+        0.6262252,
+        0.442297548,
+        0.08617181,
+        9.079022E-06,
+        1.509079E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.722117,
+      "y": 0.04091931,
+      "z": 4.58974457
+    },
+    "target_plane_position": {
+      "x": -8.721972,
+      "y": 0.0,
+      "z": 4.59005833
+    },
+    "cursor_angular_distance": 1.50128675,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.3693,
+    "headData": {
+      "head_position": {
+        "x": -9.548443,
+        "y": -0.0172608066,
+        "z": 2.7814374
+      },
+      "head_rotation": {
+        "x": 358.4906,
+        "y": 25.9778156,
+        "z": 2.61049652
+      },
+      "head_forward": {
+        "x": 0.437871158,
+        "y": 0.0263407,
+        "z": 0.8986518
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.548443,
+        "y": -0.0172608066,
+        "z": 2.7814374
+      },
+      "direction": {
+        "x": 0.39337486,
+        "y": 0.0398172662,
+        "z": 0.918515444
+      },
+      "headDirection": {
+        "x": 0.437871158,
+        "y": 0.0263407,
+        "z": 0.8986518
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 28.4238777,
+      "maxDistance": 2.49551821,
+      "moveDistance": 0.4823088,
+      "newDistance": 0.0,
+      "ratio": 0.19327,
+      "boost": 1.66367877,
+      "eye_origin": {
+        "x": -9.538166,
+        "y": -0.01785178,
+        "z": 2.7860806
+      },
+      "eye_direction": {
+        "x": 0.4028202,
+        "y": 0.005153363,
+        "z": 0.9152646
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.538166,
+        "y": -0.01785178,
+        "z": 2.7860806
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.40282023,
+        "y": 0.00515336357,
+        "z": 0.9152646
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.641327,
+        "y": 1.17015469
+      },
+      "filteredEye": {
+        "x": 0.244994164,
+        "y": 0.009950067,
+        "z": 0.9694735
+      },
+      "distances": [
+        6.550895,
+        4.349471,
+        2.34927058,
+        1.72555709,
+        3.37777,
+        5.548637,
+        7.80627632,
+        10.0770636
+      ],
+      "scores": [
+        0.018358836,
+        0.0553159565,
+        0.369751781,
+        0.6270851,
+        0.438762,
+        0.08358666,
+        8.806652E-06,
+        1.46380657E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.68792,
+      "y": 0.040919248,
+      "z": 4.586455
+    },
+    "target_plane_position": {
+      "x": -8.687768,
+      "y": 0.0,
+      "z": 4.586774
+    },
+    "cursor_angular_distance": 1.61942911,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.387024,
+    "headData": {
+      "head_position": {
+        "x": -9.53647,
+        "y": -0.0153573249,
+        "z": 2.78967476
+      },
+      "head_rotation": {
+        "x": 359.022949,
+        "y": 26.9902058,
+        "z": 2.26923251
+      },
+      "head_forward": {
+        "x": 0.4537722,
+        "y": 0.0170518011,
+        "z": 0.890954554
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.53647,
+        "y": -0.0153573249,
+        "z": 2.78967476
+      },
+      "direction": {
+        "x": 0.4023173,
+        "y": 0.037141297,
+        "z": 0.9147465
+      },
+      "headDirection": {
+        "x": 0.4537722,
+        "y": 0.0170518011,
+        "z": 0.890954554
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 35.989994,
+      "maxDistance": 2.897054,
+      "moveDistance": 0.576764047,
+      "newDistance": 0.0,
+      "ratio": 0.1990864,
+      "boost": 1.9313693,
+      "eye_origin": {
+        "x": -9.526118,
+        "y": -0.0160715766,
+        "z": 2.79413366
+      },
+      "eye_direction": {
+        "x": 0.418817371,
+        "y": -0.00389939221,
+        "z": 0.90806216
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.526118,
+        "y": -0.0160715766,
+        "z": 2.79413366
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.418817371,
+        "y": -0.003899392,
+        "z": 0.90806216
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.276245,
+        "y": 1.11048627
+      },
+      "filteredEye": {
+        "x": 0.251441777,
+        "y": 0.009763424,
+        "z": 0.967823148
+      },
+      "distances": [
+        6.744507,
+        4.55380249,
+        2.56445122,
+        1.80742753,
+        3.30612278,
+        5.435091,
+        7.676367,
+        9.938678
+      ],
+      "scores": [
+        0.0178080723,
+        0.0563336648,
+        0.373272538,
+        0.627428,
+        0.435762435,
+        0.0810790658,
+        8.542453E-06,
+        1.41989247E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.654761,
+      "y": 0.0409195647,
+      "z": 4.584482
+    },
+    "target_plane_position": {
+      "x": -8.654623,
+      "y": 0.0,
+      "z": 4.584764
+    },
+    "cursor_angular_distance": 1.57420683,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.4033,
+    "headData": {
+      "head_position": {
+        "x": -9.52444649,
+        "y": -0.0142513346,
+        "z": 2.79775643
+      },
+      "head_rotation": {
+        "x": 358.957458,
+        "y": 27.8569126,
+        "z": 2.14519072
+      },
+      "head_forward": {
+        "x": 0.4671878,
+        "y": 0.0181945749,
+        "z": 0.8839709
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.52444649,
+        "y": -0.0142513346,
+        "z": 2.79775643
+      },
+      "direction": {
+        "x": 0.4130161,
+        "y": 0.03302155,
+        "z": 0.9101248
+      },
+      "headDirection": {
+        "x": 0.4671878,
+        "y": 0.0181945749,
+        "z": 0.8839709
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 40.32149,
+      "maxDistance": 3.44651031,
+      "moveDistance": 0.7082449,
+      "newDistance": 0.0,
+      "ratio": 0.205496237,
+      "boost": 2.29767346,
+      "eye_origin": {
+        "x": -9.513686,
+        "y": -0.0149713522,
+        "z": 2.801863
+      },
+      "eye_direction": {
+        "x": 0.4351035,
+        "y": 0.0003777705,
+        "z": 0.9003803
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.513686,
+        "y": -0.0149713522,
+        "z": 2.801863
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.4351035,
+        "y": 0.0003777705,
+        "z": 0.9003804
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.276245,
+        "y": 1.11048722
+      },
+      "filteredEye": {
+        "x": 0.258294433,
+        "y": 0.009222539,
+        "z": 0.966022253
+      },
+      "distances": [
+        6.92177963,
+        4.724349,
+        2.70414329,
+        1.77552927,
+        3.15659714,
+        5.265368,
+        7.500879,
+        9.760901
+      ],
+      "scores": [
+        0.01727383,
+        0.056297563,
+        0.375849515,
+        0.627952,
+        0.43375,
+        0.0786467,
+        8.286179E-06,
+        1.37729572E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.622284,
+      "y": 0.0409197323,
+      "z": 4.58239555
+    },
+    "target_plane_position": {
+      "x": -8.622152,
+      "y": 0.0,
+      "z": 4.582656
+    },
+    "cursor_angular_distance": 1.49082232,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.4192,
+    "headData": {
+      "head_position": {
+        "x": -9.512186,
+        "y": -0.0109478766,
+        "z": 2.806675
+      },
+      "head_rotation": {
+        "x": 358.897919,
+        "y": 28.7822018,
+        "z": 1.91655493
+      },
+      "head_forward": {
+        "x": 0.481392384,
+        "y": 0.0192336142,
+        "z": 0.876294136
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.512186,
+        "y": -0.0109478766,
+        "z": 2.806675
+      },
+      "direction": {
+        "x": 0.424673826,
+        "y": 0.02987776,
+        "z": 0.9048532
+      },
+      "headDirection": {
+        "x": 0.481392384,
+        "y": 0.0192336142,
+        "z": 0.876294136
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 46.35444,
+      "maxDistance": 3.550272,
+      "moveDistance": 0.7548651,
+      "newDistance": 0.0,
+      "ratio": 0.212621763,
+      "boost": 2.366848,
+      "eye_origin": {
+        "x": -9.50136852,
+        "y": -0.0116891507,
+        "z": 2.81061077
+      },
+      "eye_direction": {
+        "x": 0.449522972,
+        "y": 0.00156022655,
+        "z": 0.893267453
+      },
+      "eye_target_name": "MenuTarget_4",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.50136852,
+        "y": -0.0116891507,
+        "z": 2.81061077
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.449522972,
+        "y": 0.00156022655,
+        "z": 0.8932674
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.1020813,
+        "y": 0.9422006
+      },
+      "filteredEye": {
+        "x": 0.265548617,
+        "y": 0.008874824,
+        "z": 0.9640566
+      },
+      "distances": [
+        7.04673147,
+        4.83501,
+        2.77085733,
+        1.67957973,
+        2.989437,
+        5.09908152,
+        7.33820868,
+        9.600829
+      ],
+      "scores": [
+        0.0167556163,
+        0.05559858,
+        0.3779489,
+        0.62903595,
+        0.4328009,
+        0.0762873,
+        8.037594E-06,
+        1.335977E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.589661,
+      "y": 0.040920157,
+      "z": 4.58094931
+    },
+    "target_plane_position": {
+      "x": -8.589558,
+      "y": 0.0,
+      "z": 4.581148
+    },
+    "cursor_angular_distance": 1.33808315,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.4361,
+    "headData": {
+      "head_position": {
+        "x": -9.499132,
+        "y": -0.007248956,
+        "z": 2.81651473
+      },
+      "head_rotation": {
+        "x": 358.148529,
+        "y": 29.7774353,
+        "z": 1.71765423
+      },
+      "head_forward": {
+        "x": 0.496372938,
+        "y": 0.032308802,
+        "z": 0.867507935
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.499132,
+        "y": -0.007248956,
+        "z": 2.81651473
+      },
+      "direction": {
+        "x": 0.4373155,
+        "y": 0.02754437,
+        "z": 0.898886263
+      },
+      "headDirection": {
+        "x": 0.496372938,
+        "y": 0.032308802,
+        "z": 0.867507935
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 50.6182823,
+      "maxDistance": 3.68987179,
+      "moveDistance": 0.812046468,
+      "newDistance": 0.0,
+      "ratio": 0.220074445,
+      "boost": 2.45991445,
+      "eye_origin": {
+        "x": -9.488132,
+        "y": -0.007875092,
+        "z": 2.82020426
+      },
+      "eye_direction": {
+        "x": 0.466146857,
+        "y": 0.0161345713,
+        "z": 0.8845602
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.488132,
+        "y": -0.007875092,
+        "z": 2.82020426
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.466146857,
+        "y": 0.0161345713,
+        "z": 0.8845602
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.1020813,
+        "y": 0.9422005
+      },
+      "filteredEye": {
+        "x": 0.2731117,
+        "y": 0.008588659,
+        "z": 0.961944
+      },
+      "distances": [
+        7.051935,
+        4.823652,
+        2.71714139,
+        1.53097379,
+        2.87650752,
+        5.01559544,
+        7.267955,
+        9.537886
+      ],
+      "scores": [
+        0.016252948,
+        0.0549887121,
+        0.3803076,
+        0.630979061,
+        0.432557821,
+        0.07399868,
+        7.796466E-06,
+        1.29589765E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.556833,
+      "y": 0.0409205034,
+      "z": 4.580454
+    },
+    "target_plane_position": {
+      "x": -8.556764,
+      "y": 0.0,
+      "z": 4.58058453
+    },
+    "cursor_angular_distance": 1.13763225,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.453461,
+    "headData": {
+      "head_position": {
+        "x": -9.487191,
+        "y": -0.00755253667,
+        "z": 2.82560158
+      },
+      "head_rotation": {
+        "x": 357.630524,
+        "y": 30.7868347,
+        "z": 1.515293
+      },
+      "head_forward": {
+        "x": 0.511407852,
+        "y": 0.041343607,
+        "z": 0.858343
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.487191,
+        "y": -0.00755253667,
+        "z": 2.82560158
+      },
+      "direction": {
+        "x": 0.4509905,
+        "y": 0.0286445245,
+        "z": 0.892069
+      },
+      "headDirection": {
+        "x": 0.511407852,
+        "y": 0.041343607,
+        "z": 0.858343
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 51.49095,
+      "maxDistance": 3.84206128,
+      "moveDistance": 0.8777571,
+      "newDistance": 0.0,
+      "ratio": 0.228459939,
+      "boost": 2.56137419,
+      "eye_origin": {
+        "x": -9.476131,
+        "y": -0.00812751,
+        "z": 2.82910538
+      },
+      "eye_direction": {
+        "x": 0.48151055,
+        "y": 0.025290709,
+        "z": 0.8760754
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.476131,
+        "y": -0.00812751,
+        "z": 2.82910538
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.48151055,
+        "y": 0.025290709,
+        "z": 0.8760753
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.01586914,
+        "y": 0.865858436
+      },
+      "filteredEye": {
+        "x": 0.2810669,
+        "y": 0.008897897,
+        "z": 0.95964694
+      },
+      "distances": [
+        6.83887959,
+        4.591968,
+        2.44672656,
+        1.31759822,
+        2.90851831,
+        5.112091,
+        7.388411,
+        9.670608
+      ],
+      "scores": [
+        0.01576536,
+        0.0557872429,
+        0.384218037,
+        0.6341441,
+        0.432129979,
+        0.07177872,
+        7.562572E-06,
+        1.25702073E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.525991,
+      "y": 0.04092048,
+      "z": 4.579305
+    },
+    "target_plane_position": {
+      "x": -8.525917,
+      "y": 0.0,
+      "z": 4.57944059
+    },
+    "cursor_angular_distance": 0.891093135,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.4699,
+    "headData": {
+      "head_position": {
+        "x": -9.475353,
+        "y": -0.008092438,
+        "z": 2.83496213
+      },
+      "head_rotation": {
+        "x": 357.578918,
+        "y": 31.6475563,
+        "z": 1.35910869
+      },
+      "head_forward": {
+        "x": 0.5242243,
+        "y": 0.04224353,
+        "z": 0.8505318
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.475353,
+        "y": -0.008092438,
+        "z": 2.83496213
+      },
+      "direction": {
+        "x": 0.465561658,
+        "y": 0.0316775441,
+        "z": 0.8844484
+      },
+      "headDirection": {
+        "x": 0.5242243,
+        "y": 0.04224353,
+        "z": 0.8505318
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 56.8746,
+      "maxDistance": 4.031529,
+      "moveDistance": 0.9580527,
+      "newDistance": 0.0,
+      "ratio": 0.237640038,
+      "boost": 2.687686,
+      "eye_origin": {
+        "x": -9.464821,
+        "y": -0.008674441,
+        "z": 2.83866334
+      },
+      "eye_direction": {
+        "x": 0.4938395,
+        "y": 0.0210143887,
+        "z": 0.8692991
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.464821,
+        "y": -0.008674441,
+        "z": 2.83866334
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.4938395,
+        "y": 0.0210143887,
+        "z": 0.8692991
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.01586914,
+        "y": 0.865858257
+      },
+      "filteredEye": {
+        "x": 0.289348245,
+        "y": 0.009562321,
+        "z": 0.9571761
+      },
+      "distances": [
+        6.621787,
+        4.35005665,
+        2.14283657,
+        1.05480516,
+        2.934316,
+        5.201645,
+        7.502187,
+        9.796933
+      ],
+      "scores": [
+        0.0152924,
+        0.0580132864,
+        0.3898345,
+        0.638790965,
+        0.4315602,
+        0.06962536,
+        7.335695E-06,
+        1.21931009E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.495329,
+      "y": 0.0409204364,
+      "z": 4.57820368
+    },
+    "target_plane_position": {
+      "x": -8.495248,
+      "y": 0.0,
+      "z": 4.578348
+    },
+    "cursor_angular_distance": 0.693797767,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.4866,
+    "headData": {
+      "head_position": {
+        "x": -9.464483,
+        "y": -0.009671637,
+        "z": 2.84373236
+      },
+      "head_rotation": {
+        "x": 357.8835,
+        "y": 32.3528938,
+        "z": 1.20227516
+      },
+      "head_forward": {
+        "x": 0.5347673,
+        "y": 0.03693118,
+        "z": 0.8441919
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.464483,
+        "y": -0.009671637,
+        "z": 2.84373236
+      },
+      "direction": {
+        "x": 0.480270743,
+        "y": 0.0343040153,
+        "z": 0.8764493
+      },
+      "headDirection": {
+        "x": 0.5347673,
+        "y": 0.03693118,
+        "z": 0.8441919
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 58.972332,
+      "maxDistance": 3.930093,
+      "moveDistance": 0.9710838,
+      "newDistance": 0.0,
+      "ratio": 0.247089267,
+      "boost": 2.620062,
+      "eye_origin": {
+        "x": -9.45391,
+        "y": -0.0103189992,
+        "z": 2.84730387
+      },
+      "eye_direction": {
+        "x": 0.504504561,
+        "y": 0.0157999657,
+        "z": 0.863264441
+      },
+      "eye_target_name": "MenuTarget_3",
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.45391,
+        "y": -0.0103189992,
+        "z": 2.84730387
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.504504561,
+        "y": 0.0157999657,
+        "z": 0.8632645
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.075348,
+        "y": 1.16654086
+      },
+      "filteredEye": {
+        "x": 0.297812074,
+        "y": 0.0100299744,
+        "z": 0.954571843
+      },
+      "distances": [
+        6.446402,
+        4.153788,
+        1.8839829,
+        0.838368058,
+        2.9720993,
+        5.283238,
+        7.6006,
+        9.904071
+      ],
+      "scores": [
+        0.0148336282,
+        0.0613501631,
+        0.396835566,
+        0.644597054,
+        0.4307808,
+        0.06753661,
+        7.11562461E-06,
+        1.18273086E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.466453,
+      "y": 0.0409202948,
+      "z": 4.57668972
+    },
+    "target_plane_position": {
+      "x": -8.466353,
+      "y": 0.0,
+      "z": 4.57686138
+    },
+    "cursor_angular_distance": 0.57742995,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.503662,
+    "headData": {
+      "head_position": {
+        "x": -9.452856,
+        "y": -0.009026389,
+        "z": 2.85226345
+      },
+      "head_rotation": {
+        "x": 358.301453,
+        "y": 32.8101273,
+        "z": 1.216253
+      },
+      "head_forward": {
+        "x": 0.5416187,
+        "y": 0.0296409056,
+        "z": 0.84010154
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.452856,
+        "y": -0.009026389,
+        "z": 2.85226345
+      },
+      "direction": {
+        "x": 0.4944256,
+        "y": 0.03499066,
+        "z": 0.868515432
+      },
+      "headDirection": {
+        "x": 0.5416187,
+        "y": 0.0296409056,
+        "z": 0.84010154
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 56.3791656,
+      "maxDistance": 3.6321094,
+      "moveDistance": 0.930579245,
+      "newDistance": 0.0,
+      "ratio": 0.256209046,
+      "boost": 2.42140627,
+      "eye_origin": {
+        "x": -9.443087,
+        "y": -0.009770966,
+        "z": 2.856275
+      },
+      "eye_direction": {
+        "x": 0.5113222,
+        "y": 0.00263777352,
+        "z": 0.859385
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.443087,
+        "y": -0.009770966,
+        "z": 2.856275
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.51132226,
+        "y": 0.00263777375,
+        "z": 0.8593851
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.075348,
+        "y": 1.1665386
+      },
+      "filteredEye": {
+        "x": 0.306380481,
+        "y": 0.0102708554,
+        "z": 0.9518537
+      },
+      "distances": [
+        6.428705,
+        4.1228857,
+        1.806886,
+        0.625575662,
+        2.914368,
+        5.248371,
+        7.57465839,
+        9.882842
+      ],
+      "scores": [
+        0.01438862,
+        0.0647723451,
+        0.4040892,
+        0.6515057,
+        0.430371165,
+        0.06551051,
+        6.902156E-06,
+        1.147249E-07
+      ]
+    }
+  },
+  {
+    "target_position": {
+      "x": -8.436708,
+      "y": 0.0409203544,
+      "z": 4.57467651
+    },
+    "target_plane_position": {
+      "x": -8.436615,
+      "y": 0.0,
+      "z": 4.574836
+    },
+    "cursor_angular_distance": 0.571640134,
+    "start_num": 1,
+    "end_num": 3,
+    "step_num": 5,
+    "wide": "SMALL",
+    "timestamp": 469.519165,
+    "headData": {
+      "head_position": {
+        "x": -9.440566,
+        "y": -0.00644017849,
+        "z": 2.86122513
+      },
+      "head_rotation": {
+        "x": 358.4029,
+        "y": 33.3788528,
+        "z": 1.2056812
+      },
+      "head_forward": {
+        "x": 0.5499589,
+        "y": 0.027871035,
+        "z": 0.8347266
+      }
+    },
+    "cursorData": {
+      "cursor_type": "NEWSPEEDSTICKY",
+      "origin": {
+        "x": -9.440566,
+        "y": -0.00644017849,
+        "z": 2.86122513
+      },
+      "direction": {
+        "x": 0.50708,
+        "y": 0.03358334,
+        "z": 0.861244559
+      },
+      "headDirection": {
+        "x": 0.5499589,
+        "y": 0.027871035,
+        "z": 0.8347266
+      },
+      "target_name": "MenuTarget_3",
+      "eyeSpeed": 47.61598,
+      "maxDistance": 3.1714468,
+      "moveDistance": 0.840089738,
+      "newDistance": 0.0,
+      "ratio": 0.264891624,
+      "boost": 2.11429787,
+      "eye_origin": {
+        "x": -9.430763,
+        "y": -0.00720133074,
+        "z": 2.86514187
+      },
+      "eye_direction": {
+        "x": 0.5198247,
+        "y": 0.0008749333,
+        "z": 0.8542725
+      },
+      "eye_target_name": null,
+      "enabled": true,
+      "isEyeCalibrationValid": true,
+      "isEyeTrackingDataValid": true,
+      "isEyeTrackingEnabled": true,
+      "isEyeTrackingEnabledAndValid": true,
+      "latestEyeGazeOrigin": {
+        "x": -9.430763,
+        "y": -0.00720133074,
+        "z": 2.86514187
+      },
+      "latestEyeGazeDirection": {
+        "x": 0.519824743,
+        "y": 0.0008749334,
+        "z": 0.854272544
+      },
+      "eyeTimestamp": "8/15/2022 8:25:18 AM",
+      "eyeonly": {
+        "x": -2.091156,
+        "y": 1.50227964
+      },
+      "filteredEye": {
+        "x": 0.314884275,
+        "y": 0.00997523,
+        "z": 0.9490776
+      },
+      "distances": [
+        6.48476648,
+        4.17546654,
+        1.84716177,
+        0.496534377,
+        2.83848739,
+        5.178616,
+        7.507207,
+        9.816643
+      ],
+      "scores": [
+        0.0139569622,
+        0.0677763745,
+        0.410883576,
+        0.6589814,
+        0.430429131,
+        0.0635452,
+        6.69509154E-06,
+        1.11283157E-07
+      ]
+    }
+  }
+]
