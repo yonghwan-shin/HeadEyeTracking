@@ -1,6 +1,6 @@
 import math
 import time
-
+from sklearn.decomposition import PCA
 import matplotlib.patches
 import pandas as pd
 
@@ -14,7 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
-
+from statsmodels.stats.anova import AnovaRM
+import pingouin as pg
 
 def collect_offsets(sub_num, cursorTypes=None, postures=None, targets=range(9),
                     repetitions=None):
@@ -207,7 +208,7 @@ def visualize_offsets(show_plot=True):
 
 @timeit
 def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=range(8),
-                           repetitions=None, saveFile=True):
+                           repetitions=None, saveFile=True, pickle=False):
     if repetitions is None:
         repetitions = [2, 3, 4]
 
@@ -224,125 +225,191 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
         'std_offset', 'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
         'success_trial', 'trial_time', 'drop_count', 'abs_mean_offset_horizontal', 'abs_mean_offset_vertical',
         "drop_out_count", "mean_out_time",
-        "drop_positions",'walking_speed',
+        "drop_positions", 'drop_vectors', 'walking_speed', 'straight_length',
+        'walk_length',
+        'straightness_simple', 'out_mean_distance', 'straightness', 'curve',
         'error'
     ])
     print('summarizing second study : ', sub_num)
-    for ct, tt, rep, t in itertools.product(cursorTypes, targetTypes, repetitions, targets):
-        temp_data = read_second_data(subject=sub_num, cursor_type=ct, repetition=rep, target_type=tt, target_num=t)
-        try:
-            trial_summary = {
-                'subject_num': sub_num,
-                'cursor_type': ct,
-                'target_type': tt,
-                'repetition': rep,
-                'target_num': t,
-            }
-            # temp_data = splited_data[t]
-            temp_data.reset_index(inplace=True)
-            temp_data.timestamp -= temp_data.timestamp.values[0]
-            only_success = temp_data[temp_data.success == True]
-            if len(only_success) <= 0:
-                raise ValueError('no success frames', len(only_success))
-            initial_contact_time = only_success.timestamp.values[0]
-            if "STICKY" in ct:
-                temp_data[['score_0', 'score_1', 'score_2', 'score_3'
-                    , 'score_4', 'score_5', 'score_6', 'score_7']] = pd.DataFrame(temp_data.scores.tolist(),
-                                                                                  index=temp_data.index)
+    for ct, tt, rep in itertools.product(cursorTypes, targetTypes, repetitions):
+        dfs = []
+        for t in targets:
+            temp_data = read_second_data(subject=sub_num, cursor_type=ct, repetition=rep, target_type=tt, target_num=t)
+            dfs.append(temp_data)
+        data = pd.concat(dfs)
+        pca = PCA(n_components=2)
+        X = data[['head_position_x', 'head_position_z']]
+        X = np.array(X)
+        pca.fit(X)
+        Z = pca.transform(X)
+        ZZ = pd.DataFrame(Z)
+        ZM = ZZ[ZZ[0] < 0]
+        ZP = ZZ[ZZ[0] > 0]
+        leftMax = ZM[0].values[ZM[1].argmax()]
+        leftMin = ZM[0].values[ZM[1].argmin()]
+        lefty = max(leftMax, leftMin)
+        rightMax = ZP[0].values[ZP[1].argmax()]
+        rightMin = ZP[0].values[ZP[1].argmin()]
+        righty = min(rightMin, rightMax)
+        for t in targets:
+            # temp_data = read_second_data(subject=sub_num, cursor_type=ct, repetition=rep, target_type=tt, target_num=t)
+            try:
+                trial_summary = {
+                    'subject_num': sub_num,
+                    'cursor_type': ct,
+                    'target_type': tt,
+                    'repetition': rep,
+                    'target_num': t,
+                }
+                temp_data = data[data.end_num == t]
+                temp_data.reset_index(inplace=True)
+                temp_data.timestamp -= temp_data.timestamp.values[0]
+                only_success = temp_data[temp_data.success == True]
+                if len(only_success) <= 0:
+                    raise ValueError('no success frames', len(only_success))
+                initial_contact_time = only_success.timestamp.values[0]
+                if "STICKY" in ct:
+                    temp_data[['score_0', 'score_1', 'score_2', 'score_3'
+                        , 'score_4', 'score_5', 'score_6', 'score_7']] = pd.DataFrame(temp_data.scores.tolist(),
+                                                                                      index=temp_data.index)
 
-            success_dwells = []
-            fail_dwells = []
+                success_dwells = []
+                fail_dwells = []
 
-            for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
-                # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
-                # print(k, [t[0] for t in g])
-                if k == True:
-                    # if k == 'Target_' + str(t):
-                    df = pd.DataFrame([r[1] for r in g])
-                    success_dwells.append(df)
-                # if k == False:
-                #     df = pd.DataFrame([r[1] for r in g])
-                #     fail_dwells.append(df)
-            times = []
-            for dw in success_dwells:
-                current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
-                times.append(current_dwell_time)
+                for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                    # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
+                    # print(k, [t[0] for t in g])
+                    if k == True:
+                        # if k == 'Target_' + str(t):
+                        df = pd.DataFrame([r[1] for r in g])
+                        success_dwells.append(df)
+                    # if k == False:
+                    #     df = pd.DataFrame([r[1] for r in g])
+                    #     fail_dwells.append(df)
+                times = []
+                for dw in success_dwells:
+                    current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                    times.append(current_dwell_time)
 
-            longest_dwell_time = max(times)
-            total_dwell_time = sum(times)
-            mean_dwell_time = sum(times) / len(times)
-            success_time = success_dwells[-1].timestamp.values[0]
-            dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
-            for k, g in itertools.groupby(dwell_temp.iterrows(), key=lambda row: row[1]['success']):
-                if k == False:
-                    df = pd.DataFrame([r[1] for r in g])
-                    fail_dwells.append(df)
-            fail_times = []
-            drop_positions = []
-            for fw in fail_dwells:
-                fail_time = fw.timestamp.values[-1] - fw.timestamp.values[0]
-                fail_times.append(fail_time)
-                drop_positions.append((fw.horizontal_offset.values[0], fw.vertical_offset.values[0]))
+                longest_dwell_time = max(times)
+                total_dwell_time = sum(times)
+                mean_dwell_time = sum(times) / len(times)
+                success_time = success_dwells[-1].timestamp.values[0]
+                dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                drop_positions = []
+                drop_vectors = []
 
-            mean_offset_horizontal = dwell_temp.horizontal_offset.mean()
-            abs_mean_offset_horizontal = dwell_temp.horizontal_offset.apply(abs).mean()
-            std_offset_horizontal = dwell_temp.horizontal_offset.std()
-            mean_offset_vertical = dwell_temp.vertical_offset.mean()
-            abs_mean_offset_vertical = dwell_temp.vertical_offset.apply(abs).mean()
-            std_offset_vertical = dwell_temp.vertical_offset.std()
-            walklength = (temp_data.head_position_x.diff(1) ** 2 + temp_data.head_position_z.diff(
-                1) ** 2).apply(math.sqrt).sum()
-            walking_speed = (walklength / (temp_data.timestamp.values[-1] - temp_data.timestamp.values[0]))
-            trial_summary = {
-                'subject_num': sub_num,
-                'cursor_type': ct,
-                'target_type': tt,
-                'repetition': rep,
-                'target_num': t,
-                'longest_dwell_time': longest_dwell_time,
-                'total_dwell_time': total_dwell_time,
-                'mean_dwell_time': mean_dwell_time,
-                'success_time': success_time,
-                'initial_contact_time': initial_contact_time,
-                'mean_offset': dwell_temp.angle.mean(),
-                'std_offset': dwell_temp.angle.std(),
-                'mean_offset_horizontal': mean_offset_horizontal,
-                'mean_offset_vertical': mean_offset_vertical,
-                'std_offset_horizontal': std_offset_horizontal,
-                'std_offset_vertical': std_offset_vertical,
-                "success_trial": longest_dwell_time >= 1.0 - 2.5 / 60.0,
-                "trial_time": temp_data.timestamp.values[-1] - temp_data.timestamp.values[0],
-                "drop_count": len(success_dwells),
-                'abs_mean_offset_horizontal': abs_mean_offset_horizontal,
-                'abs_mean_offset_vertical': abs_mean_offset_vertical,
-                "drop_out_count": len(fail_times),
-                "mean_out_time": sum(fail_times) / len(fail_times),
-                "drop_positions": drop_positions,
-                'walking_speed':walking_speed,
-                'error': None
-            }
-            summary.loc[len(summary)] = trial_summary
+                temp_X = temp_data[['head_position_x', 'head_position_z']]
+                temp_X = np.array(temp_X)
+                temp_transform = pca.transform(temp_X)
+                straightness = np.sum((lefty < temp_transform[:, 0]) & (temp_transform[:, 0] < righty)) / len(
+                    temp_transform)
+                if straightness >= 1.0:
+                    curve = 'straight'
+                elif 1 > straightness > 0:
+                    curve = 'between'
+                else:
+                    curve = 'curve'
 
-            # print('best dwell time:', round(longest_dwell_time, 2), sub_num, ct, rep, tt, t)
-        except Exception as e:
-            error_trial_summary = {
-                'subject_num': sub_num,
-                'cursor_type': ct,
-                'target_type': tt,
-                'repetition': rep,
-                'target_num': t,
-                'error': e.args
-            }
-            summary.loc[len(summary)] = error_trial_summary
-            print(sub_num, ct, rep, tt, t, e.args)
+                for k, g in itertools.groupby(dwell_temp.iterrows(), key=lambda row: row[1]['success']):
+                    if k == False:
+                        df = pd.DataFrame([r[1] for r in g])
+                        fail_dwells.append(df)
+                        pos = (df.horizontal_offset.values[-1], df.vertical_offset.values[-1])
+                        drop_positions.append(pos)
+                        pos = np.array(pos)
+                        drop_vectors.append(pos / np.linalg.norm(pos))
+                fail_times = []
+                out_distances = []
+                for fw in fail_dwells:
+                    fail_time = fw.timestamp.values[-1] - fw.timestamp.values[0]
+                    fail_times.append(fail_time)
+                    out_distances.append(fw.cursor_angular_distance.mean())
+                    # drop_positions.append((fw.horizontal_offset.values[0], fw.vertical_offset.values[0]))
+
+                mean_offset_horizontal = dwell_temp.horizontal_offset.mean()
+                abs_mean_offset_horizontal = dwell_temp.horizontal_offset.apply(abs).mean()
+                std_offset_horizontal = dwell_temp.horizontal_offset.std()
+                mean_offset_vertical = dwell_temp.vertical_offset.mean()
+                abs_mean_offset_vertical = dwell_temp.vertical_offset.apply(abs).mean()
+                std_offset_vertical = dwell_temp.vertical_offset.std()
+                walklength = (temp_data.head_position_x.diff(1) ** 2 + temp_data.head_position_z.diff(
+                    1) ** 2).apply(math.sqrt).sum()
+                straight_length = math.sqrt(
+                    (temp_data.head_position_x.values[0] - temp_data.head_position_x.values[-1]) ** 2 + (
+                            temp_data.head_position_z.values[0] - temp_data.head_position_z.values[-1]) ** 2)
+                walking_speed = (walklength / (temp_data.timestamp.values[-1] - temp_data.timestamp.values[0]))
+                # if straight_length ==0: print('straight zero')
+                # if len(fail_times)==0 : print('fail zero')
+                # if len(times) == 0: print('times zero')
+
+                if len(fail_times) == 0:
+                    mean_out_time = None
+                else:
+                    mean_out_time = sum(fail_times) / len(fail_times)
+                trial_summary = {
+                    'subject_num': sub_num,
+                    'cursor_type': ct,
+                    'target_type': tt,
+                    'repetition': rep,
+                    'target_num': t,
+                    'longest_dwell_time': longest_dwell_time,
+                    'total_dwell_time': total_dwell_time,
+                    'mean_dwell_time': mean_dwell_time,
+                    'success_time': success_time,
+                    'initial_contact_time': initial_contact_time,
+                    'mean_offset': dwell_temp.angle.mean(),
+                    'std_offset': dwell_temp.angle.std(),
+                    'mean_offset_horizontal': mean_offset_horizontal,
+                    'mean_offset_vertical': mean_offset_vertical,
+                    'std_offset_horizontal': std_offset_horizontal,
+                    'std_offset_vertical': std_offset_vertical,
+                    "success_trial": longest_dwell_time >= 1.0 - 2.5 / 60.0,
+                    "trial_time": temp_data.timestamp.values[-1] - temp_data.timestamp.values[0],
+                    "drop_count": len(success_dwells),
+                    'abs_mean_offset_horizontal': abs_mean_offset_horizontal,
+                    'abs_mean_offset_vertical': abs_mean_offset_vertical,
+                    "drop_out_count": len(fail_times),
+                    "mean_out_time": mean_out_time,
+                    "drop_positions": drop_positions,
+                    'drop_vectors': drop_vectors,
+                    'walking_speed': walking_speed,
+                    'straight_length': straight_length,
+                    'walk_length': walklength,
+                    'straightness_simple': walklength / straight_length,
+                    'out_mean_distance': out_distances,
+                    'straightness': straightness,
+                    'curve': curve,
+                    'error': None
+                }
+                summary.loc[len(summary)] = trial_summary
+
+                # print('best dwell time:', round(longest_dwell_time, 2), sub_num, ct, rep, tt, t)
+            except Exception as e:
+                error_trial_summary = {
+                    'subject_num': sub_num,
+                    'cursor_type': ct,
+                    'target_type': tt,
+                    'repetition': rep,
+                    'target_num': t,
+                    'error': e.args
+                }
+                summary.loc[len(summary)] = error_trial_summary
+                print(sub_num, ct, rep, tt, t, e.args)
     final_summary = summary.groupby([summary['cursor_type'], summary['target_type']]).mean()
     if saveFile:
-        final_summary.to_csv('second_summary' + str(sub_num) + '.csv')
-        summary.to_csv('second_Rawsummary' + str(sub_num) + '.csv')
+        if pickle:
+            final_summary.to_pickle('second_summary' + str(sub_num) + '.pkl')
+            summary.to_pickle('second_Rawsummary' + str(sub_num) + '.pkl')
+        else:
+            final_summary.to_csv('second_summary' + str(sub_num) + '.csv')
+            summary.to_csv('second_Rawsummary' + str(sub_num) + '.csv')
+
     return summary, final_summary
 
 
-# def calculate_score(param):
+# def path_finding(coordinates):
+
 
 @timeit
 def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
