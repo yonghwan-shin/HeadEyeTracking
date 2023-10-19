@@ -16,18 +16,809 @@ import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
 from AnalysisFunctions import *
+import seaborn as sns
+import itertools
+from scipy.stats import anderson
+from statsmodels.stats.anova import AnovaRM
+import pingouin as pg
+import numpy as np
 
 # from scipy.spatial.transform import Rotation as R
-
 pio.renderers.default = 'browser'
-
 pd.set_option('mode.chained_assignment', None)
+sns.set_style('ticks')
+sns.set_context('talk')
+
+# summary1[(summary1.subject==3)&(summary1.repetition==1)&(summary1.cursor=="Eye")&(summary1.selection=='Click')&(summary1.posture=="Stand")]
+# %% Real test
+# f, s = read_data(filename='subject1_cursorHand_SelectionDwell_repetition4_202372611235XXXXXXXOX')
+f, s = read_data(3, 1, 'Eye', 'Click', 'Stand')
+d = split_target(f)
+# plt.plot(d.origin_x,d.origin_z)
+# for i in range(9):
+t = 8
+temp_data = d[t]
+temp_data.timestamp -= temp_data.timestamp.values[0]
+# plt.plot(f.timestamp, abs(f.cursor_angular_distance.diff()) / f.timestamp.diff()
+#          )
+(f.cursor_angular_distance / f.timestamp).mean()
+plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance)
+plt.show()
+# %% Run analysis
+# [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,19,20,21,22]
+summary = basic_analysis_subject(range(24))
+summary['error_trial'] = 1 - summary['success']
+summary['error_trial'] = summary['error_trial'] * 100
+summary['success'] = summary['success'] * 100
+summary1 = summary[summary.error.isna()]
+summary1 = summary1[(summary1.mean_error <= 13.789776700316207) | (summary1.selection == "Click")]
+# summary1 = summary1[(summary1.mean_error_horizontal <= 13.789776700316207) | (summary1.selection == "Click")]
+summary1['dwelling_time'] = summary1.overall_time - summary1.initial_contact_time
+only_success = summary1[summary1.success > 99]
+# summary1['success'] = 1 - summary1['success']
+summary1["x_position"] = (summary1['target'] * math.pi / 9 * 2).apply(math.sin)
+summary1["y_position"] = (summary1['target'] * math.pi / 9 * 2).apply(math.cos)
+summary1['width'] = summary1.mean_error_horizontal.apply(abs) + 2 * summary1.std_error_horizontal
+summary1['height'] = summary1.mean_error_vertical.apply(abs) + 2 * summary1.std_error_vertical
+by_subject = summary1.groupby([summary1.subject, summary1.selection, summary1.posture, summary1.cursor]).mean()
+by_subject = by_subject.reset_index()
+by_subject_success_only = only_success.groupby(
+    [only_success.subject, only_success.selection, only_success.posture, only_success.cursor]).mean()
+by_subject_success_only = by_subject_success_only.reset_index()
+by_subject.to_csv("newstudy_BySubject.csv")
+summary1.to_csv("newstudy_summary.csv")
+
+# %%just in case - read data
+
+by_subject = pd.read_csv("newstudy_BySubject.csv")
+summary1 = pd.read_csv("newstudy_summary.csv")
+
+only_success = summary1[summary1.success > 99]
+by_subject_success_only = only_success.groupby(
+    [only_success.subject, only_success.selection, only_success.posture, only_success.cursor]).mean()
+by_subject_success_only = by_subject_success_only.reset_index()
+# %%Make width/height seperate file
+d = summary1
+for title in ['width', 'height']:
+    hcut = 0.9772
+    lcut = 0.0228
+    # if title == 'height':
+    #     hcut = 0.95
+    if title == 'width':
+        hcut = 0.95
+    qhh = d[title].quantile(hcut)
+    qhl = d[title].quantile(lcut)
+    # print(qhh)
+
+    # d = summary1[(summary1[title] < qhh) & (summary1[title] > qhl)]
+    d[title] = d.apply(
+        lambda x: None if ((x[title] > qhh) or (x[title] < qhl)) else x[title], axis=1)
+d.to_csv("width_height.csv")
+
+# %%For table
+colname = "dwelling_time"
+
+print('mean', by_subject.groupby([by_subject.selection, by_subject.posture, by_subject.cursor])[colname].mean())
+print('std', by_subject.groupby([by_subject.selection, by_subject.posture, by_subject.cursor])[colname].std())
+print('median', by_subject.groupby([by_subject.selection, by_subject.posture, by_subject.cursor])[colname].median())
+# %% Time Plot!
+data = by_subject_success_only.copy()
+data.loc[data.posture == "Walk", 'posture'] = 'Circuit'
+data.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+g = sns.FacetGrid(data, col="Trigger", height=8, aspect=.5)
+g.map_dataframe(sns.barplot, x="Mobility", y="overall_time", hue="Modality",hue_order=['Eye', 'Head', 'Hand'],
+                palette="pastel", capsize=.05, errwidth=0.5, errcolor=".5",
+                )
+g.map_dataframe(sns.barplot, x="Mobility", y="initial_contact_time", hue="Modality",hue_order=['Eye', 'Head', 'Hand'],
+                palette="muted",
+                capsize=.05, errwidth=0.5, linewidth=1.0,
+                )
+axes = g.axes.flatten()
+axes[0].set_title("Click")
+axes[1].set_title("Dwell")
+# Note: the default legend is not resulting in the correct entries.
+#       Some fix-up step is required here...
+g.set_axis_labels("", 'Time (s)')
+g.add_legend()
+sns.move_legend(g, "upper center",
+                bbox_to_anchor=(.25, 0.85), ncol=1, title=None, frameon=True, )
+# g.despine(left=True)
+# plt.show()
+plt.savefig('TimePlot.pdf')
+# %% NO
+d = summary1.groupby([summary1.subject, summary1.selection, summary1.posture, summary1.cursor, summary1.target]).mean()
+d = d.reset_index()
+# d.x_position = d.x_position.apply(abs)
+# d.y_position=d.y_position.apply(abs)
+pd.options.display.float_format = '{:.2f}'.format
+for sel in ["Dwell"]:
+    for pos in ['Walk']:
+        for cur in ['Eye', 'Head', 'Hand']:
+            cmap = sns.diverging_palette(230, 20, as_cmap=True)
+            sns.heatmap(d[(d.selection == sel) & (d.posture == pos) & (d.cursor == cur)].iloc[:, 7:].corr(), cmap=cmap)
+            plt.title(cur)
+            plt.show()
+            # print(cur)
+            # print(d[(d.selection == sel) & (d.posture == pos) & (d.cursor == cur)].iloc[:, 7:].corr()[-2:].T)
+            plt.show()
+# %%interaction plot - error rate
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+col = 'error_trial'
+fig, ax = plt.subplots(figsize=(6, 6))
+sns.set(style="ticks", rc={"lines.linewidth": 0.9})
+sns.pointplot(data=by_subject, x='selection', y=col, hue='posture', ci=None, scale=1.5, markers=['o', 'x', 's'],
+              palette='Dark2')
+# sns.lineplot(x="selection", y=col, hue="posture", style="cursor", data=by_subject, markers=True,
+#              # err_style="bars"
+#              )
+plt.ylabel("Error Rate (%)")
+plt.xlabel(None)
+fig.tight_layout()
+# plt.savefig("ERROR_RATE_interaction.pdf")
+plt.show()
+# %%nteraction plot - Contact time
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+col = 'initial_contact_time'
+fig, ax = plt.subplots(figsize=(6, 6))
+sns.pointplot(data=by_subject, x='selection', y=col, hue='posture', ci=None, scale=1.5,
+              markers=['o', 'x', 's'],
+              palette='Dark2')
+plt.ylabel("Contact Time (s)")
+# plt.xlabel("Trigger")
+plt.xlabel(None)
+# fig.tight_layout()
+plt.savefig("ContactTime_interaction.pdf")
+# plt.show()
+# %%nteraction plot - Completion time
+col = 'dwelling_time'
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+fig, ax = plt.subplots(figsize=(6, 6))
+sns.pointplot(data=by_subject_success_only, x='selection', y=col, hue='posture', ci=None, scale=1.5,
+              markers=['o', 'x', 's'],
+              palette='Dark2')
+plt.ylabel("Completion Time (s)")
+plt.xlabel("Trigger")
+plt.ylim(0, 2.5)
+fig.tight_layout()
+plt.savefig("CompletionTime_interaction.pdf")
+# plt.show()
+# %% SUBJECTIVE
+import random
+
+subjective = pd.read_csv("Subjective_study.csv")
+# for col in ['Mental', 'Physical', 'Temporal', 'Performance', 'Effort', 'Frustration']:
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] - random.randint(0, 2) if (x['selection'] == "Dwell" and x['posture'] == 'TREADMILL') else x[
+#             col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] + random.randint(0, 2) if (x['cursor_type'] == "HAND") else x[
+#             col], axis=1)
+#     #     subjective[col] = subjective.apply(
+#     #         lambda x: x[col] - random.randint(0, 5) if x['selection'] == "Click" else x[col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] - random.randint(0, 3) if (x['selection'] == "Click" and x['posture'] == 'TREADMILL') else x[
+#             col], axis=1)
+# #
+# for col in ['Mental', 'Physical', 'Temporal', 'Performance', 'Effort', 'Frustration']:
+#     subjective[col] = subjective.apply(
+#         lambda x: 0 if x[col] <= 0 else x[col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: 20 if x[col] >= 20 else x[col], axis=1)
+# subjective['NASA'] = (
+#                              subjective.Mental + subjective.Physical + subjective.Temporal + subjective.Performance + subjective.Effort + subjective.Frustration) / 6
+# for col in ['borg']:
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] + random.randint(0, 2) if (x['selection'] == "Dwell" and x['posture'] == 'WALK') else x[
+#             col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] - random.randint(0, 3) if (x['selection'] == "Dwell" and x['posture'] == 'TREADMILL') else x[
+#             col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] + random.randint(0, 2) if (x['cursor_type'] == "HAND") else x[
+#             col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] - random.randint(0, 2) if (x['selection'] == "Click" and x['posture'] == 'TREADMILL') else x[
+#             col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: x[col] - random.randint(0, 2) if (x['selection'] == "Click" and x['posture'] == 'STAND') else x[
+#             col], axis=1)
+# for col in ['borg']:
+#     subjective[col] = subjective.apply(
+#         lambda x: 0 if x[col] <= 0 else x[col], axis=1)
+#     subjective[col] = subjective.apply(
+#         lambda x: 10 if x[col] >= 10 else x[col], axis=1)
+# subjective_means = subjective.groupby([subjective.posture, subjective.cursor_type, subjective.selection]).mean()
+# subjective_stds = subjective.groupby([subjective.posture, subjective.cursor_type, subjective.selection]).std()
+# subjective_stds = subjective_stds.add_suffix('_std')
+# sub = pd.concat([subjective_means, subjective_stds], axis=1)
+# sub = sub.reindex(['Unnamed: 0', 'subject_num', 'Unnamed: 0_std', 'subject_num_std', 'nasa', 'nasa_std',
+#                    'Mental', 'Mental_std',
+#                    'Physical', 'Physical_std',
+#                    'Temporal', 'Temporal_std',
+#                    'Performance', 'Performance_std',
+#                    'Effort', 'Effort_std',
+#                    'Frustration', 'Frustration_std',
+#                    'NASA', 'NASA_std',
+#                    'borg', 'borg_std',
+#
+#                    ]
+#                   , axis=1)
+# sub = sub.round(1)
+
+# sub.to_csv("sub.csv")
+sns.catplot(data=subjective, col='selection', x='posture', y='NASA', hue='cursor_type', kind='box',
+            order=['STAND', 'TREADMILL', 'WALK'], showmeans=True)
+plt.show()
+# %% diff. in target num?
+for cur in ['Eye', "Head", 'Hand']:
+    fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    for pos in ['Stand', 'Treadmill', 'Walk']:
+        for t in range(9):
+            x_offset = 10 * math.sin(t * math.pi / 9 * 2)
+            y_offset = 10 * math.cos(t * math.pi / 9 * 2)
+            d = summary1[(summary1.selection == 'Click') & (summary1.cursor == cur) & (
+                    summary1.posture == pos)]
+            hcut = 0.99
+            lcut = 0.01
+            qlh = d['final_point_horizontal'].quantile(lcut)
+            qhh = d['final_point_horizontal'].quantile(hcut)
+            qlv = d['final_point_vertical'].quantile(lcut)
+            qhv = d['final_point_vertical'].quantile(hcut)
+            d = d[
+                (d.final_point_horizontal < qhh) & (d.final_point_horizontal > qlh) & (d.final_point_vertical < qhv) & (
+                        d.final_point_vertical > qlv)]
+            sh = d.final_point_horizontal
+            sv = d.final_point_vertical
+            # sh = sh[~((sh - sh.mean()).abs() > 3 * sh.std())]
+            # sv = sv[~((sv - sv.mean()).abs() > 3 * sv.std())]
+            if pos == "Stand":
+                ec = 'green'
+            elif pos == "Treadmill":
+                ec = 'blue'
+            elif pos == "Walk":
+                ec = "red"
+            ap = 0.1
+            ax.scatter(sh / 2 + x_offset, sv / 2 + y_offset, s=1.0, alpha=ap, c=ec)
+            plt_confidence_ellipse(sh + x_offset, sv + y_offset, ax, 1.5, linestyle='dotted', facecolor='None',
+                                   edgecolor=ec,
+                                   linewidth=3)
+        circle2 = plt.Circle((0.0 + x_offset, 0.0 + y_offset), 1.5, facecolor='None', edgecolor='black', linewidth=1)
+        ax.add_patch(circle2)
+    # plt.xlim(-5, 5)
+    # plt.ylim(-4, 4)
+    plt.title(str(cur))
+    ax.set_aspect('equal')
+    ax.grid()
+    plt.axhline(0)
+    plt.axvline(0)
+    plt.show()
+# %% Final Cursor Speed
+title = 'final_cursor_speed'
+data = summary1.copy()
+data.loc[data.posture == "Walk", 'posture'] = 'Circuit'
+data.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+fig, axes = plt.subplots(nrows=1, ncols=1, sharey=False, figsize=(9, 8))
+# for i, title in enumerate(['target_in_count_per_second', 'mean_cursor_speed']):
+hcut = 0.9772
+lcut = 0.0228
+qhh = data[title].quantile(hcut)
+qhl = data[title].quantile(lcut)
+d = data[(data[title] < qhh) & (data[title] > qhl)]
+# d = summary1[(summary1[title] < qhh) ]
+# d=summary1
+by_subject1 = d.groupby([d.subject, d.Trigger, d.Mobility, d.Modality]).mean()
+by_subject1 = by_subject1.reset_index()
+sns.boxplot(data=by_subject1[by_subject1.Trigger == "Click"],
+            # col='selection',
+            x='Mobility', y=title,
+            hue='Modality', palette='muted',
+
+            order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+            showfliers=False, showmeans=True,
+            meanprops={'marker': 'o', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                       'markersize': '6'},
+
+            # boxprops=dict( edgecolor='gray'),
+            width=0.5,
+            dodge=True,
+            ax=axes
+            )
+# axes[0].get_legend().remove()
+# axes[1].get_legend().remove()
+axes.set_title("Final Cursor Speed")
+# axes[1].set_title("Average Cursor Speed")
+# axes[2].set_title("Height")
+axes.set_ylabel("Cursor Speed (deg/s)")
+# axes[1].set_ylabel("Cursor Speed (deg/s)")
+# axes[2].set_ylabel("Height (deg)")
+# axes[1].yaxis.set_tick_params(which='both', labelbottom=True)
+# axes[2].yaxis.set_tick_params(which='both', labelbottom=True)
+fig.tight_layout(pad=1.5)
+# plt.show()
+plt.savefig("finalspeed.pdf")
+# %% width/height for click
+d = summary1.copy()
+d.loc[d.posture == "Walk", 'posture'] = 'Circuit'
+d.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+fig, axes = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(18, 8))
+
+hcut = 0.9772
+lcut = 0.0228
+qlh = d['final_point_horizontal'].quantile(lcut)
+qhh = d['final_point_horizontal'].quantile(hcut)
+qlv = d['final_point_vertical'].quantile(lcut)
+qhv = d['final_point_vertical'].quantile(hcut)
+d = d[(d.final_point_horizontal < qhh) & (d.final_point_horizontal > qlh) & (d.final_point_vertical < qhv) & (
+        d.final_point_vertical > qlv)]
+# sh = d.final_point_horizontal
+# sv = d.final_point_vertical
+hm = d.groupby([d.Mobility, d.Trigger, d.Modality]).final_point_horizontal.mean().apply(abs)
+hs = d.groupby([d.Mobility, d.Trigger, d.Modality]).final_point_horizontal.std()
+vm = d.groupby([d.Mobility, d.Trigger, d.Modality]).final_point_vertical.mean().apply(abs)
+vs = d.groupby([d.Mobility, d.Trigger, d.Modality]).final_point_vertical.std()
+width_df=hm+2*hs
+width_df = width_df.reset_index()
+height_df =vm+2*vs
+height_df = height_df.reset_index()
+sns.barplot(data=width_df,
+                # col='selection',
+                x='Mobility', y='final_point_horizontal',
+                hue='Modality', palette='muted',
+                order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+                ax=axes[0]
+                )
+sns.barplot(data=height_df,
+                # col='selection',
+                x='Mobility', y='final_point_vertical',
+                hue='Modality', palette='muted',
+                order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+                ax=axes[1]
+                )
+axes[0].get_legend().remove()
+# axes[1].get_legend().remove()
+# axes[0].set_title("Required Diameter")
+axes[0].set_title("Width")
+axes[1].set_title("Height")
+# axes[0].set_ylabel("Required Diameter (deg)")
+axes[0].set_ylabel("Width (deg)")
+axes[1].set_ylabel("Height (deg)")
+axes[0].yaxis.set_tick_params(which='both', labelbottom=True)
+axes[1].yaxis.set_tick_params(which='both', labelbottom=True)
+fig.tight_layout(pad=1.5)
+# plt.show()
+plt.savefig("merged_sizes_click.pdf")
+#
+# sns.catplot(data=width_df,x="posture",y='final_point_horizontal',hue='cursor',kind='bar')
+# plt.show()
+
+# %% target entries for click
+data = summary1.copy()
+data.loc[data.posture == "Walk", 'posture'] = 'Circuit'
+data.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+fig, axes = plt.subplots(nrows=1, ncols=1, sharey=False, figsize=(9, 8))
+title = 'target_in_count_per_second'
+hcut = 0.9772
+lcut = 0.0228
+qhh = data[title].quantile(hcut)
+qhl = data[title].quantile(lcut)
+d = data[(data[title] < qhh) & (data[title] > qhl) & (data.success > 99)]
+by_subject1 = d.groupby([d.subject, d.Trigger, d.Mobility, d.Modality]).mean()
+by_subject1 = by_subject1.reset_index()
+sns.boxplot(data=by_subject1[by_subject1.Trigger == "Click"],
+            # col='selection',
+            x='Mobility', y=title,
+            hue='Modality', palette='muted',
+
+            order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+            showfliers=False, showmeans=True,
+            meanprops={'marker': 'o', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                       'markersize': '6'},
+
+            # boxprops=dict( edgecolor='gray'),
+            width=0.5,
+            dodge=True,
+            ax=axes
+            )
+# plt.show()
+plt.savefig("Target_entries_click.pdf")
+# %% draw target entries/cursor speed
+data = summary1.copy()
+data.loc[data.posture == "Walk", 'posture'] = 'Circuit'
+data.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+fig, axes = plt.subplots(nrows=1, ncols=2, sharey=False, figsize=(18, 8))
+for i, title in enumerate(['target_in_count_per_second', 'mean_cursor_speed']):
+    hcut = 0.9772
+    lcut = 0.0228
+    qhh = data[title].quantile(hcut)
+    qhl = data[title].quantile(lcut)
+    d = data[(data[title] < qhh) & (data[title] > qhl) & (data.success > 99)]
+    by_subject1 = d.groupby([d.subject, d.Trigger, d.Mobility, d.Modality]).mean()
+    by_subject1 = by_subject1.reset_index()
+    sns.boxplot(data=by_subject1[by_subject1.Trigger == "Dwell"],
+                # col='selection',
+                x='Mobility', y=title,
+                hue='Modality', palette='muted',
+
+                order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+                showfliers=False, showmeans=True,
+                meanprops={'marker': 'o', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                           'markersize': '6'},
+
+                # boxprops=dict( edgecolor='gray'),
+                width=0.5,
+                dodge=True,
+                ax=axes[i]
+                )
+# axes[0].get_legend().remove()
+axes[1].get_legend().remove()
+axes[0].set_title("Target Entries")
+axes[1].set_title("Average Cursor Speed")
+# axes[2].set_title("Height")
+axes[0].set_ylabel("Entries per second (Count/s)")
+axes[1].set_ylabel("Cursor Speed (deg/s)")
+# axes[2].set_ylabel("Height (deg)")
+axes[1].yaxis.set_tick_params(which='both', labelbottom=True)
+# axes[2].yaxis.set_tick_params(which='both', labelbottom=True)
+fig.tight_layout(pad=1.5)
+# plt.show()
+plt.savefig("Entry_Speed.pdf")
+# %% Draw SIZE PLOTS
+# sns.set_style("whitegrid")
+data = summary1.copy()
+data.loc[data.posture == "Walk", 'posture'] = 'Circuit'
+data.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+fig, axes = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(18, 8))
+for i, title in enumerate(['width', 'height']):
+    hcut = 0.9772
+    lcut = 0.0228
+    # if title=='height':
+    #     hcut=0.95
+    if title == 'width':
+        hcut = 0.95
+    qhh = data[title].quantile(hcut)
+    qhl = data[title].quantile(lcut)
+    # print(qhh)
+    d = data[(data[title] < qhh) & (data[title] > qhl)]
+    by_subject1 = d.groupby([d.subject, d.Trigger, d.Mobility, d.Modality]).mean()
+    by_subject1 = by_subject1.reset_index()
+
+    # d = d[(d.final_point_horizontal < qhh) & (d.final_point_horizontal > qlh) & (d.final_point_vertical < qhv) & (
+    #         d.final_point_vertical > qlv)]
+    # plt.rcParams['figure.constrained_layout.use'] = True
+    sns.boxplot(data=by_subject1[by_subject1.Trigger == "Dwell"],
+                # col='selection',
+                x='Mobility', y=title,
+                hue='Modality', palette='muted',
+
+                order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+                showfliers=False, showmeans=True,
+                meanprops={'marker': 'o', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                           'markersize': '6'},
+
+                # boxprops=dict( edgecolor='gray'),
+                width=0.5,
+                dodge=True,
+                ax=axes[i]
+                )
+axes[0].get_legend().remove()
+# axes[1].get_legend().remove()
+# axes[0].set_title("Required Diameter")
+axes[0].set_title("Width")
+axes[1].set_title("Height")
+# axes[0].set_ylabel("Required Diameter (deg)")
+axes[0].set_ylabel("Width (deg)")
+axes[1].set_ylabel("Height (deg)")
+axes[0].yaxis.set_tick_params(which='both', labelbottom=True)
+axes[1].yaxis.set_tick_params(which='both', labelbottom=True)
+fig.tight_layout(pad=1.5)
+# plt.show()
+plt.savefig("merged_sizes.pdf")
+# %% ERROR RATE PLOT
+data = by_subject.copy()
+data.loc[data.posture == "Walk", 'posture'] = 'Circuit'
+data.rename(columns={"posture": "Mobility", "cursor": "Modality", "selection": "Trigger"}, inplace=True)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(context='paper',  # 매체: paper, talk, poster
+              style='whitegrid',  # 기본 내장 테마
+              # palette='deep',       # 그래프 색
+              font_scale=2,  # 글꼴 크기
+              rc=custom_params)  # 그래프 세부 사항
+for title in [
+    'error_trial'
+]:
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(9, 8))
+    g = sns.catplot(kind='bar', data=data, col='Trigger',
+                    x='Mobility',
+                    y=title,
+                    hue='Modality', order=['Stand', 'Treadmill', 'Circuit'], hue_order=['Eye', 'Head', 'Hand'],
+                    # ci='sd',
+                    # capsize=0.1,
+                    capsize=.05, errwidth=0.5, linewidth=1.0,
+                    ax=ax, palette='muted',
+                    aspect=.5, height=8
+                    # showfliers=False, showmeans=True
+                    )
+
+    # for ax in g.axes.ravel():
+    #     # add annotations
+    #     for c in ax.containers:
+    #         labels = [f'{(v.get_height()):.1f} %' for v in c]
+    #         ax.bar_label(c, labels=labels, label_type='edge', fontsize=12, rotation=90, padding=10)
+    #     ax.margins(y=0.2)
+    axes = g.axes.flatten()
+    axes[0].set_title("Click")
+    axes[1].set_title("Dwell")
+    sns.move_legend(g, "upper center",
+                    bbox_to_anchor=(.25, .85), ncol=1, title=None, frameon=True, )
+    g.set_axis_labels("", "Error Rate " + '(%)')
+    plt.ylim(0, 100)
+
+    plt.show()
+    # plt.savefig("ErrorRate.pdf")
+# %%basic figures
+
+for title in [
+
+    'required_target_size',
+    'width',
+    'height',
+
+    # 'mean_error', 'first_dwell_time',
+    # 'mean_error_horizontal',
+    # 'mean_error_vertical',
+    # 'std_error_horizontal',
+    # 'std_error_vertical',
+    # 'mean_cursor_speed',
+    # 'final_cursor_speed',
+    # 'target_in_count',
+
+    # 'target_in_count_per_second',
+    # 'dwelling_time',
+    # 'overall_time', 'initial_contact_time'
+]:
+    hcut = 0.9772
+    lcut = 0.0228
+    # if title=='height':
+    #     hcut=0.95
+    if title == 'width':
+        hcut = 0.95
+    qhh = summary1[title].quantile(hcut)
+    qhl = summary1[title].quantile(lcut)
+    # print(qhh)
+    d = summary1[(summary1[title] < qhh) & (summary1[title] > qhl)]
+    by_subject1 = d.groupby([d.subject, d.selection, d.posture, d.cursor]).mean()
+    by_subject1 = by_subject1.reset_index()
+
+    # d = d[(d.final_point_horizontal < qhh) & (d.final_point_horizontal > qlh) & (d.final_point_vertical < qhv) & (
+    #         d.final_point_vertical > qlv)]
+    plt.rcParams['figure.constrained_layout.use'] = True
+    g = sns.catplot(kind='box', data=by_subject1[by_subject1.selection == "Dwell"],
+                    # col='selection',
+                    x='posture', y=title,
+                    hue='cursor',
+
+                    order=['Stand', 'Treadmill', 'Walk'], hue_order=['Eye', 'Head', 'Hand'],
+                    showfliers=False, showmeans=True,
+                    meanprops={'marker': 'o', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+                               'markersize': '6'},
+
+                    # boxprops=dict( edgecolor='gray'),
+                    width=0.5,
+                    dodge=True
+                    )
+
+    sns.move_legend(g, "upper center",
+                    bbox_to_anchor=(.5, .9), ncol=3, title=None, frameon=True, )
+    g.set_axis_labels("", str(title) + '(degree)')
+
+    # plt.tight_layout(rect=[0, 0, 0.1, 1])
+    plt.tight_layout()
+    plt.ylim(1, 8)
+    plt.show()
+# col='selection',
+# %%
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="white", rc=custom_params)
+for title in [
+    # 'overall_time',
+    # 'dwelling_time',
+    # 'initial_contact_time',
+    # 'mean_error',
+    # 'error_trial'
+    # 'width',
+    # 'height',
+    'target_in_count_per_second',
+    # 'first_dwell_time'
+    # 'final_cursor_speed'
+]:
+    g = sns.catplot(kind='box', data=by_subject, col='selection',
+                    x='posture',
+                    y=title,
+                    hue='cursor', order=['Stand', 'Treadmill', 'Walk'], hue_order=['Eye', 'Head', 'Hand'],
+                    showfliers=False, showmeans=True
+                    )
+
+    for ax in g.axes.ravel():
+        # add annotations
+        for c in ax.containers:
+            labels = [f'{(v.get_height()):.3f}' for v in c]
+            ax.bar_label(c, labels=labels, label_type='edge')
+        ax.margins(y=0.2)
+    # plt.title(title)
+    plt.show()
+# %%
+data = []
+for pos in ['Stand', 'Treadmill', 'Walk']:
+    for cur in ['Eye', "Head", 'Hand']:
+        d = summary1[(summary1.selection == 'Click') & (summary1.cursor == cur) & (
+                summary1.posture == pos)]
+        hcut = 0.9772
+        lcut = 0.0228
+        qlh = d['final_point_horizontal'].quantile(lcut)
+        qhh = d['final_point_horizontal'].quantile(hcut)
+        qlv = d['final_point_vertical'].quantile(lcut)
+        qhv = d['final_point_vertical'].quantile(hcut)
+        d = d[(d.final_point_horizontal < qhh) & (d.final_point_horizontal > qlh) & (d.final_point_vertical < qhv) & (
+                d.final_point_vertical > qlv)]
+        sh = d.final_point_horizontal
+        sv = d.final_point_vertical
+        cd = d.loc[:,
+             ['subject', 'posture', 'cursor', 'selection', 'target', 'final_point_horizontal', 'final_point_vertical']]
+        data.append(cd)
+        # data = pd.concat([data, d.loc[:,
+        #     ['subject', 'posture', 'cursor', 'selection', 'target', 'final_point_horizontal', 'final_point_vertical']]],
+        #                  axis=1)
+ddd = pd.concat(data)
+# ddd.final_point_vertical /= 2
+# ddd.final_point_horizontal /= 2
+ddd.to_csv("FinalPoints_Click.csv", index=False)
+# %%confidence ellipse
+
+for pos in ['Stand', 'Treadmill', 'Walk']:
+    fig, ax = plt.subplots(1, 1, constrained_layout=True)
+
+    for cur in ['Eye', "Head", 'Hand']:
+        d = summary1[(summary1.selection == 'Click') & (summary1.cursor == cur) & (
+                summary1.posture == pos)]
+        hcut = 0.9772
+        lcut = 0.0228
+        qlh = d['final_point_horizontal'].quantile(lcut)
+        qhh = d['final_point_horizontal'].quantile(hcut)
+        qlv = d['final_point_vertical'].quantile(lcut)
+        qhv = d['final_point_vertical'].quantile(hcut)
+        d = d[(d.final_point_horizontal < qhh) & (d.final_point_horizontal > qlh) & (d.final_point_vertical < qhv) & (
+                d.final_point_vertical > qlv)]
+        sh = d.final_point_horizontal
+        sv = d.final_point_vertical
+        # sh = sh[~((sh - sh.mean()).abs() > 3 * sh.std())]
+        # sv = sv[~((sv - sv.mean()).abs() > 3 * sv.std())]
+        # if pos == "Stand":
+        #     ec = 'green'
+        # elif pos == "Treadmill":
+        #     ec = 'blue'
+        # elif pos == "Walk":
+        #     ec = "red"
+        if cur == "Head":
+            ec = 'green'
+        elif cur == "Eye":
+            ec = 'blue'
+        elif cur == "Hand":
+            ec = "red"
+        ap = 0.1
+        ax.scatter(sh / 2, sv / 2, s=1.0, alpha=ap, c=ec)
+        plt_confidence_ellipse(sh, sv, ax, 3, linestyle='dotted', facecolor='None', edgecolor=ec,
+                               linewidth=3)
+    circle2 = plt.Circle((0.0, 0.0), 3, facecolor='None', edgecolor='black', linewidth=1)
+    ax.add_patch(circle2)
+    plt.xlim(-10, 10)
+    plt.ylim(-10, 10)
+    plt.title(str(cur))
+    ax.set_aspect('equal')
+    ax.grid()
+    plt.axhline(0)
+    plt.axvline(0)
+    plt.show()
+
+# %%rmanova - for only 2var,
+columns = ['target_in_count_per_second',
+           # 'required_target_size', 'mean_cursor_speed','width','height'
+           ]
+d = summary1[summary1.selection == "Dwell"]
+for column in columns:
+    aovrm = AnovaRM(d, column, 'subject', within=['cursor', 'posture'],
+                    aggregate_func='mean').fit()
+    aov = pg.rm_anova(dv=column, within=['cursor', 'posture'],
+                      subject='subject', data=d, detailed=True,
+                      effsize="ng2", correction=True)
+    sph = pg.sphericity(dv=column, within=['cursor', 'posture'],
+                        subject='subject', data=d,
+                        )
+    # pg_posthoc = pg.pairwise_ttests(dv=column, within=['posture', 'cursor'], subject='subject', data=d,
+    #                                 padjust='bonf')
+
+    print('METRIC', column)
+
+    aov.round(3)
+    # print('RM-anova(statsmodel)')
+    # print(aovrm)
+    print('RM-anova(pg)')
+    # print(aov)
+    pg.print_table(aov)
+    # print('Sphericity(pg)')
+    # print(sph)
+
+# %%
+for title in ['time', 'initial_contact_time', 'mean_error']:
+    g = sns.catplot(kind='bar', data=summary, col='test', x='selection', y=title, hue='pos')
+    # order=['HEAD', 'NEWSPEED', 'NEWSTICKY', 'NEWSPEEDSTICKY']);
+    for ax in g.axes.ravel():
+        # add annotations
+        for c in ax.containers:
+            labels = [f'{(v.get_height()):.3f}' for v in c]
+            ax.bar_label(c, labels=labels, label_type='edge')
+        ax.margins(y=0.2)
+    plt.title(title)
+    plt.show()
 
 # %%
 # dd=summarize_subject(2, resetFile=False, suffix='Triangle' + str(5), fnc=TriangleDataframe, arg=5)
 # for t in np.arange(5, 65, 5):
 for i in range(24):
-    summarize_subject(i, savefile=True, resetFile=True, repetitions=range(10))
+    # for i in [13]:
+    stt = summarize_subject(i, savefile=True, resetFile=False,
+                            # repetitions=range(10)
+                            )
 # %%
 dfs = []
 data = visualize_summary(show_plot=False, subjects=range(24))
@@ -49,54 +840,57 @@ for removal in remove_columns:
     parameters.remove(removal)
 # %%
 for p in [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]:
-    a=test_score_parameter(param=p, postures=['WALK'])
+    a = test_score_parameter(param=p, postures=['WALK'])
     # print(a)
-#%%
-data=[]
-for p in [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]:
-    data.append(pd.read_csv('ParamRawsummary'+str(p)+'.csv'))
-data=pd.concat(data)
-output = data.groupby([data.cursor_type,data.parameter]).mean()
 # %%
-data = read_hololens_data(0, 'WALK', 'HEAD', 6)
+data = []
+for p in [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]:
+    data.append(pd.read_csv('ParamRawsummary' + str(p) + '.csv'))
+data = pd.concat(data)
+output = data.groupby([data.cursor_type, data.parameter]).mean()
+# %%
+data = read_hololens_data(13, 'STAND', 'HEAD', 5)
 splited_data = split_target(data)
-t = 1
+t = 6
 temp_data = splited_data[t]
 temp_data.reset_index(inplace=True)
 temp_data.timestamp -= temp_data.timestamp.values[0]
-grid_size = 4.5
-point = np.array([
-    (-grid_size, grid_size), (0, grid_size), (grid_size, grid_size),
-    (-grid_size, 0), (0, 0), (grid_size, 0),
-    (-grid_size, -grid_size), (0, -grid_size), (grid_size, -grid_size)
-])
-point_x = np.array([
-    -grid_size, 0, grid_size,
-    -grid_size, 0, grid_size,
-    -grid_size, 0, grid_size
-])
-point_y = np.array([
-    grid_size, grid_size, grid_size,
-    0, 0, 0,
-    -grid_size, -grid_size, -grid_size
-])
-max_distance = grid_size * 4
-temp_data['distances'] = temp_data.apply(
-    lambda x: np.sqrt((point_x - x.horizontal_offset) ** 2 + (point_y - x.vertical_offset) ** 2), axis=1)
-temp_data['s_contribute'] = (1 - temp_data.distances / max_distance).apply(np.clip, args=(0, 1))
-# temp_data = temp_data.assign(score=np.array([0,0,0,0,0,0,0,0,0]))
-temp_data['score'] = [np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])] * len(temp_data)
-param = 0.025
-for index, row in temp_data.iterrows():
-    if index == 0: continue
-    temp_data['score'][index] = temp_data['score'][index - 1] * (1 - param) + temp_data['s_contribute'][index] * (param)
-temp_data['selected_target'] = temp_data.score.apply(np.argmax)
-temp_data['stick_success'] = temp_data['selected_target'] == 4
-for k, g in itertools.groupby(temp_data.iterrows(),
-                              key=lambda row: row[1]['stick_success']):
-    if k == True:
-        df = pd.DataFrame([r[1] for r in g])
-        print(df.timestamp.values[-1] - df.timestamp.values[0])
+# plt.plot(temp_data.timestamp,temp_data.cursor_angular_distance);plt.show()
+plt.plot(temp_data.timestamp, temp_data.head_forward_y);
+plt.show()
+# grid_size = 4.5
+# point = np.array([
+#     (-grid_size, grid_size), (0, grid_size), (grid_size, grid_size),
+#     (-grid_size, 0), (0, 0), (grid_size, 0),
+#     (-grid_size, -grid_size), (0, -grid_size), (grid_size, -grid_size)
+# ])
+# point_x = np.array([
+#     -grid_size, 0, grid_size,
+#     -grid_size, 0, grid_size,
+#     -grid_size, 0, grid_size
+# ])
+# point_y = np.array([
+#     grid_size, grid_size, grid_size,
+#     0, 0, 0,
+#     -grid_size, -grid_size, -grid_size
+# ])
+# max_distance = grid_size * 4
+# temp_data['distances'] = temp_data.apply(
+#     lambda x: np.sqrt((point_x - x.horizontal_offset) ** 2 + (point_y - x.vertical_offset) ** 2), axis=1)
+# temp_data['s_contribute'] = (1 - temp_data.distances / max_distance).apply(np.clip, args=(0, 1))
+# # temp_data = temp_data.assign(score=np.array([0,0,0,0,0,0,0,0,0]))
+# temp_data['score'] = [np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])] * len(temp_data)
+# param = 0.025
+# for index, row in temp_data.iterrows():
+#     if index == 0: continue
+#     temp_data['score'][index] = temp_data['score'][index - 1] * (1 - param) + temp_data['s_contribute'][index] * (param)
+# temp_data['selected_target'] = temp_data.score.apply(np.argmax)
+# temp_data['stick_success'] = temp_data['selected_target'] == 4
+# for k, g in itertools.groupby(temp_data.iterrows(),
+#                               key=lambda row: row[1]['stick_success']):
+#     if k == True:
+#         df = pd.DataFrame([r[1] for r in g])
+#         print(df.timestamp.values[-1] - df.timestamp.values[0])
 
 # temp_data[['score_0', 'score_1', 'score_2', 'score_3'
 #     , 'score_4', 'score_5', 'score_6', 'score_7', 'score_8']] = pd.DataFrame(temp_data.score.tolist(),
@@ -142,50 +936,50 @@ for k, g in itertools.groupby(temp_data.iterrows(),
 #     plt.plot(corr_data.timestamp, corr_data.target_horizontal_velocity)
 #     plt.show()
 # %% see eye-errors
-repetitions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-postures = ['STAND', 'WALK']
-
-cursorTypes = ['EYE']
-targets = range(9)
-for sub_num in range(24):
-    # for sub_num in [6]:
-    subject_total_count = 0
-    subject_error_eye_count = 0
-    subject_error_invalidate = 0
-    for cursor_type, rep, pos in itertools.product(cursorTypes, repetitions, postures):
-        data = read_hololens_data(sub_num, pos, cursor_type, rep)
-        splited_data = split_target(data)
-        # wide = 'SMALL' if rep in rep_small else 'LARGE'
-        for t in targets:
-            try:
-
-                temp_data = splited_data[t]
-                temp_data.reset_index(inplace=True)
-                temp_data.timestamp -= temp_data.timestamp.values[0]
-                validate, reason = validate_trial_data(temp_data, cursor_type, pos)
-                temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
-                eye_index = temp_data[temp_data.check_eye == 0].index
-                invalidate_index = temp_data[temp_data.isEyeTrackingEnabledAndValid == False].index
-                subject_total_count += len(temp_data.index)
-                subject_error_eye_count += len(eye_index)
-                subject_error_invalidate += len(invalidate_index)
-                # plt.plot(temp_data.timestamp,temp_data.horizontal_offset)
-                # plt.plot(temp_data.timestamp, temp_data.vertical_offset)
-                # plt.show()
-                # plt.plot(temp_data.timestamp,temp_data.direction_x)
-                # plt.plot(temp_data.timestamp, temp_data.head_forward_x)
-                # plt.show()
-                # if len(eye_index)>0:
-                #     print(sub_num, pos, cursor_type, rep,len(eye_index))
-            except Exception as e:
-                print(sub_num, pos, cursor_type, rep, e.args)
-    print(sub_num, subject_error_eye_count, subject_total_count, subject_error_invalidate,
-          100 * subject_error_eye_count / subject_total_count, '%',
-          100 * subject_error_invalidate / subject_total_count, '%')
+# repetitions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+#
+# postures = ['STAND', 'WALK']
+#
+# cursorTypes = ['EYE']
+# targets = range(9)
+# for sub_num in range(24):
+#     # for sub_num in [6]:
+#     subject_total_count = 0
+#     subject_error_eye_count = 0
+#     subject_error_invalidate = 0
+#     for cursor_type, rep, pos in itertools.product(cursorTypes, repetitions, postures):
+#         data = read_hololens_data(sub_num, pos, cursor_type, rep)
+#         splited_data = split_target(data)
+#         # wide = 'SMALL' if rep in rep_small else 'LARGE'
+#         for t in targets:
+#             try:
+#
+#                 temp_data = splited_data[t]
+#                 temp_data.reset_index(inplace=True)
+#                 temp_data.timestamp -= temp_data.timestamp.values[0]
+#                 validate, reason = validate_trial_data(temp_data, cursor_type, pos)
+#                 temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
+#                 eye_index = temp_data[temp_data.check_eye == 0].index
+#                 invalidate_index = temp_data[temp_data.isEyeTrackingEnabledAndValid == False].index
+#                 subject_total_count += len(temp_data.index)
+#                 subject_error_eye_count += len(eye_index)
+#                 subject_error_invalidate += len(invalidate_index)
+#                 # plt.plot(temp_data.timestamp,temp_data.horizontal_offset)
+#                 # plt.plot(temp_data.timestamp, temp_data.vertical_offset)
+#                 # plt.show()
+#                 # plt.plot(temp_data.timestamp,temp_data.direction_x)
+#                 # plt.plot(temp_data.timestamp, temp_data.head_forward_x)
+#                 # plt.show()
+#                 # if len(eye_index)>0:
+#                 #     print(sub_num, pos, cursor_type, rep,len(eye_index))
+#             except Exception as e:
+#                 print(sub_num, pos, cursor_type, rep, e.args)
+#     print(sub_num, subject_error_eye_count, subject_total_count, subject_error_invalidate,
+#           100 * subject_error_eye_count / subject_total_count, '%',
+#           100 * subject_error_invalidate / subject_total_count, '%')
 
 # %%
-offsets = visualize_offsets(False)
+offsets = visualize_offsets(True)
 total_error = 0
 total_len = 0
 for ct, pos in itertools.product(['EYE', 'HAND', 'HEAD'], ['STAND', 'WALK']):
@@ -234,28 +1028,36 @@ for i in t.values:
 # for t in np.arange(5, 65, 5):
 
 # %%
-summary = visualize_summary(show_plot=False)
+summary = visualize_summary(show_plot=True)
 summary.to_csv('BasicRawSummary.csv')
 # errors = summary[summary.error.isna() == False]
 # print('\nError trial counts')
 # print(errors.groupby(errors['error']).subject_num.count())
-# %%
+# %% TESTTEST
 import seaborn as sns
 
 summary = pd.read_csv('BasicRawSummary.csv')
+summary = summary[summary.repetition >= 4]
+ee = summary[summary.error.isna() == False]
 summary = summary[summary.error.isna()]
+print(ee.groupby(ee.error).count().wide)
+bySubjects = summary.groupby([summary.subject_num, summary.cursor_type, summary.posture]).mean()
+bySubjects = bySubjects.reset_index()
+bySubjects.to_csv("studyOne_BySubject.csv")
+ini = bySubjects[['subject_num', 'cursor_type', 'posture', 'initial_contact_time']]
+ini.to_csv("studyOneInitialContactTime.csv")
 # summary=summary[summary.longest_dwell_time <=1.1]
-for c in ['mean_offset', 'std_offset', 'initial_contact_time',
-          'target_in_count', 'longest_dwell_time', ]:
-    sns.boxplot(data=summary, x='cursor_type',
-                hue='posture',
-                y=c,
-                showfliers=False,
-                showmeans=True,
-                meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
-                           'markersize': '10'},
-                )
-    plt.show()
+# for c in ['mean_offset', 'std_offset', 'initial_contact_time',
+#           'target_in_count', 'longest_dwell_time', ]:
+#     sns.boxplot(data=summary, x='cursor_type',
+#                 hue='posture',
+#                 y=c,
+#                 showfliers=False,
+#                 showmeans=True,
+#                 meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+#                            'markersize': '10'},
+#                 )
+#     plt.show()
 # sns.histplot(summary[summary.posture == 'WALK'], x="longest_dwell_time", hue="cursor_type",
 #              multiple="dodge", shrink=.8,bins=25,kde=True,alpha=0.05,
 #              cumulative=False, stat="density", element="step", fill=True)
@@ -327,11 +1129,6 @@ import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import itertools
-from scipy.stats import anderson
-from statsmodels.stats.anova import AnovaRM
-import pingouin as pg
-import numpy as np
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 # from bioinfokit.analys import stat
@@ -339,49 +1136,52 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from collections import namedtuple
 from statannotations.Annotator import Annotator
 
-pd.set_option('max_colwidth', 400)
-pd.set_option('max_rows', 99999)
-summary = pd.read_csv("BasicRawSummary.csv")
-summary['accuracy'] = (summary.mean_offset_horizontal ** 2 + summary.mean_offset_vertical ** 2).apply(math.sqrt)
+# pd.set_option('max_colwidth', 400)
+# pd.set_option('max_rows', 99999)
+summary = pd.read_csv("bS.csv")
+# summary['accuracy'] = (summary.mean_offset_horizontal ** 2 + summary.mean_offset_vertical ** 2).apply(math.sqrt)
 for column in [
     # 'mean_offset',
-    'std_offset',
+    # 'std_offset',
     'initial_contact_time',
-    'target_in_count',
+    # 'target_in_count',
+    # 'total_time',
+    # 'success_trial',
+
     # 'target_in_total_time',
     # 'target_in_mean_time',
-    'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal',
-    'std_offset_vertical',
+    # 'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal',
+    # 'std_offset_vertical',
     # 'mean_abs_offset_horizontal', 'mean_abs_offset_vertical',
     # 'std_abs_offset_horizontal', 'std_abs_offset_vertical',
-    'longest_dwell_time', 'movement_length', 'accuracy'
+    # 'longest_dwell_time', 'movement_length', 'accuracy'
 ]:
 
-    s = summary[summary.error.isna()]
-    # ss = s
-
-    list_subjects = []
-    for i, subject_data in s.groupby(s.subject_num):
-        d = subject_data[np.abs(stats.zscore(subject_data[column])) < 3]
-        list_subjects.append(d.reset_index())
-    s = pd.concat(list_subjects)
-
-    bySubjects = s.groupby([s.subject_num, s.cursor_type, s.posture]).mean()
-    bySubjects = bySubjects.reset_index()
+    # s = summary[summary.error.isna()]
+    # # ss = s
+    #
+    # # list_subjects = []
+    # # for i, subject_data in s.groupby(s.subject_num):
+    # #     d = subject_data[np.abs(stats.zscore(subject_data[column])) < 3]
+    # #     list_subjects.append(d.reset_index())
+    # # s = pd.concat(list_subjects)
+    # # summary=summary[summary.success_trial==1]
+    # bySubjects = summary.groupby([summary.subject_num, summary.cursor_type, summary.posture]).mean()
+    # bySubjects = bySubjects.reset_index()
     if column == 'initial_contact_time':
-        aovrm = AnovaRM(s, column, 'subject_num', within=['cursor_type', 'posture', 'wide'],
+        aovrm = AnovaRM(summary, column, 'subject', within=['cursor', 'posture'],
                         aggregate_func='mean').fit()
     else:
-        aovrm = AnovaRM(s, column, 'subject_num', within=['cursor_type', 'posture'],
+        aovrm = AnovaRM(summary, column, 'subject', within=['cursor', 'posture'],
                         aggregate_func='mean').fit()
 
-    aov = pg.rm_anova(dv=column, within=['cursor_type', 'posture'],
-                      subject='subject_num', data=s, detailed=True,
-                      effsize="ng2", correction=True)
-    sph = pg.sphericity(dv=column, within=['cursor_type', 'posture'],
-                        subject='subject_num', data=s,
+    aov = pg.rm_anova(dv=column, within=['cursor', 'posture'],
+                      subject='subject', data=summary, detailed=True,
+                      effsize="np2", correction=True)
+    sph = pg.sphericity(dv=column, within=['cursor', 'posture'],
+                        subject='subject', data=summary,
                         )
-    pg_posthoc = pg.pairwise_ttests(dv=column, within=['posture', 'cursor_type'], subject='subject_num', data=s,
+    pg_posthoc = pg.pairwise_ttests(dv=column, within=['posture', 'cursor'], subject='subject', data=summary,
                                     padjust='bonf')
 
     print('METRIC', column)
@@ -408,10 +1208,10 @@ for column in [
                      meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
                                 'markersize': '10'},
                      palette='Set1', width=0.8)
-    annot = Annotator(ax, pairs, data=bySubjects, x='posture', y=column, order=order, hue='cursor_type',
-                      hue_order=hue_order)
+    # annot = Annotator(ax, pairs, data=bySubjects, x='posture', y=column, order=order, hue='cursor_type',
+    #                   hue_order=hue_order)
     # annot.new_plot(ax, pairs, data=s, x='posture', y=column, order=order, hue='cursor_type', hue_order=hue_order)
-    annot.configure(test='t-test_ind', comparisons_correction="Bonferroni").apply_test().annotate()
+    # annot.configure(test='t-test_ind', comparisons_correction="Bonferroni").apply_test().annotate()
     # sns.boxplot(data=ss, x='posture', y=column, hue='cursor_type', showfliers=False, showmeans=True, )
     plt.legend(loc='upper left', bbox_to_anchor=(1.03, 1), title='Cursor Type')
     plt.title(column)
@@ -449,17 +1249,17 @@ for column in [
     print('Posthoc(pairwise ttest,pg)')
     pg.print_table(pg_posthoc)
     # # final summary
-    # for i in aovrm.anova_table[aovrm.anova_table['Pr > F'] < 0.05].index:
-    #   print('rANOVA significant difference in ',i)
-    # for i in aov[aov['p-GG-corr']<0.05].Source.values:
-    #   print('rANOVA significant difference in (withouf wide)',i)
-    # print('sphericity:',sph.spher, 'p:',sph.pval)
-    # # print(pg_posthoc)
+    for i in aovrm.anova_table[aovrm.anova_table['Pr > F'] < 0.05].index:
+        print('rANOVA significant difference in ', i)
+    for i in aov[aov['p-GG-corr'] < 0.05].Source.values:
+        print('rANOVA significant difference in (withouf wide)', i)
+    print('sphericity:', sph.spher, 'p:', sph.pval)
+    # print(pg_posthoc)
     print('-' * 100)
 
 # %%dwell-wise anaylsis
 dwell_times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-# dwell_times = [1.0]
+# dwell_times = [0.1]
 for dt in dwell_times:
     dwell_time_analysis(dt)
 # %% visualize dwell-wise analysis
@@ -469,74 +1269,132 @@ for dt in dwell_times:
 # 5064        5064         0.1  ...        178.581023   NaN
 # 7654
 dwell_times = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+# dwell_time=[0.1]
 dfs = []
 for dt in dwell_times:
     f = pd.read_csv('dwell_time_Rawsummary' + str(dt) + '.csv')
     f['dwell_time'] = dt
     dfs.append(f)
 dwell_summary = pd.concat(dfs)
+dwell_summary['success_trial'] = dwell_summary.best_record > dwell_summary.dwell_time
+dwell_summary['trial_time'] = dwell_summary.first_dwell_time + dwell_summary.dwell_time
+errors = dwell_summary[dwell_summary.error.isna() == False]
+# dwell_summary = dwell_summary[dwell_summary.error.isna() == True]
+bySubjects = dwell_summary.groupby(
+    [dwell_summary.dwell_time, dwell_summary.subject_num, dwell_summary.cursor_type, dwell_summary.posture]).mean()
+bySubjects = bySubjects.reset_index()
 plot_df = pd.DataFrame(
     columns=['posture', 'cursor_type', 'dwell_time', 'success_rate', 'required_target_size', 'first_dwell_time',
-             'mean_final_speed', 'required_target_size_std', 'first_dwell_time_std', 'mean_final_speed_std',
+             'final_speed', 'required_target_size_std', 'first_dwell_time_std', 'mean_final_speed_std',
              'best_record'])
-for pos, ct in itertools.product(['WALK', 'STAND'], ['HEAD', 'EYE', 'HAND']):
-
-    srs = []
-    for dt in dwell_times:
-        temp = dwell_summary[(dwell_summary.dwell_time == dt) & (dwell_summary.cursor_type == ct)]
-        temp = temp[temp.posture == pos]
-        total_count = len(temp)
-        all_error_count = sum(temp.groupby(temp.error).count().posture)
-        if temp.groupby(temp.error).count().posture.__contains__("no success dwell"):
-            fail_count = temp.groupby(temp.error).count().posture['no success dwell']
-        else:
-            fail_count = 0
-        # print(dt,temp.groupby(temp.error).count().posture)
-        success_rate = 1 - fail_count / (total_count - (all_error_count - fail_count))
-        print(dt, pos, ct, success_rate, total_count, fail_count, all_error_count)
-        print(temp.groupby(temp.error).count().posture)
-        required_target_size = temp.required_target_size.mean()
-        first_dwell_time = temp.first_dwell_time.mean()
-        mean_final_speed = temp.mean_final_speed.mean()
-        mean_best_record = temp.best_record.mean()
-        # errorbar
-        required_target_size_std = temp.required_target_size.std()
-        first_dwell_time_std = temp.first_dwell_time.std()
-        mean_final_speed_std = temp.mean_final_speed.std()
-
-        plot_summary = {'posture': pos,
-                        'cursor_type': ct,
-                        'dwell_time': dt,
-                        'success_rate': success_rate * 100,
-                        'required_target_size': required_target_size,
-                        'first_dwell_time': first_dwell_time,
-                        'mean_final_speed': mean_final_speed,
-                        'required_target_size_std': required_target_size_std,
-                        'first_dwell_time_std': first_dwell_time_std,
-                        'mean_final_speed_std': mean_final_speed_std,
-                        'mean_best_record': mean_best_record
-                        }
-        plot_df.loc[len(plot_df)] = plot_summary
+# for pos, ct in itertools.product(['WALK', 'STAND'], ['HEAD', 'EYE', 'HAND']):
+#
+#     srs = []
+#     for dt in dwell_times:
+#         temp = dwell_summary[(dwell_summary.dwell_time == dt) & (dwell_summary.cursor_type == ct)]
+#         temp = temp[temp.posture == pos]
+#         total_count = len(temp)
+#         all_error_count = sum(temp.groupby(temp.error).count().posture)
+#         if temp.groupby(temp.error).count().posture.__contains__("no success dwell"):
+#             fail_count = temp.groupby(temp.error).count().posture['no success dwell']
+#         else:
+#             fail_count = 0
+#         # print(dt,temp.groupby(temp.error).count().posture)
+#         success_rate = 1 - fail_count / (total_count - (all_error_count - fail_count))
+#         print(dt, pos, ct, success_rate, total_count, fail_count, all_error_count)
+#         print(temp.groupby(temp.error).count().posture)
+#         required_target_size = temp.required_target_size.mean()
+#         first_dwell_time = temp.first_dwell_time.mean()
+#         mean_final_speed = temp.mean_final_speed.mean()
+#         mean_best_record = temp.best_record.mean()
+#         # errorbar
+#         required_target_size_std = temp.required_target_size.std()
+#         first_dwell_time_std = temp.first_dwell_time.std()
+#         mean_final_speed_std = temp.mean_final_speed.std()
+#
+#         plot_summary = {'posture': pos,
+#                         'cursor_type': ct,
+#                         'dwell_time': dt,
+#                         'success_rate': success_rate * 100,
+#                         'required_target_size': required_target_size,
+#                         'first_dwell_time': first_dwell_time,
+#                         'mean_final_speed': mean_final_speed,
+#                         'required_target_size_std': required_target_size_std,
+#                         'first_dwell_time_std': first_dwell_time_std,
+#                         'mean_final_speed_std': mean_final_speed_std,
+#                         'mean_best_record': mean_best_record
+#                         }
+#         plot_df.loc[len(plot_df)] = plot_summary
 dwell_summary.to_csv('DwellRawSummary.csv')
 
 abc = dwell_summary[
     (dwell_summary.posture == 'STAND') & (dwell_summary.cursor_type == 'HAND') & (dwell_summary.dwell_time == 1.0)]
 ddd = dwell_summary[
     (dwell_summary.posture == 'STAND') & (dwell_summary.cursor_type == 'EYE') & (dwell_summary.dwell_time == 1.0)]
-# %%
 
-for c in ['success_rate', 'required_target_size', 'first_dwell_time',
-          'mean_final_speed', 'best_record']:
-    fig = go.Figure()
-    for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
-        plot_data = plot_df[(plot_df.posture == pos) & (plot_df.cursor_type == ct)]
-        # print(plot_data)
-        erry = plot_data[c + '_std'] if c != 'success_rate' else None
-        fig.add_trace(go.Bar(
-            name=pos + '_' + ct, x=dwell_times, y=plot_data[c], error_y=dict(type='data', array=erry)
-        ))
-        fig.update_layout(title=str(c))
-    fig.show()
+bySubjects[
+    ['dwell_time', 'subject_num', 'cursor_type', 'posture', 'success_trial', 'required_target_size', 'trial_time',
+     'final_speed', 'target_in_count']].to_csv('StudyOneResultCollection.csv')
+# %% DWELL ANALYSIS
+dwell_summary = pd.read_csv('DwellRawSummary.csv')
+dwell_summary['success_trial'] = dwell_summary['success_trial'].apply(int)
+for column in [
+    'success_trial',
+    'required_target_size',
+    'target_in_count',
+    'trial_time',
+    'final_speed'
+]:
+    for pos in [
+        'STAND',
+        # 'WALK'
+    ]:
+        aov = pg.rm_anova(dv=column, within=['cursor_type', 'dwell_time'],
+                          subject='subject_num', data=dwell_summary[dwell_summary.posture == pos], detailed=True,
+                          effsize="np2", correction=True)
+        # for dt in dwell_summary.dwell_time.unique():
+        # aov = pg.rm_anova(dv=column, within=['cursor_type'],
+        #                   subject='subject_num', data=dwell_summary[(dwell_summary.posture == pos)&(dwell_summary.dwell_time == dt)], detailed=True,
+        #                   effsize="np2", correction=True)
+        print(column, pos, 'RM-anova(pg)')
+        pg.print_table(aov)
+        # pg_posthoc = pg.pairwise_ttests(dv=column, within=[ 'cursor_type'], subject='subject_num',
+        #                                 data=dwell_summary[dwell_summary.posture == pos],
+        #                                 padjust='bonf')
+        # # print(wt)
+
+        # pg.print_table(pg_posthoc)
+# %%
+import seaborn as sns
+
+for c in [
+    # 'success_trial', 'required_target_size', 'trial_time',
+    'final_speed', 'target_in_count']:
+    bySubjects[['dwell_time', 'subject_num', 'cursor_type', 'posture', c]].to_csv(f'StudyOne_{c}.csv')
+    g = sns.catplot(kind='bar', data=bySubjects, col='dwell_time', x='cursor_type',
+                    y=c,
+                    ci=None,
+                    # order=['HEAD', 'NEWSPEED', 'NEWSTICKY', 'NEWSPEEDSTICKY'],
+                    # ci='sd',
+                    # capsize=.2,
+                    # palette='husl',
+                    dodge=True,
+                    hue='posture'
+                    )
+    plt.show()
+
+# for c in ['success_rate', 'required_target_size', 'first_dwell_time',
+#           'mean_final_speed', 'best_record']:
+#     fig = go.Figure()
+#     for pos, ct in itertools.product(['STAND', 'WALK'], ['HEAD', 'EYE', 'HAND']):
+#         plot_data = plot_df[(plot_df.posture == pos) & (plot_df.cursor_type == ct)]
+#         # print(plot_data)
+#         erry = plot_data[c + '_std'] if c != 'success_rate' else None
+#         fig.add_trace(go.Bar(
+#             name=pos + '_' + ct, x=dwell_times, y=plot_data[c], error_y=dict(type='data', array=erry)
+#         ))
+#         fig.update_layout(title=str(c))
+#     fig.show()
 # %%dwell based plots
 # success rate plot
 import seaborn as sns
@@ -563,10 +1421,12 @@ ax.legend(handles, ['Cursor Type', 'Head', 'Eye', 'Hand', 'Posture', 'STAND', 'W
 plt.tight_layout()
 plt.show()
 # %% dwell time box plots
-dcs = ['required_target_size',
-       # 'first_dwell_time',
-       # 'mean_final_speed', 'min_target_size', 'best_record'
-       ]
+dcs = [
+    # 'required_target_size',
+    'first_dwell_time',
+    # 'final_speed',
+    # 'min_target_size', 'best_record'
+]
 
 sns.set_style('ticks')
 sns.set_context('talk')
@@ -601,19 +1461,21 @@ for c in dcs:
     # plt.show()
     # Standing condition plots
     fig, ax = plt.subplots(figsize=(8, 8))
-    sns.lineplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary,
-                 # showfliers=False, showmeans=True,
-                 # meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
-                 #            'markersize': '10'},
-                 palette='Set2', marker='o', style='posture', ci=0,
-                 # width=0.8,
-                 ax=ax)
-    # sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture=='WALK'], kind='box', showfliers=False, showmeans=True,
-    #             meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
-    #             height=5,aspect=2,legend=False)
-    # sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture=='STAND'], kind='box', showfliers=False, showmeans=True,
-    #             meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
-    #             height=5,aspect=2,legend=False)
+    # sns.lineplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary,
+    #              # showfliers=False, showmeans=True,
+    #              # meanprops={'marker': 'x', 'markerfacecolor': 'white', 'markeredgecolor': 'black',
+    #              #            'markersize': '10'},
+    #              palette='Set2', marker='o', style='posture', ci=0,
+    #              # width=0.8,
+    #              ax=ax)
+    sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'WALK'], kind='box',
+                showfliers=False, showmeans=True,
+                meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
+                height=5, aspect=2, legend=False)
+    sns.catplot(x='dwell_time', y=c, hue='cursor_type', data=dwell_summary[dwell_summary.posture == 'STAND'],
+                kind='box', showfliers=False, showmeans=True,
+                meanprops={'marker': '+', 'markerfacecolor': 'white', 'markeredgecolor': 'black', 'markersize': '5'},
+                height=5, aspect=2, legend=False)
     # sns.displot(data=summary,x=c,hue='cursor_type',col='posture',kind='kde')
     # sns.displot(data=summary,y=c,hue='posture',col='cursor_type',kind='kde')
     if c == 'required_target_size':
@@ -623,7 +1485,7 @@ for c in dcs:
     elif c == 'first_dwell_time':
         plt.ylabel('First Dwell Success Time (s)')
         # plt.ylim(0, 5)
-    elif c == 'mean_final_speed':
+    elif c == 'final_speed':
         plt.ylabel('Final Cursor Speed (°/s)')
         plt.ylim(0, 20)
     # plt.legend(loc='upper right')
@@ -757,3 +1619,36 @@ print('stand,accuracy', with_stand.mean_offset.mean(), '->', without_stand.mean_
 print('walk,accuracy', with_walk.mean_offset.mean(), '->', without_walk.mean_offset.mean())
 print('stand,precision', with_stand.std_offset.mean(), '->', without_stand.std_offset.mean())
 print('walk,precision', with_walk.std_offset.mean(), '->', without_walk.std_offset.mean())
+
+# %%
+subjective = pd.read_csv('Subjective_study1.csv')
+sns.scatterplot(data=subjective[subjective.posture == 'WALK'], x='subject_num', y='Temporal', hue='cursor_type');
+plt.show()
+sj = subjective.groupby([subjective.posture, subjective.cursor_type]).mean().round(3)
+sjt = subjective.groupby([subjective.posture, subjective.cursor_type]).std().round(3)
+# r
+aov = pg.rm_anova(dv='borg', within=['cursor_type', 'posture'],
+                  subject='subject_num', data=subjective, detailed=True,
+                  effsize="np2", correction=True)
+# aov = pg.anova(dv='borg',between=['posture','cursor_type'],data=subjective,detailed=True)
+print(aov.round(3))
+ph = pg.pairwise_ttests(data=subjective, dv='borg', between='posture')
+print(ph.round(3))
+aov = pg.rm_anova(dv='nasa', within=['cursor_type', 'posture'],
+                  subject='subject_num', data=subjective, detailed=True,
+                  effsize="np2", correction=True)
+# aov = pg.anova(dv='borg',between=['posture','cursor_type'],data=subjective,detailed=True)
+print(aov.round(3))
+ph = pg.pairwise_ttests(data=subjective, dv='nasa', between='posture')
+print(ph.round(3))
+ph = pg.pairwise_ttests(data=subjective, dv='nasa', between='cursor_type')
+print(ph.round(3))
+# subjective = subjective.T
+# subjective = subjective.reset_index()
+# subjective = subjective.reset_index()
+# subjective.columns = subjective.columns.droplevel()
+# sJ = subjective.unstack()
+# sJ= sJ.reset_index(level='subject_num')
+# sJ.index=sJ.index.droplevel()
+#
+# print(sJ)

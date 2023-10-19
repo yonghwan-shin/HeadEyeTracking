@@ -75,7 +75,8 @@ def check_loss(temp_data, cursor_type):
             temp_data['direction_z'] == 0)].index
     temp_data['error_frame'] = False
 
-    if cursor_type == 'EYE':
+    # if cursor_type == 'EYE':
+    if False:
         temp_data['check_eye'] = temp_data.latestEyeGazeDirection_x.diff(1)
         check_eyes = []
         for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['check_eye']):
@@ -106,13 +107,14 @@ def check_loss(temp_data, cursor_type):
         temp_data['error_frame'].loc[list(loss_indices)] = True
     else:
         if len(drop_index) > 0:
+
             loss_indices = set(list(drop_index) + list(drop_index + 1) + list(drop_index + 2))
             if len(temp_data) in loss_indices:
                 loss_indices.remove(len(temp_data))
             if len(temp_data) + 1 in loss_indices:
                 loss_indices.remove(len(temp_data) + 1)
             temp_data.loc[list(loss_indices)] = np.nan
-            temp_data = temp_data.interpolate()
+            # temp_data = temp_data.interpolate()
 
             temp_data['error_frame'].loc[list(loss_indices)] = True
     temp_data['target_horizontal_velocity'] = (
@@ -126,28 +128,28 @@ def validate_trial_data(data, cursor_type, posture):
     if cursor_type == 'EYE':
         drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
                 data['direction_z'] == 0)].index
-        # if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
-        if len(drop_index) > 0:
-            # if len(drop_index) > 0 and len(drop_index) > 0:
+        if len(drop_index) > 0 and len(drop_index) > len(data.index) / 3:
+            # if len(drop_index) > 0:
+            #     # if len(drop_index) > 0 and len(drop_index) > 0:
             return False, 'eyeloss'
 
-        data['check_eye'] = data.latestEyeGazeDirection_x.diff(1)
-        eye_index = data[data.check_eye == 0].index
-        invalidate_index = data[data.isEyeTrackingEnabledAndValid == False].index
-        loss_interval = 3
-        loss_indices = []
-        for i in range(-loss_interval, loss_interval + 1):
-            loss_indices += list(eye_index + i)
-        for i in loss_indices:
-            if i > len(data) or i < 0:
-                loss_indices.remove(i)
+        # data['check_eye'] = data.latestEyeGazeDirection_x.diff(1)
+        # eye_index = data[data.check_eye == 0].index
+        # invalidate_index = data[data.isEyeTrackingEnabledAndValid == False].index
+        # loss_interval = 3
+        # loss_indices = []
         # for i in range(-loss_interval, loss_interval + 1):
-        #     if len(data) + i in loss_indices:
-        #         loss_indices.remove(len(data) + i)
-        if len(eye_index) > 100:
-            # if len(drop_index) > 0 and len(drop_index) > 0:
-            # print('eye loss')
-            return False, 'eyelossinterval'
+        #     loss_indices += list(eye_index + i)
+        # for i in loss_indices:
+        #     if i > len(data) or i < 0:
+        #         loss_indices.remove(i)
+        # # for i in range(-loss_interval, loss_interval + 1):
+        # #     if len(data) + i in loss_indices:
+        # #         loss_indices.remove(len(data) + i)
+        # if len(eye_index) > 100:
+        #     # if len(drop_index) > 0 and len(drop_index) > 0:
+        #     # print('eye loss')
+        #     return False, 'eyelossinterval'
     else:
         drop_index = data[(data['direction_x'] == 0) & (data['direction_y'] == 0) & (
                 data['direction_z'] == 0)].index
@@ -155,8 +157,8 @@ def validate_trial_data(data, cursor_type, posture):
         if len(drop_index) > 0:
             # if len(drop_index) > 0 and len(drop_index) > 0:
             return False, 'loss'
-    # if len(data[data['error_frame'] == True]) > len(data.index) * 2 / 3:
-    if len(data[data['error_frame'] == True]) > 40:
+    if len(data[data['error_frame'] == True]) > len(data.index) * 2 / 3:
+        # if len(data[data['error_frame'] == True]) > 40:
         # print(len(data['error_frame']) , len(data.index))
         return False, 'LOSS'
     if posture == 'WALK':
@@ -238,8 +240,9 @@ def without_cursor_file(subject, posture, cursor_type, repetition):
         print(e.args)
     return output
 
-def read_second_data(subject,cursor_type,target_type,repetition,target_num,save_file=False):
-    root = Path(__file__).resolve().parent / 'SecondStudy' / (str(target_type)+"_data") / str(subject)
+
+def read_second_data(subject, cursor_type, target_type, repetition, target_num, save_file=False):
+    root = Path(__file__).resolve().parent / 'SecondStudy' / (str(target_type) + "_data") / str(subject)
     trial_detail = f'subject{str(subject)}_postureWALK_cursor{str(cursor_type)}_repetition{str(repetition)}_STYLE{str(target_type)}_NUM{target_num}'
     files = root.rglob(trial_detail + '*.json')
     pickled_files = root.rglob(trial_detail + "*.pkl")
@@ -304,7 +307,7 @@ def read_second_data(subject,cursor_type,target_type,repetition,target_num,save_
                     output['abs_vertical_offset'] = output['vertical_offset'].apply(abs)
                     output['target_horizontal_velocity'] = (
                             output['target_horizontal_angle'].diff(1) / output['timestamp'].diff(1))
-                    if(save_file):
+                    if (save_file):
                         print(str(root / (file.name.split('.')[0] + ".pkl")))
                         output.to_pickle(path=str(root / (file.name.split('.')[0] + ".pkl")))
                     return output
@@ -312,12 +315,107 @@ def read_second_data(subject,cursor_type,target_type,repetition,target_num,save_
         print('error in reading file', e.args)
 
 
+def read_test_data(subject, repetition, cursor, selection, stand=False):
+    root = Path(__file__).resolve().parent / 'data' / 'Test' / str(subject)
+    # if stand: root = Path(__file__).resolve().parent / 'data' / 'EyeTest' / 'dummy' / str(subject)
+    trial_detail = f'subject{str(subject)}_cursor{str(cursor)}_Selection{str(selection)}_repetition{str(repetition)}'
+    files = root.rglob(trial_detail + '*.json')
+
+    for file in files:
+        if trial_detail in file.name:
+            with open(file) as f:  # found exact file
+                output = pd.read_json(f)
+                target_position = pd.json_normalize(output.target_position, sep='_').rename(
+                    columns={'x': 'target_position_x', 'y': 'target_position_y', 'z': 'target_position_z'})
+                # head = pd.json_normalize(output.headData, sep='_')
+                cursor = pd.json_normalize(output.cursorData, sep='_')
+                output = pd.concat([output, cursor], axis=1)
+                return output
+
+
+def read_data(subject=None, repetition=None, cursor=None, selection=None, posture=None, filename=None):
+    root = Path(__file__).resolve().parent / 'Dataset' / str(posture) / str(subject)
+    # if stand: root = Path(__file__).resolve().parent / 'data' / 'EyeTest' / 'dummy' / str(subject)
+    trial_detail = f'subject{str(subject)}_cursor{str(cursor)}_Selection{str(selection)}_repetition{str(repetition)}'
+    if filename != None:
+        trial_detail = filename
+        root = Path(__file__).resolve().parent / 'Dataset'
+    files = root.rglob(trial_detail + '*.json')
+
+    for file in files:
+        if trial_detail in file.name:
+            with open(file) as f:  # found exact file
+                output = pd.read_json(f)
+                target_position = pd.json_normalize(output.target_position, sep='_').rename(
+                    columns={'x': 'target_position_x', 'y': 'target_position_y', 'z': 'target_position_z'})
+                head_origin = pd.json_normalize(output.head_origin, sep='_').rename(
+                    columns={'x': 'head_origin_x', 'y': 'head_origin_y', 'z': 'head_origin_z'})
+                head_forward = pd.json_normalize(output.head_forward, sep='_').rename(
+                    columns={'x': 'head_forward_x', 'y': 'head_forward_y', 'z': 'head_forward_z'})
+                head_rotation = pd.json_normalize(output.head_rotation, sep='_').rename(
+                    columns={'x': 'head_rotation_x', 'y': 'head_rotation_y', 'z': 'head_rotation_z'})
+                eyeRay_direction = pd.json_normalize(output.eyeRayDirection, sep='_').rename(
+                    columns={'x': 'eyeRay_direction_x', 'y': 'eyeRay_direction_y', 'z': 'eyeRay_direction_z'})
+                cursor = pd.json_normalize(output.cursorData, sep='_')
+                output = pd.concat([output, target_position,
+                                    head_origin, head_forward, head_rotation, eyeRay_direction,
+                                    cursor], axis=1)
+
+                output['cursor_rotation'] = output.apply(
+                    lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
+                output['target_rotation'] = output.apply(
+                    lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
+                                          x.target_position_z - x.origin_z), axis=1)
+                output['head_rotation'] = output.apply(
+                    lambda x: asSpherical(x.head_forward_x, x.head_forward_y, x.head_forward_z), axis=1)
+                output['eyeRay_rotation'] = output.apply(
+                    lambda x: asSpherical(x.eyeRay_direction_x, x.eyeRay_direction_y, x.eyeRay_direction_z), axis=1)
+
+                output['head_horizontal_angle'] = output.apply(
+                    lambda x: x.head_rotation[1], axis=1
+                )
+                output['head_vertical_angle'] = output.apply(
+                    lambda x: x.head_rotation[0], axis=1
+                )
+                output['cursor_horizontal_angle'] = output.apply(
+                    lambda x: x.cursor_rotation[1], axis=1
+                )
+                output['cursor_vertical_angle'] = output.apply(
+                    lambda x: x.cursor_rotation[0], axis=1
+                )
+                output['eyeRay_horizontal_angle'] = output.apply(
+                    lambda x: x.eyeRay_rotation[1], axis=1
+                )
+                output['eyeRay_vertical_angle'] = output.apply(
+                    lambda x: x.eyeRay_rotation[0], axis=1
+                )
+                output['target_horizontal_angle'] = output.apply(
+                    lambda x: x.target_rotation[1], axis=1
+                )
+                output['target_vertical_angle'] = output.apply(
+                    lambda x: x.target_rotation[0], axis=1
+                )
+                output['horizontal_offset'] = (
+                        output.target_horizontal_angle - output.cursor_horizontal_angle).apply(correct_angle)
+                output['vertical_offset'] = (
+                        output.target_vertical_angle - output.cursor_vertical_angle).apply(correct_angle)
+                output['head_horizontal_offset'] = (
+                        output.target_horizontal_angle - output.head_horizontal_angle).apply(correct_angle)
+                output['head_vertical_offset'] = (
+                        output.target_vertical_angle - output.head_vertical_angle).apply(correct_angle)
+                output['eyeRay_horizontal_offset'] = (
+                        output.target_horizontal_angle - output.eyeRay_horizontal_angle).apply(correct_angle)
+                output['eyeRay_vertical_offset'] = (
+                        output.target_vertical_angle - output.eyeRay_vertical_angle).apply(correct_angle)
+                success_record = f.name[-14:-5]
+                return output, success_record
+
+
 def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, pilot=False, secondstudy=False,
-                       targetType=None):
+                       targetType=None, folder=None):
     root = Path(__file__).resolve().parent / 'data' / str(subject)
     if secondstudy:
         root = Path(__file__).resolve().parent / 'SecondStudy' / str(subject)
-
 
         trial_detail = f'subject{str(subject)}_posture{str(posture)}_cursor{str(cursor_type)}_repetition{str(repetition)}_STYLE{str(targetType)}'
     else:
@@ -408,8 +506,8 @@ def read_hololens_data(subject, posture, cursor_type, repetition, reset=False, p
                     output['max_angle'] = (default_target_radius / output['distance']).apply(math.asin).apply(
                         math.degrees)
                     # if secondstudy:
-                        # menu style !!!
-                        # output['success'] = output.target_name.str.contains(str(t))
+                    # menu style !!!
+                    # output['success'] = output.target_name.str.contains(str(t))
                     output['success'] = output.apply(
                         lambda x: str(x.end_num) in str(x.target_name), axis=1)
                     # else:
@@ -530,11 +628,14 @@ def change_angle(a):
     if a > 180:
         a = a - 360
     return a
+
+
 def timeit(func):
     import time
     """
     Decorator for measuring function's running time.
     """
+
     def measure_time(*args, **kw):
         start_time = time.time()
         result = func(*args, **kw)
