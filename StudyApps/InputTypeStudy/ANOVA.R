@@ -25,7 +25,7 @@ get_anova_table(res.aov)
 
 library(apaTables)
 
-data <- read_csv(file="BasicRawSummary.csv")
+data <- read_csv("Documents/GitHub/HeadEyeTracking/StudyApps/InputTypeStudy/newstudy_BySubject.csv")
 dwell_data = read_csv(file='DwellRawSummary.csv')
 dwell_data <- within(dwell_data,{
   dwell_data$subject_num <-factor(dwell_data$subject_num)
@@ -34,29 +34,30 @@ dwell_data <- within(dwell_data,{
   dwell_data$dwell_time <- factor(dwell_data$dwell_time)
 })
 data <- within(data,{
-  data$subject_num <-factor(data$subject_num)
+  data$subject <-factor(data$subject)
   data$posture <-factor(data$posture)
-  data$cursor_type <- factor(data$cursor_type)
+  data$cursor <- factor(data$cursor)
 })
 library(rlang)
 
 print_basic_statistics <- function(col){
   print(col)
-  data <- read_csv(file="BasicRawSummary.csv")
-  data = data[-which(is.na(data$target_in_count)), ]
+  data <- read_csv("Documents/GitHub/HeadEyeTracking/StudyApps/InputTypeStudy/newstudy_BySubject.csv")
+  #data = data[-which(is.na(data$target_in_count)), ]
   data <- within(data,{
-    data$subject_num <-factor(data$subject_num)
+    data$subject <-factor(data$subject)
     data$posture <-factor(data$posture)
-    data$cursor_type <- factor(data$cursor_type)
+    data$cursor <- factor(data$cursor)
+    data$selection <- factor(data$selection)
   })
   data.mean <- aggregate(data[col],
-                         by=list(data$subject_num,data$posture,data$cursor_type),
+                         by=list(data$subject,data$posture,data$cursor,data$selection),
                          FUN='mean', na.rm=TRUE)
-  colnames(data.mean)<- c("subject_num","posture","cursor_type","x")
-  data.aov<-ezANOVA(data=data.mean, dv=x, wid=subject_num, within=c(posture, cursor_type))
+  colnames(data.mean)<- c("subject","posture","cursor","selection","x")
+  data.aov<-ezANOVA(data=data.mean, dv=x, wid=subject, within=c(posture, cursor,selection))
   print(apa.ezANOVA.table(data.aov))
   # colnames(data.mean)<- c("subject_num","posture","cursor_type","x")
-  a1 <- aov_ez(id="subject_num",dv= "x", data=data.mean, within=c("posture", "cursor_type"), anova_table = list(es = "pes"))
+  a1 <- aov_ez(id="subject",dv= "x", data=data.mean, within=c("posture", "cursor","selection"), anova_table = list(es = "pes"))
   # switched to pes (partial eta squared) for compatability with ART
   print(a1)
   summary(a1)$sphericity.tests
@@ -64,10 +65,10 @@ print_basic_statistics <- function(col){
   apa_print(a1, correction = "GG", es="pes")$full_result 	
   data.aov <- with(data.mean,
                    aov(x ~ posture * cursor_type +
-                         Error(subject_num / (posture * cursor_type)))
+                         Error(subject / (posture * cursor)))
   )
 }
-print_basic_statistics('success_trial')
+print_basic_statistics('success')
 
 print_dwell_statistics <- function(col,stand=TRUE,print_result=TRUE,print_posthoc=TRUE){
   print(col)
