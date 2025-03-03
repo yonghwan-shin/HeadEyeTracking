@@ -3,7 +3,7 @@ import time
 from sklearn.decomposition import PCA
 import matplotlib.patches
 import pandas as pd
-
+import traceback
 from FileHandling import *
 
 import plotly.graph_objects as go
@@ -18,67 +18,88 @@ from statsmodels.stats.anova import AnovaRM
 import pingouin as pg
 
 
-def collect_offsets(sub_num, cursorTypes=None, postures=None, targets=range(9),
-                    repetitions=None):
+# matplotlib.use('TkAgg')
+
+
+def collect_offsets(
+    sub_num, cursorTypes=None, postures=None, targets=range(9), repetitions=None
+):
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
-        postures = ['STAND', 'WALK']
+        postures = ["STAND", "WALK"]
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'EYE', 'HAND']
+        cursorTypes = ["HEAD", "EYE", "HAND"]
     rep_small = [0, 2, 4, 6, 8]
     rep_large = [1, 3, 5, 7, 9]
     summary = pd.DataFrame(
-        columns=['subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide', 'horizontal_offset_list',
-                 'vertical_offset_list', 'error'])
+        columns=[
+            "subject_num",
+            "posture",
+            "cursor_type",
+            "repetition",
+            "target_num",
+            "wide",
+            "horizontal_offset_list",
+            "vertical_offset_list",
+            "error",
+        ]
+    )
     for cursor_type, rep, pos in itertools.product(cursorTypes, repetitions, postures):
         data = read_hololens_data(sub_num, pos, cursor_type, rep)
         splited_data = split_target(data)
-        wide = 'SMALL' if rep in rep_small else 'LARGE'
+        wide = "SMALL" if rep in rep_small else "LARGE"
         for t in targets:
             try:
-                trial_summary = {'subject_num': sub_num,
-                                 'posture': pos,
-                                 'cursor_type': cursor_type,
-                                 'repetition': rep,
-                                 'target_num': t,
-                                 'wide': wide,
-                                 }
+                trial_summary = {
+                    "subject_num": sub_num,
+                    "posture": pos,
+                    "cursor_type": cursor_type,
+                    "repetition": rep,
+                    "target_num": t,
+                    "wide": wide,
+                }
                 temp_data = splited_data[t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
                 validate, reason = validate_trial_data(temp_data, cursor_type, pos)
                 if not validate:  # in case of invalid trial.
-                    trial_summary['error'] = reason
+                    trial_summary["error"] = reason
                     summary.loc[len(summary)] = trial_summary
                     continue
-                drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-                        temp_data['direction_z'] == 0)].index
+                drop_index = temp_data[
+                    (temp_data["direction_x"] == 0)
+                    & (temp_data["direction_y"] == 0)
+                    & (temp_data["direction_z"] == 0)
+                ].index
                 # if len(drop_index) > 0:
                 #     print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
                 #     # raise ValueError
                 temp_data = temp_data.drop(drop_index)
                 only_success = temp_data[temp_data.target_name == "Target_" + str(t)]
                 if len(only_success) <= 0:
-                    raise ValueError('no success frames', len(only_success))
+                    raise ValueError("no success frames", len(only_success))
                 initial_contact_time = only_success.timestamp.values[0]
                 dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
-                trial_summary['horizontal_offset_list'] = list(dwell_temp.horizontal_offset)
-                trial_summary['vertical_offset_list'] = list(dwell_temp.vertical_offset)
+                trial_summary["horizontal_offset_list"] = list(
+                    dwell_temp.horizontal_offset
+                )
+                trial_summary["vertical_offset_list"] = list(dwell_temp.vertical_offset)
                 summary.loc[len(summary)] = trial_summary
             except Exception as e:
-                error_summary = {'subject_num': sub_num,
-                                 'posture': pos,
-                                 'cursor_type': cursor_type,
-                                 'repetition': rep,
-                                 'target_num': t,
-                                 'wide': wide,
-                                 'error': e.args
-                                 }
+                error_summary = {
+                    "subject_num": sub_num,
+                    "posture": pos,
+                    "cursor_type": cursor_type,
+                    "repetition": rep,
+                    "target_num": t,
+                    "wide": wide,
+                    "error": e.args,
+                }
                 summary.loc[len(summary)] = error_summary
     # final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
     # final_summary.to_csv('summary' + str(sub_num) + '.csv')
-    summary.to_pickle('offset_lists' + str(sub_num) + '.pkl')
+    summary.to_pickle("offset_lists" + str(sub_num) + ".pkl")
     return summary
 
 
@@ -86,18 +107,26 @@ def plot_wobble():
     subjects = range(24)
     dfs = []
     for subject in subjects:
-        summary_subject = pd.read_pickle('offset_lists' + str(subject) + '.pkl')
+        summary_subject = pd.read_pickle("offset_lists" + str(subject) + ".pkl")
         dfs.append(summary_subject)
     summary = pd.concat(dfs)
     summary = summary[summary.error.isna() == True]
-    cursorTypes = ['HEAD', 'EYE', 'HAND']
-    postures = ['STAND', 'WALK']
-    summary_dataframe = pd.DataFrame(columns=[
-        'posture', 'cursor_type', 'wide', 'horizontal', 'vertical', 'target_num'
-    ])
+    cursorTypes = ["HEAD", "EYE", "HAND"]
+    postures = ["STAND", "WALK"]
+    summary_dataframe = pd.DataFrame(
+        columns=[
+            "posture",
+            "cursor_type",
+            "wide",
+            "horizontal",
+            "vertical",
+            "target_num",
+        ]
+    )
     for posture, cursor_type in itertools.product(postures, cursorTypes):
         temp_summary = summary[
-            (summary.posture == posture) & (summary.cursor_type == cursor_type)]
+            (summary.posture == posture) & (summary.cursor_type == cursor_type)
+        ]
         hs = []
         vs = []
 
@@ -116,42 +145,56 @@ def plot_wobble():
         hs = np.array(hs)
         vs = np.array(vs)
         trial_summary = {
-            'posture': posture,
-            'cursor_type': cursor_type,
-            'horizontal': hs,
-            'vertical': vs,
+            "posture": posture,
+            "cursor_type": cursor_type,
+            "horizontal": hs,
+            "vertical": vs,
         }
         summary_dataframe.loc[len(summary_dataframe)] = trial_summary
-        colorset = ['maroon', 'orangered', 'darkorange', 'olive', 'yellowgreen', 'darkolivegreen', 'turquoise',
-                    'deepskyblue',
-                    'dodgerblue']
-        postures = ['WALK', 'STAND']
+        colorset = [
+            "maroon",
+            "orangered",
+            "darkorange",
+            "olive",
+            "yellowgreen",
+            "darkolivegreen",
+            "turquoise",
+            "deepskyblue",
+            "dodgerblue",
+        ]
+        postures = ["WALK", "STAND"]
         # postures = ['WALK']
         sigma_multiple = 3
     # for posture, cursor_type in itertools.product(postures, ['EYE', 'HAND', 'HEAD']):
-    fig, ax = plt.subplots(1, 3, figsize=(10, 5), constrained_layout=True, sharex=True, sharey=True)
-    for idx, cursor_type in enumerate(['HEAD', 'EYE', 'HAND']):
+    fig, ax = plt.subplots(
+        1, 3, figsize=(10, 5), constrained_layout=True, sharex=True, sharey=True
+    )
+    for idx, cursor_type in enumerate(["HEAD", "EYE", "HAND"]):
 
         for posture in postures:
 
             h_raw = summary_dataframe.loc[
-                (summary_dataframe['posture'] == posture) & (
-                        summary_dataframe['cursor_type'] == cursor_type)]['horizontal'].values[0]
+                (summary_dataframe["posture"] == posture)
+                & (summary_dataframe["cursor_type"] == cursor_type)
+            ]["horizontal"].values[0]
             v_raw = summary_dataframe.loc[
-                (summary_dataframe['posture'] == posture) & (
-                        summary_dataframe['cursor_type'] == cursor_type)]['vertical'].values[0]
+                (summary_dataframe["posture"] == posture)
+                & (summary_dataframe["cursor_type"] == cursor_type)
+            ]["vertical"].values[0]
             h = []
             v = []
             for i in range(len(h_raw)):
-                if not (-sigma_multiple * sigmas[(cursor_type, posture, 'horizontal')] < h_raw[
-                    i] < sigma_multiple *
-                        sigmas[
-                            (cursor_type, posture, 'horizontal')]):
+                if not (
+                    -sigma_multiple * sigmas[(cursor_type, posture, "horizontal")]
+                    < h_raw[i]
+                    < sigma_multiple * sigmas[(cursor_type, posture, "horizontal")]
+                ):
                     continue
-                elif not (-sigma_multiple * sigmas[(cursor_type, posture, 'vertical')] < v_raw[
-                    i] < sigma_multiple *
-                          sigmas[
-                              (cursor_type, posture, 'vertical')]):
+                elif not (
+                    -sigma_multiple * sigmas[(cursor_type, posture, "vertical")]
+                    < v_raw[i]
+                    < sigma_multiple * sigmas[(cursor_type, posture, "vertical")]
+                ):
                     continue
                 h.append(h_raw[i])
                 v.append(v_raw[i])
@@ -170,15 +213,23 @@ def plot_wobble():
             #                    label=r'$2\sigma$', edgecolor='fuchsia', linestyle='--')
             # confidence_ellipse(x, y, ax_nstd, n_std=3,
             #                    label=r'$3\sigma$', edgecolor='blue', linestyle=':')
-            if posture == 'STAND':
-                ec = 'red'
+            if posture == "STAND":
+                ec = "red"
                 ap = 0.03
             else:
-                ec = 'green'
+                ec = "green"
                 ap = 0.05
             ax[idx].scatter(sh, sv, s=0.1, alpha=ap, c=ec)
-            plt_confidence_ellipse(sh, sv, ax[idx], 2, linestyle='dotted', facecolor='None', edgecolor=ec,
-                                   linewidth=3)
+            plt_confidence_ellipse(
+                sh,
+                sv,
+                ax[idx],
+                2,
+                linestyle="dotted",
+                facecolor="None",
+                edgecolor=ec,
+                linewidth=3,
+            )
             # plt_confidence_ellipse(h, v, ax, 3, linestyle='--', facecolor='None', edgecolor='red',
             #                        linewidth=1)
 
@@ -194,15 +245,16 @@ def plot_wobble():
             # )
             # plt.title(str(posture) + "," + str(cursor_type) + '-' + str(sigma_multiple))
         # plt.title(str(posture) + "," + str(cursor_type) )
-        circle2 = plt.Circle((0.0, 0.0), 1.5, facecolor='None', edgecolor='blue', linewidth=1)
+        circle2 = plt.Circle(
+            (0.0, 0.0), 1.5, facecolor="None", edgecolor="blue", linewidth=1
+        )
         ax[idx].add_patch(circle2)
-        print(
-            ax[idx].patches)
+        print(ax[idx].patches)
         ax[idx].set_title(str(cursor_type).lower())
         ax[idx].set_xlim(-12, 12)
         ax[idx].set_ylim(-6, 6)
         # plt.ylim(12, 12)
-        ax[idx].set_aspect('equal')
+        ax[idx].set_aspect("equal")
         ax[idx].grid()
     plt.show()
 
@@ -211,27 +263,38 @@ def visualize_offsets(show_plot=True):
     subjects = range(24)
     dfs = []
     for subject in subjects:
-        summary_subject = pd.read_pickle('offset_lists' + str(subject) + '.pkl')
+        summary_subject = pd.read_pickle("offset_lists" + str(subject) + ".pkl")
         dfs.append(summary_subject)
     summary = pd.concat(dfs)
-    cursorTypes = ['HEAD', 'EYE', 'HAND']
-    postures = ['STAND', 'WALK']
+    cursorTypes = ["HEAD", "EYE", "HAND"]
+    postures = ["STAND", "WALK"]
     # print('total failure',summary.isnull().mean_offset.sum(),'/',len(summary.index))
 
     errors = summary[summary.error.isna() == False]
-    print(errors.groupby(errors['error']).subject_num.count())
+    print(errors.groupby(errors["error"]).subject_num.count())
     # if show_plot:
     #     fig, axes = plt.subplots(2, 2, figsize=(10, 10), sharex=True, sharey=True, dpi=100)
     # plot over each posture,cursor types
     summary_dict = {}
-    summary_dataframe = pd.DataFrame(columns=[
-        'posture', 'cursor_type', 'wide', 'horizontal', 'vertical', 'target_num'
-    ])
-    for posture, cursor_type, target_num, wide in itertools.product(postures, cursorTypes, range(9),
-                                                                    ['LARGE', 'SMALL']):
+    summary_dataframe = pd.DataFrame(
+        columns=[
+            "posture",
+            "cursor_type",
+            "wide",
+            "horizontal",
+            "vertical",
+            "target_num",
+        ]
+    )
+    for posture, cursor_type, target_num, wide in itertools.product(
+        postures, cursorTypes, range(9), ["LARGE", "SMALL"]
+    ):
         temp_summary = summary[
-            (summary.posture == posture) & (summary.cursor_type == cursor_type) & (summary.target_num == target_num) & (
-                    summary.wide == wide)]
+            (summary.posture == posture)
+            & (summary.cursor_type == cursor_type)
+            & (summary.target_num == target_num)
+            & (summary.wide == wide)
+        ]
         hs = []
         vs = []
         for h in temp_summary.horizontal_offset_list.values:
@@ -250,12 +313,12 @@ def visualize_offsets(show_plot=True):
         vs = np.array(vs)
 
         trial_summary = {
-            'posture': posture,
-            'cursor_type': cursor_type,
-            'wide': wide,
-            'horizontal': hs,
-            'vertical': vs,
-            'target_num': target_num
+            "posture": posture,
+            "cursor_type": cursor_type,
+            "wide": wide,
+            "horizontal": hs,
+            "vertical": vs,
+            "target_num": target_num,
         }
         summary_dataframe.loc[len(summary_dataframe)] = trial_summary
 
@@ -268,18 +331,28 @@ def visualize_offsets(show_plot=True):
     # plt.show()
     if show_plot:
 
-        colorset = ['maroon', 'orangered', 'darkorange', 'olive', 'yellowgreen', 'darkolivegreen', 'turquoise',
-                    'deepskyblue',
-                    'dodgerblue']
-        postures = ['STAND', 'WALK']
+        colorset = [
+            "maroon",
+            "orangered",
+            "darkorange",
+            "olive",
+            "yellowgreen",
+            "darkolivegreen",
+            "turquoise",
+            "deepskyblue",
+            "dodgerblue",
+        ]
+        postures = ["STAND", "WALK"]
         # postures = ['WALK']
         sigma_multiple = 3
-        for posture, cursor_type in itertools.product(postures, ['EYE', 'HAND', 'HEAD']):
+        for posture, cursor_type in itertools.product(
+            postures, ["EYE", "HAND", "HEAD"]
+        ):
             fig, ax = plt.subplots(1, 1, figsize=(10, 10))
             size_fig, size_ax = plt.subplots(1, 1, figsize=(10, 10))
             for t in range(9):
-                for w in ['SMALL', 'LARGE']:
-                    if w == 'LARGE':
+                for w in ["SMALL", "LARGE"]:
+                    if w == "LARGE":
                         wide = 14.04
                     else:
                         wide = 7.125
@@ -287,46 +360,68 @@ def visualize_offsets(show_plot=True):
                     x_offset = wide * math.sin(t * math.pi / 9 * 2)
                     y_offset = wide * math.cos(t * math.pi / 9 * 2)
                     h_raw = summary_dataframe.loc[
-                        (summary_dataframe['posture'] == posture) & (summary_dataframe['wide'] == w) & (
-                                summary_dataframe['cursor_type'] == cursor_type) & (
-                                summary_dataframe['target_num'] == t)]['horizontal'].values[0]
+                        (summary_dataframe["posture"] == posture)
+                        & (summary_dataframe["wide"] == w)
+                        & (summary_dataframe["cursor_type"] == cursor_type)
+                        & (summary_dataframe["target_num"] == t)
+                    ]["horizontal"].values[0]
                     v_raw = summary_dataframe.loc[
-                        (summary_dataframe['posture'] == posture) & (summary_dataframe['wide'] == w) & (
-                                summary_dataframe['cursor_type'] == cursor_type) & (
-                                summary_dataframe['target_num'] == t)]['vertical'].values[0]
+                        (summary_dataframe["posture"] == posture)
+                        & (summary_dataframe["wide"] == w)
+                        & (summary_dataframe["cursor_type"] == cursor_type)
+                        & (summary_dataframe["target_num"] == t)
+                    ]["vertical"].values[0]
                     h = []
                     v = []
                     for i in range(len(h_raw)):
-                        if not (-sigma_multiple * sigmas[(cursor_type, posture, 'horizontal')] < h_raw[
-                            i] < sigma_multiple *
-                                sigmas[
-                                    (cursor_type, posture, 'horizontal')]):
+                        if not (
+                            -sigma_multiple
+                            * sigmas[(cursor_type, posture, "horizontal")]
+                            < h_raw[i]
+                            < sigma_multiple
+                            * sigmas[(cursor_type, posture, "horizontal")]
+                        ):
                             continue
-                        elif not (-sigma_multiple * sigmas[(cursor_type, posture, 'vertical')] < v_raw[
-                            i] < sigma_multiple *
-                                  sigmas[
-                                      (cursor_type, posture, 'vertical')]):
+                        elif not (
+                            -sigma_multiple * sigmas[(cursor_type, posture, "vertical")]
+                            < v_raw[i]
+                            < sigma_multiple
+                            * sigmas[(cursor_type, posture, "vertical")]
+                        ):
                             continue
                         h.append(h_raw[i])
                         v.append(v_raw[i])
                     h = np.array(h)
                     v = np.array(v)
                     # sns.kdeplot(x=h + x_offset, y=v + y_offset, fill=True, ax=ax)
-                    ax.scatter(x_offset, y_offset, s=100, c=colorset[t], marker='x')
+                    ax.scatter(x_offset, y_offset, s=100, c=colorset[t], marker="x")
                     # ax.scatter(h + x_offset, v + y_offset, s=0.5, alpha=0.05, c=colorset[t])
-                    plt_confidence_ellipse(h + x_offset, v + y_offset, ax, 2, edgecolor=colorset[t], linestyle='--',
-                                           linewidth=3)
-                    size_ax.scatter(x_offset, y_offset, s=100, c=colorset[t], marker='x')
+                    plt_confidence_ellipse(
+                        h + x_offset,
+                        v + y_offset,
+                        ax,
+                        2,
+                        edgecolor=colorset[t],
+                        linestyle="--",
+                        linewidth=3,
+                    )
+                    size_ax.scatter(
+                        x_offset, y_offset, s=100, c=colorset[t], marker="x"
+                    )
                     import matplotlib.patches as patches
+
                     width = h.mean() + 2 * h.std()
                     height = v.mean() + 2 * v.std()
                     size_ax.add_patch(
                         patches.Rectangle(
-                            (x_offset - width, y_offset - height)
-                            , 2 * width, 2 * height, edgecolor=colorset[t], fill=False
+                            (x_offset - width, y_offset - height),
+                            2 * width,
+                            2 * height,
+                            edgecolor=colorset[t],
+                            fill=False,
                         )
                     )
-            plt.title(str(posture) + "," + str(cursor_type) + '-' + str(sigma_multiple))
+            plt.title(str(posture) + "," + str(cursor_type) + "-" + str(sigma_multiple))
             plt.xlim(-20, 20)
             plt.ylim(-20, 20)
             plt.show()
@@ -334,50 +429,71 @@ def visualize_offsets(show_plot=True):
 
 
 @timeit
-def draw_ellipse_second_study(cursorTypes=None, targetTypes=None, targets=range(8),
-                              repetitions=None, saveFile=True):
+def draw_ellipse_second_study(
+    cursorTypes=None,
+    targetTypes=None,
+    targets=range(8),
+    repetitions=None,
+    saveFile=True,
+):
     if repetitions is None:
         repetitions = [2, 3, 4]
 
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'NEWSPEED', 'NEWSTICKY', 'NEWSPEEDSTICKY']
+        cursorTypes = ["HEAD", "NEWSPEED", "NEWSTICKY", "NEWSPEEDSTICKY"]
     if targetTypes is None:
-        targetTypes = ['GRID', 'MENU', 'PIE']
+        targetTypes = ["GRID", "MENU", "PIE"]
     subjects = range(16)
-    summary = pd.DataFrame(columns=[
-        'cursor_type', 'target_type', 'repetition', 'target_num', 'coordinates_x', 'coordinates_y', 'error'
-    ])
-    for sub_num, ct, tt, rep, t in itertools.product(subjects, cursorTypes, targetTypes, repetitions, targets):
+    summary = pd.DataFrame(
+        columns=[
+            "cursor_type",
+            "target_type",
+            "repetition",
+            "target_num",
+            "coordinates_x",
+            "coordinates_y",
+            "error",
+        ]
+    )
+    for sub_num, ct, tt, rep, t in itertools.product(
+        subjects, cursorTypes, targetTypes, repetitions, targets
+    ):
         try:
             print(sub_num, ct, tt, rep, t)
-            temp_data = read_second_data(subject=sub_num, cursor_type=ct, repetition=rep, target_type=tt, target_num=t)
+            temp_data = read_second_data(
+                subject=sub_num,
+                cursor_type=ct,
+                repetition=rep,
+                target_type=tt,
+                target_num=t,
+            )
             temp_data.reset_index(inplace=True)
             temp_data.timestamp -= temp_data.timestamp.values[0]
             only_success = temp_data[temp_data.success == True]
             if len(only_success) <= 0:
-                raise ValueError('no success frames', len(only_success))
+                raise ValueError("no success frames", len(only_success))
             initial_contact_time = only_success.timestamp.values[0]
             after = temp_data[temp_data.timestamp >= initial_contact_time]
             coordinate_x = after.horizontal_offset.to_list()
             coordinate_y = after.vertical_offset.to_list()
             trial_summary = {
-                'cursor_type': ct,
-                'target_type': tt,
-                'repetition': rep,
-                'target_num': t,
-                'coordinates_x': coordinate_x,
-                'coordinates_y': coordinate_y,
-                'error': None
+                "cursor_type": ct,
+                "target_type": tt,
+                "repetition": rep,
+                "target_num": t,
+                "coordinates_x": coordinate_x,
+                "coordinates_y": coordinate_y,
+                "error": None,
             }
             summary.loc[len(summary)] = trial_summary
         except Exception as e:
             error_trial_summary = {
-                'subject_num': sub_num,
-                'cursor_type': ct,
-                'target_type': tt,
-                'repetition': rep,
-                'target_num': t,
-                'error': e.args
+                "subject_num": sub_num,
+                "cursor_type": ct,
+                "target_type": tt,
+                "repetition": rep,
+                "target_num": t,
+                "error": e.args,
             }
             summary.loc[len(summary)] = error_trial_summary
     if saveFile:
@@ -386,38 +502,77 @@ def draw_ellipse_second_study(cursorTypes=None, targetTypes=None, targets=range(
 
 
 @timeit
-def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=range(8),
-                           repetitions=None, saveFile=True, pickle=False):
+def summarize_second_study(
+    sub_num,
+    cursorTypes=None,
+    targetTypes=None,
+    targets=range(8),
+    repetitions=None,
+    saveFile=True,
+    pickle=False,
+):
     if repetitions is None:
         repetitions = [2, 3, 4]
 
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'NEWSPEED', 'NEWSTICKY', 'NEWSPEEDSTICKY']
+        cursorTypes = ["HEAD", "NEWSPEED", "NEWSTICKY", "NEWSPEEDSTICKY"]
     if targetTypes is None:
-        targetTypes = ['GRID', 'MENU', 'PIE']
+        targetTypes = ["GRID", "MENU", "PIE"]
     # if target_nums is None:
     #     target_nums = [2,3,4]
-    summary = pd.DataFrame(columns=[
-        'subject_num', 'posture', 'cursor_type', 'target_type', 'repetition', 'target_num', 'longest_dwell_time',
-        'mean_dwell_time',
-        'initial_contact_time', 'mean_offset', 'total_dwell_time', 'success_time',
-        'std_offset', 'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
-        'success_trial', 'trial_time', 'drop_count', 'abs_mean_offset_horizontal', 'abs_mean_offset_vertical',
-        "drop_out_count", "mean_out_time",
-        "drop_positions", 'drop_vectors', 'walking_speed', 'straight_length',
-        'walk_length',
-        'straightness_simple', 'out_mean_distance', 'straightness', 'curve',
-        'error'
-    ])
-    print('summarizing second study : ', sub_num)
+    summary = pd.DataFrame(
+        columns=[
+            "subject_num",
+            "posture",
+            "cursor_type",
+            "target_type",
+            "repetition",
+            "target_num",
+            "longest_dwell_time",
+            "mean_dwell_time",
+            "initial_contact_time",
+            "mean_offset",
+            "total_dwell_time",
+            "success_time",
+            "std_offset",
+            "mean_offset_horizontal",
+            "mean_offset_vertical",
+            "std_offset_horizontal",
+            "std_offset_vertical",
+            "success_trial",
+            "trial_time",
+            "drop_count",
+            "abs_mean_offset_horizontal",
+            "abs_mean_offset_vertical",
+            "drop_out_count",
+            "mean_out_time",
+            "drop_positions",
+            "drop_vectors",
+            "walking_speed",
+            "straight_length",
+            "walk_length",
+            "straightness_simple",
+            "out_mean_distance",
+            "straightness",
+            "curve",
+            "error",
+        ]
+    )
+    print("summarizing second study : ", sub_num)
     for ct, tt, rep in itertools.product(cursorTypes, targetTypes, repetitions):
         dfs = []
         for t in targets:
-            temp_data = read_second_data(subject=sub_num, cursor_type=ct, repetition=rep, target_type=tt, target_num=t)
+            temp_data = read_second_data(
+                subject=sub_num,
+                cursor_type=ct,
+                repetition=rep,
+                target_type=tt,
+                target_num=t,
+            )
             dfs.append(temp_data)
         data = pd.concat(dfs)
         pca = PCA(n_components=2)
-        X = data[['head_position_x', 'head_position_z']]
+        X = data[["head_position_x", "head_position_z"]]
         X = np.array(X)
         pca.fit(X)
         Z = pca.transform(X)
@@ -434,28 +589,39 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
             # temp_data = read_second_data(subject=sub_num, cursor_type=ct, repetition=rep, target_type=tt, target_num=t)
             try:
                 trial_summary = {
-                    'subject_num': sub_num,
-                    'cursor_type': ct,
-                    'target_type': tt,
-                    'repetition': rep,
-                    'target_num': t,
+                    "subject_num": sub_num,
+                    "cursor_type": ct,
+                    "target_type": tt,
+                    "repetition": rep,
+                    "target_num": t,
                 }
                 temp_data = data[data.end_num == t]
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
                 only_success = temp_data[temp_data.success == True]
                 if len(only_success) <= 0:
-                    raise ValueError('no success frames', len(only_success))
+                    raise ValueError("no success frames", len(only_success))
                 initial_contact_time = only_success.timestamp.values[0]
                 if "STICKY" in ct:
-                    temp_data[['score_0', 'score_1', 'score_2', 'score_3'
-                        , 'score_4', 'score_5', 'score_6', 'score_7']] = pd.DataFrame(temp_data.scores.tolist(),
-                                                                                      index=temp_data.index)
+                    temp_data[
+                        [
+                            "score_0",
+                            "score_1",
+                            "score_2",
+                            "score_3",
+                            "score_4",
+                            "score_5",
+                            "score_6",
+                            "score_7",
+                        ]
+                    ] = pd.DataFrame(temp_data.scores.tolist(), index=temp_data.index)
 
                 success_dwells = []
                 fail_dwells = []
 
-                for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                for k, g in itertools.groupby(
+                    temp_data.iterrows(), key=lambda row: row[1]["success"]
+                ):
                     # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
                     # print(k, [t[0] for t in g])
                     if k == True:
@@ -467,7 +633,9 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
                     #     fail_dwells.append(df)
                 times = []
                 for dw in success_dwells:
-                    current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                    current_dwell_time = (
+                        dw.timestamp.values[-1] - dw.timestamp.values[0]
+                    )
                     times.append(current_dwell_time)
 
                 longest_dwell_time = max(times)
@@ -478,23 +646,29 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
                 drop_positions = []
                 drop_vectors = []
 
-                temp_X = temp_data[['head_position_x', 'head_position_z']]
+                temp_X = temp_data[["head_position_x", "head_position_z"]]
                 temp_X = np.array(temp_X)
                 temp_transform = pca.transform(temp_X)
-                straightness = np.sum((lefty < temp_transform[:, 0]) & (temp_transform[:, 0] < righty)) / len(
-                    temp_transform)
+                straightness = np.sum(
+                    (lefty < temp_transform[:, 0]) & (temp_transform[:, 0] < righty)
+                ) / len(temp_transform)
                 if straightness >= 1.0:
-                    curve = 'straight'
+                    curve = "straight"
                 elif 1 > straightness > 0:
-                    curve = 'between'
+                    curve = "between"
                 else:
-                    curve = 'curve'
+                    curve = "curve"
 
-                for k, g in itertools.groupby(dwell_temp.iterrows(), key=lambda row: row[1]['success']):
+                for k, g in itertools.groupby(
+                    dwell_temp.iterrows(), key=lambda row: row[1]["success"]
+                ):
                     if k == False:
                         df = pd.DataFrame([r[1] for r in g])
                         fail_dwells.append(df)
-                        pos = (df.horizontal_offset.values[-1], df.vertical_offset.values[-1])
+                        pos = (
+                            df.horizontal_offset.values[-1],
+                            df.vertical_offset.values[-1],
+                        )
                         drop_positions.append(pos)
                         pos = np.array(pos)
                         drop_vectors.append(pos / np.linalg.norm(pos))
@@ -507,18 +681,37 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
                     # drop_positions.append((fw.horizontal_offset.values[0], fw.vertical_offset.values[0]))
 
                 mean_offset_horizontal = dwell_temp.horizontal_offset.mean()
-                abs_mean_offset_horizontal = dwell_temp.horizontal_offset.apply(abs).mean()
+                abs_mean_offset_horizontal = dwell_temp.horizontal_offset.apply(
+                    abs
+                ).mean()
                 std_offset_horizontal = dwell_temp.horizontal_offset.std()
                 mean_offset_vertical = dwell_temp.vertical_offset.mean()
                 abs_mean_offset_vertical = dwell_temp.vertical_offset.apply(abs).mean()
                 std_offset_vertical = dwell_temp.vertical_offset.std()
-                walklength = (temp_data.head_position_x.diff(1) ** 2 + temp_data.head_position_y.diff(
-                    1) ** 2 + temp_data.head_position_z.diff(1) ** 2).apply(
-                    math.sqrt).sum()
+                walklength = (
+                    (
+                        temp_data.head_position_x.diff(1) ** 2
+                        + temp_data.head_position_y.diff(1) ** 2
+                        + temp_data.head_position_z.diff(1) ** 2
+                    )
+                    .apply(math.sqrt)
+                    .sum()
+                )
                 straight_length = math.sqrt(
-                    (temp_data.head_position_x.values[0] - temp_data.head_position_x.values[-1]) ** 2 + (
-                            temp_data.head_position_z.values[0] - temp_data.head_position_z.values[-1]) ** 2)
-                walking_speed = (walklength / (temp_data.timestamp.values[-1] - temp_data.timestamp.values[0]))
+                    (
+                        temp_data.head_position_x.values[0]
+                        - temp_data.head_position_x.values[-1]
+                    )
+                    ** 2
+                    + (
+                        temp_data.head_position_z.values[0]
+                        - temp_data.head_position_z.values[-1]
+                    )
+                    ** 2
+                )
+                walking_speed = walklength / (
+                    temp_data.timestamp.values[-1] - temp_data.timestamp.values[0]
+                )
                 # if straight_length ==0: print('straight zero')
                 # if len(fail_times)==0 : print('fail zero')
                 # if len(times) == 0: print('times zero')
@@ -528,62 +721,65 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
                 else:
                     mean_out_time = sum(fail_times) / len(fail_times)
                 trial_summary = {
-                    'subject_num': sub_num,
-                    'cursor_type': ct,
-                    'target_type': tt,
-                    'repetition': rep,
-                    'target_num': t,
-                    'longest_dwell_time': longest_dwell_time,
-                    'total_dwell_time': total_dwell_time,
-                    'mean_dwell_time': mean_dwell_time,
-                    'success_time': success_time,
-                    'initial_contact_time': initial_contact_time,
-                    'mean_offset': dwell_temp.angle.mean(),
-                    'std_offset': dwell_temp.angle.std(),
-                    'mean_offset_horizontal': mean_offset_horizontal,
-                    'mean_offset_vertical': mean_offset_vertical,
-                    'std_offset_horizontal': std_offset_horizontal,
-                    'std_offset_vertical': std_offset_vertical,
+                    "subject_num": sub_num,
+                    "cursor_type": ct,
+                    "target_type": tt,
+                    "repetition": rep,
+                    "target_num": t,
+                    "longest_dwell_time": longest_dwell_time,
+                    "total_dwell_time": total_dwell_time,
+                    "mean_dwell_time": mean_dwell_time,
+                    "success_time": success_time,
+                    "initial_contact_time": initial_contact_time,
+                    "mean_offset": dwell_temp.angle.mean(),
+                    "std_offset": dwell_temp.angle.std(),
+                    "mean_offset_horizontal": mean_offset_horizontal,
+                    "mean_offset_vertical": mean_offset_vertical,
+                    "std_offset_horizontal": std_offset_horizontal,
+                    "std_offset_vertical": std_offset_vertical,
                     "success_trial": longest_dwell_time >= 1.0 - 2.5 / 60.0,
-                    "trial_time": temp_data.timestamp.values[-1] - temp_data.timestamp.values[0],
+                    "trial_time": temp_data.timestamp.values[-1]
+                    - temp_data.timestamp.values[0],
                     "drop_count": len(success_dwells),
-                    'abs_mean_offset_horizontal': abs_mean_offset_horizontal,
-                    'abs_mean_offset_vertical': abs_mean_offset_vertical,
+                    "abs_mean_offset_horizontal": abs_mean_offset_horizontal,
+                    "abs_mean_offset_vertical": abs_mean_offset_vertical,
                     "drop_out_count": len(fail_times),
                     "mean_out_time": mean_out_time,
                     "drop_positions": drop_positions,
-                    'drop_vectors': drop_vectors,
-                    'walking_speed': walking_speed,
-                    'straight_length': straight_length,
-                    'walk_length': walklength,
-                    'straightness_simple': walklength / straight_length,
-                    'out_mean_distance': out_distances,
-                    'straightness': straightness,
-                    'curve': curve,
-                    'error': None
+                    "drop_vectors": drop_vectors,
+                    "walking_speed": walking_speed,
+                    "straight_length": straight_length,
+                    "walk_length": walklength,
+                    "straightness_simple": walklength / straight_length,
+                    "out_mean_distance": out_distances,
+                    "straightness": straightness,
+                    "curve": curve,
+                    "error": None,
                 }
                 summary.loc[len(summary)] = trial_summary
 
                 # print('best dwell time:', round(longest_dwell_time, 2), sub_num, ct, rep, tt, t)
             except Exception as e:
                 error_trial_summary = {
-                    'subject_num': sub_num,
-                    'cursor_type': ct,
-                    'target_type': tt,
-                    'repetition': rep,
-                    'target_num': t,
-                    'error': e.args
+                    "subject_num": sub_num,
+                    "cursor_type": ct,
+                    "target_type": tt,
+                    "repetition": rep,
+                    "target_num": t,
+                    "error": e.args,
                 }
                 summary.loc[len(summary)] = error_trial_summary
                 print(sub_num, ct, rep, tt, t, e.args)
-    final_summary = summary.groupby([summary['cursor_type'], summary['target_type']]).mean()
+    final_summary = summary.groupby(
+        [summary["cursor_type"], summary["target_type"]]
+    ).mean()
     if saveFile:
         if pickle:
-            final_summary.to_pickle('second_summary' + str(sub_num) + '.pkl')
-            summary.to_pickle('second_Rawsummary' + str(sub_num) + '.pkl')
+            final_summary.to_pickle("second_summary" + str(sub_num) + ".pkl")
+            summary.to_pickle("second_Rawsummary" + str(sub_num) + ".pkl")
         else:
-            final_summary.to_csv('second_summary' + str(sub_num) + '.csv')
-            summary.to_csv('second_Rawsummary' + str(sub_num) + '.csv')
+            final_summary.to_csv("second_summary" + str(sub_num) + ".csv")
+            summary.to_csv("second_Rawsummary" + str(sub_num) + ".csv")
 
     return summary, final_summary
 
@@ -592,16 +788,27 @@ def summarize_second_study(sub_num, cursorTypes=None, targetTypes=None, targets=
 
 
 @timeit
-def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9),
-                      repetitions=None, pilot=False, savefile=True, resetFile=False, secondstudy=False, fnc=None,
-                      suffix="", arg=None):
-    print('summarizing subject', sub_num)
+def summarize_subject(
+    sub_num,
+    cursorTypes=None,
+    postures=None,
+    targets=range(9),
+    repetitions=None,
+    pilot=False,
+    savefile=True,
+    resetFile=False,
+    secondstudy=False,
+    fnc=None,
+    suffix="",
+    arg=None,
+):
+    print("summarizing subject", sub_num)
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
-        postures = ['STAND', 'WALK']
+        postures = ["STAND", "WALK"]
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'EYE', 'HAND']
+        cursorTypes = ["HEAD", "EYE", "HAND"]
 
     rep_small = [0, 2, 4, 6, 8]
     rep_large = [1, 3, 5, 7, 9]
@@ -610,20 +817,45 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
     # repetitions = range(10)
     fail_count = 0
     summary = pd.DataFrame(
-        columns=['subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide', 'mean_offset',
-                 'std_offset', 'overall_mean_offset', 'overall_std_offset',
-                 'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-                 'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
-                 'mean_abs_offset_horizontal', 'mean_abs_offset_vertical', 'std_abs_offset_horizontal',
-                 'std_abs_offset_vertical', 'longest_dwell_time',
-                 'movement_length',
-                 'entering_position',
-                 'walking_speed', 'total_time', 'success_trial',
-                 'error', 'error_frame_count'])
+        columns=[
+            "subject_num",
+            "posture",
+            "cursor_type",
+            "repetition",
+            "target_num",
+            "wide",
+            "mean_offset",
+            "std_offset",
+            "overall_mean_offset",
+            "overall_std_offset",
+            "initial_contact_time",
+            "target_in_count",
+            "target_in_total_time",
+            "target_in_mean_time",
+            "mean_offset_horizontal",
+            "mean_offset_vertical",
+            "std_offset_horizontal",
+            "std_offset_vertical",
+            "mean_abs_offset_horizontal",
+            "mean_abs_offset_vertical",
+            "std_abs_offset_horizontal",
+            "std_abs_offset_vertical",
+            "longest_dwell_time",
+            "movement_length",
+            "entering_position",
+            "walking_speed",
+            "total_time",
+            "success_trial",
+            "error",
+            "error_frame_count",
+        ]
+    )
     for cursor_type in cursorTypes:
         for rep in repetitions:
             for pos in postures:
-                data = read_hololens_data(sub_num, pos, cursor_type, rep, resetFile, pilot, secondstudy)
+                data = read_hololens_data(
+                    sub_num, pos, cursor_type, rep, resetFile, pilot, secondstudy
+                )
 
                 # print(data)
                 # data=data.apply(fnc,arg)
@@ -645,17 +877,18 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                 # righty = min(rightMin, rightMax)
 
                 splited_data = split_target(data)
-                wide = 'SMALL' if rep in rep_small else 'LARGE'
+                wide = "SMALL" if rep in rep_small else "LARGE"
 
                 for t in targets:
                     try:
-                        trial_summary = {'subject_num': sub_num,
-                                         'posture': pos,
-                                         'cursor_type': cursor_type,
-                                         'repetition': rep,
-                                         'target_num': t,
-                                         'wide': wide,
-                                         }
+                        trial_summary = {
+                            "subject_num": sub_num,
+                            "posture": pos,
+                            "cursor_type": cursor_type,
+                            "repetition": rep,
+                            "target_num": t,
+                            "wide": wide,
+                        }
                         temp_data = splited_data[t]
 
                         temp_data.reset_index(inplace=True)
@@ -666,24 +899,32 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         #     (output['abs_horizontal_offset'] > 3 * sigmas[(cursor_type, posture, 'horizontal')]) | (
                         #             output['abs_vertical_offset'] > 3 * sigmas[(cursor_type, posture, 'vertical')])]
                         temp_data = check_loss(temp_data, cursor_type)
-                        trial_summary['error_frame_count'] = len(temp_data[temp_data['error_frame'] == True])
+                        trial_summary["error_frame_count"] = len(
+                            temp_data[temp_data["error_frame"] == True]
+                        )
                         # # temp_data = temp_data.drop(drop_index)
-                        validate, reason = validate_trial_data(temp_data, cursor_type, pos)
+                        validate, reason = validate_trial_data(
+                            temp_data, cursor_type, pos
+                        )
                         if not validate:  # in case of invalid trial.
-                            trial_summary['error'] = reason
+                            trial_summary["error"] = reason
                             print(sub_num, pos, cursor_type, rep, t, reason)
                             summary.loc[len(summary)] = trial_summary
                             continue
 
-                        temp_data['cursor_speed'] = temp_data.angle.diff(
-                            1) / temp_data.timestamp.diff(1)
-                        temp_data['cursor_speed'] = abs(
-                            temp_data.cursor_speed.rolling(10, min_periods=1, center=True).mean())
+                        temp_data["cursor_speed"] = temp_data.angle.diff(
+                            1
+                        ) / temp_data.timestamp.diff(1)
+                        temp_data["cursor_speed"] = abs(
+                            temp_data.cursor_speed.rolling(
+                                10, min_periods=1, center=True
+                            ).mean()
+                        )
 
                         # only_success = temp_data[temp_data.cursor_angular_distance < default_target_size]
                         only_success = temp_data[temp_data.success == True]
                         if len(only_success) <= 0:
-                            raise ValueError('no success frames', len(only_success))
+                            raise ValueError("no success frames", len(only_success))
                         initial_contact_time = only_success.timestamp.values[0]
 
                         success_dwells = []
@@ -702,7 +943,9 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         #             success_dwells.append(df)
                         # else:
                         # temp_data['target_in'] = temp_data['cursor_angular_distance'] < default_target_size
-                        for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                        for k, g in itertools.groupby(
+                            temp_data.iterrows(), key=lambda row: row[1]["success"]
+                        ):
                             # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_name']):
                             # print(k, [t[0] for t in g])
                             if k == True:
@@ -712,7 +955,9 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         time_sum = 0
                         times = []
                         for dw in success_dwells:
-                            current_dwell_time = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                            current_dwell_time = (
+                                dw.timestamp.values[-1] - dw.timestamp.values[0]
+                            )
                             time_sum += current_dwell_time
                             times.append(current_dwell_time)
 
@@ -723,26 +968,47 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         longest_dwell_time = max(times)
                         # if longest_dwell_time >= 1:
                         #     longest_dwell_time = 1.0
-                        targeting = temp_data[temp_data.timestamp <= initial_contact_time]
-                        movement = (targeting.horizontal_offset.diff(1) ** 2 + targeting.vertical_offset.diff(
-                            1) ** 2).apply(math.sqrt)
+                        targeting = temp_data[
+                            temp_data.timestamp <= initial_contact_time
+                        ]
+                        movement = (
+                            targeting.horizontal_offset.diff(1) ** 2
+                            + targeting.vertical_offset.diff(1) ** 2
+                        ).apply(math.sqrt)
                         movement_length = movement.sum()
-                        contact_frame = temp_data[temp_data.timestamp == initial_contact_time]
+                        contact_frame = temp_data[
+                            temp_data.timestamp == initial_contact_time
+                        ]
                         x = contact_frame.horizontal_offset.values[0]
                         y = contact_frame.vertical_offset.values[0]
                         entering_position = (-x, y)
 
-                        dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                        dwell_temp = temp_data[
+                            temp_data.timestamp >= initial_contact_time
+                        ]
                         #
                         mean_offset_horizontal = dwell_temp.horizontal_offset.mean()
                         std_offset_horizontal = dwell_temp.horizontal_offset.std()
                         mean_offset_vertical = dwell_temp.vertical_offset.mean()
                         std_offset_vertical = dwell_temp.vertical_offset.std()
-                        walklength = (temp_data.head_position_x.diff(1) ** 2 + temp_data.head_position_z.diff(
-                            1) ** 2).apply(math.sqrt).sum()
-                        walking_speed = (walklength / (temp_data.timestamp.values[-1] - temp_data.timestamp.values[0]))
-                        temp_data['head_position_x'] = temp_data['head_position_x'].interpolate()
-                        temp_data['head_position_z'] = temp_data['head_position_z'].interpolate()
+                        walklength = (
+                            (
+                                temp_data.head_position_x.diff(1) ** 2
+                                + temp_data.head_position_z.diff(1) ** 2
+                            )
+                            .apply(math.sqrt)
+                            .sum()
+                        )
+                        walking_speed = walklength / (
+                            temp_data.timestamp.values[-1]
+                            - temp_data.timestamp.values[0]
+                        )
+                        temp_data["head_position_x"] = temp_data[
+                            "head_position_x"
+                        ].interpolate()
+                        temp_data["head_position_z"] = temp_data[
+                            "head_position_z"
+                        ].interpolate()
                         # temp_X = temp_data[['head_position_x', 'head_position_z']]
                         # temp_X = np.array(temp_X)
                         # temp_transform = pca.transform(temp_X)
@@ -754,206 +1020,267 @@ def summarize_subject(sub_num, cursorTypes=None, postures=None, targets=range(9)
                         #     curve = 'between'
                         # else:
                         #     curve = 'curve'
-                        trial_success = (longest_dwell_time >= 1.0 - 2.5 / 60)
-                        trial_summary = {'subject_num': sub_num,
-                                         'posture': pos,
-                                         'cursor_type': cursor_type,
-                                         'repetition': rep,
-                                         'target_num': t,
-                                         'wide': wide,
-                                         'mean_offset': dwell_temp.angle.mean(),
-                                         'std_offset': dwell_temp.angle.std(),
-                                         'overall_mean_offset': temp_data.angle.mean(),
-                                         'overall_std_offset': temp_data.angle.std(),
-                                         'initial_contact_time': initial_contact_time,
-                                         'target_in_count': float(target_in_count),
-                                         'target_in_total_time': target_in_total_time,
-                                         'target_in_mean_time': target_in_mean_time,
-                                         'mean_offset_horizontal': mean_offset_horizontal,
-                                         'mean_offset_vertical': mean_offset_vertical,
-                                         'std_offset_horizontal': std_offset_horizontal,
-                                         'std_offset_vertical': std_offset_vertical,
-                                         'mean_abs_offset_horizontal': dwell_temp.abs_horizontal_offset.mean(),
-                                         'mean_abs_offset_vertical': dwell_temp.abs_vertical_offset.mean(),
-                                         'std_abs_offset_horizontal': dwell_temp.abs_horizontal_offset.std(),
-                                         'std_abs_offset_vertical': dwell_temp.abs_vertical_offset.std(),
-                                         'longest_dwell_time': longest_dwell_time,
-                                         'movement_length': movement_length,
-                                         'entering_position': entering_position,
-                                         'walking_speed': walking_speed,
-                                         'total_time': temp_data.timestamp.values[-1],
-                                         'success_trial': trial_success,
-                                         # 'curve': curve,
-                                         'error': None
-                                         }
+                        trial_success = longest_dwell_time >= 1.0 - 2.5 / 60
+                        trial_summary = {
+                            "subject_num": sub_num,
+                            "posture": pos,
+                            "cursor_type": cursor_type,
+                            "repetition": rep,
+                            "target_num": t,
+                            "wide": wide,
+                            "mean_offset": dwell_temp.angle.mean(),
+                            "std_offset": dwell_temp.angle.std(),
+                            "overall_mean_offset": temp_data.angle.mean(),
+                            "overall_std_offset": temp_data.angle.std(),
+                            "initial_contact_time": initial_contact_time,
+                            "target_in_count": float(target_in_count),
+                            "target_in_total_time": target_in_total_time,
+                            "target_in_mean_time": target_in_mean_time,
+                            "mean_offset_horizontal": mean_offset_horizontal,
+                            "mean_offset_vertical": mean_offset_vertical,
+                            "std_offset_horizontal": std_offset_horizontal,
+                            "std_offset_vertical": std_offset_vertical,
+                            "mean_abs_offset_horizontal": dwell_temp.abs_horizontal_offset.mean(),
+                            "mean_abs_offset_vertical": dwell_temp.abs_vertical_offset.mean(),
+                            "std_abs_offset_horizontal": dwell_temp.abs_horizontal_offset.std(),
+                            "std_abs_offset_vertical": dwell_temp.abs_vertical_offset.std(),
+                            "longest_dwell_time": longest_dwell_time,
+                            "movement_length": movement_length,
+                            "entering_position": entering_position,
+                            "walking_speed": walking_speed,
+                            "total_time": temp_data.timestamp.values[-1],
+                            "success_trial": trial_success,
+                            # 'curve': curve,
+                            "error": None,
+                        }
                         summary.loc[len(summary)] = trial_summary
                         # smalls.loc[len(smalls)] = [sub_num, 'STAND', cursor_type, rep, t, temp_data.cursor_angular_distance.mean(),
                         #                            temp_data.cursor_angular_distance.std()]
                     except Exception as e:
                         fail_count += 1
-                        error_summary = {'subject_num': sub_num,
-                                         'posture': pos,
-                                         'cursor_type': cursor_type,
-                                         'repetition': rep,
-                                         'target_num': t,
-                                         'wide': wide,
-                                         'error': e.args
-                                         }
+                        error_summary = {
+                            "subject_num": sub_num,
+                            "posture": pos,
+                            "cursor_type": cursor_type,
+                            "repetition": rep,
+                            "target_num": t,
+                            "wide": wide,
+                            "error": e.args,
+                        }
                         summary.loc[len(summary)] = error_summary
-                        print(sub_num, pos, cursor_type, rep, t, e.args, 'fail count', fail_count)
+                        print(
+                            sub_num,
+                            pos,
+                            cursor_type,
+                            rep,
+                            t,
+                            e.args,
+                            "fail count",
+                            fail_count,
+                        )
     # print(summary)
-    final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
+    final_summary = summary.groupby(
+        [summary["posture"], summary["cursor_type"], summary["wide"]]
+    ).mean()
     if savefile:
         if pilot:
-            final_summary.to_csv(suffix + 'nocursor_summary' + str(sub_num) + '.csv')
-            summary.to_csv(suffix + 'nocursor_Rawsummary' + str(sub_num) + '.csv')
+            final_summary.to_csv(suffix + "nocursor_summary" + str(sub_num) + ".csv")
+            summary.to_csv(suffix + "nocursor_Rawsummary" + str(sub_num) + ".csv")
         elif secondstudy:
-            final_summary.to_csv(suffix + 'second_summary' + str(sub_num) + '.csv')
-            summary.to_csv(suffix + 'second_Rawsummary' + str(sub_num) + '.csv')
+            final_summary.to_csv(suffix + "second_summary" + str(sub_num) + ".csv")
+            summary.to_csv(suffix + "second_Rawsummary" + str(sub_num) + ".csv")
         else:
-            final_summary.to_csv(suffix + 'summary' + str(sub_num) + '.csv')
-            summary.to_csv(suffix + 'Rawsummary' + str(sub_num) + '.csv')
+            final_summary.to_csv(suffix + "summary" + str(sub_num) + ".csv")
+            summary.to_csv(suffix + "Rawsummary" + str(sub_num) + ".csv")
     return summary
 
 
 @timeit
-def test_score_parameter(param=0.01, subjects=range(24), cursorTypes=None, postures=None, targets=range(9),
-                         repetitions=None, pilot=False, savefile=True, resetFile=False, secondstudy=False
-                         ):
+def test_score_parameter(
+    param=0.01,
+    subjects=range(24),
+    cursorTypes=None,
+    postures=None,
+    targets=range(9),
+    repetitions=None,
+    pilot=False,
+    savefile=True,
+    resetFile=False,
+    secondstudy=False,
+):
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     if postures is None:
-        postures = ['STAND', 'WALK']
+        postures = ["STAND", "WALK"]
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'EYE', 'HAND']
+        cursorTypes = ["HEAD", "EYE", "HAND"]
     grid_size = 4.5
-    point = np.array([
-        (-grid_size, grid_size), (0, grid_size), (grid_size, grid_size),
-        (-grid_size, 0), (0, 0), (grid_size, 0),
-        (-grid_size, -grid_size), (0, -grid_size), (grid_size, -grid_size)
-    ])
-    point_x = np.array([
-        -grid_size, 0, grid_size,
-        -grid_size, 0, grid_size,
-        -grid_size, 0, grid_size
-    ])
-    point_y = np.array([
-        grid_size, grid_size, grid_size,
-        0, 0, 0,
-        -grid_size, -grid_size, -grid_size
-    ])
+    point = np.array(
+        [
+            (-grid_size, grid_size),
+            (0, grid_size),
+            (grid_size, grid_size),
+            (-grid_size, 0),
+            (0, 0),
+            (grid_size, 0),
+            (-grid_size, -grid_size),
+            (0, -grid_size),
+            (grid_size, -grid_size),
+        ]
+    )
+    point_x = np.array(
+        [-grid_size, 0, grid_size, -grid_size, 0, grid_size, -grid_size, 0, grid_size]
+    )
+    point_y = np.array(
+        [grid_size, grid_size, grid_size, 0, 0, 0, -grid_size, -grid_size, -grid_size]
+    )
     max_distance = grid_size * 4
     summary = pd.DataFrame(
-        columns=['subject_num', 'posture', 'cursor_type', 'repetition', 'target_num',
-                 'parameter', 'target_in_count',
-                 'time_sum',
-                 'target_in_total_time',
-                 'target_in_mean_time',
-                 'longest_dwell_time',
-                 'initial_contact_time',
-                 'error', 'error_frame_count'])
-    for sub_num, cursor_type, rep, pos in itertools.product(subjects, cursorTypes, repetitions, postures):
+        columns=[
+            "subject_num",
+            "posture",
+            "cursor_type",
+            "repetition",
+            "target_num",
+            "parameter",
+            "target_in_count",
+            "time_sum",
+            "target_in_total_time",
+            "target_in_mean_time",
+            "longest_dwell_time",
+            "initial_contact_time",
+            "error",
+            "error_frame_count",
+        ]
+    )
+    for sub_num, cursor_type, rep, pos in itertools.product(
+        subjects, cursorTypes, repetitions, postures
+    ):
         # for sub_num in subjects:
         #     for cursor_type in cursorTypes:
         #         for rep in repetitions:
         #             for pos in postures:
-        data = read_hololens_data(sub_num, pos, cursor_type, rep, resetFile, pilot, secondstudy)
+        data = read_hololens_data(
+            sub_num, pos, cursor_type, rep, resetFile, pilot, secondstudy
+        )
         splited_data = split_target(data)
 
         for t in targets:
             try:
-                trial_summary = {'subject_num': sub_num,
-                                 'posture': pos,
-                                 'cursor_type': cursor_type,
-                                 'repetition': rep,
-                                 'target_num': t,
-                                 "parameter": param,
-                                 # 'wide': wide,
-                                 }
+                trial_summary = {
+                    "subject_num": sub_num,
+                    "posture": pos,
+                    "cursor_type": cursor_type,
+                    "repetition": rep,
+                    "target_num": t,
+                    "parameter": param,
+                    # 'wide': wide,
+                }
                 temp_data = splited_data[t]
 
                 temp_data.reset_index(inplace=True)
                 temp_data.timestamp -= temp_data.timestamp.values[0]
                 temp_data = check_loss(temp_data, cursor_type)
-                trial_summary['error_frame_count'] = len(temp_data[temp_data['error_frame'] == True])
+                trial_summary["error_frame_count"] = len(
+                    temp_data[temp_data["error_frame"] == True]
+                )
                 # # temp_data = temp_data.drop(drop_index)
                 validate, reason = validate_trial_data(temp_data, cursor_type, pos)
 
                 if not validate:  # in case of invalid trial.
-                    trial_summary['error'] = reason
+                    trial_summary["error"] = reason
                     print(sub_num, pos, cursor_type, rep, t, reason)
                     summary.loc[len(summary)] = trial_summary
                     continue
-                temp_data['distances'] = temp_data.apply(
-                    lambda x: np.sqrt((point_x - x.horizontal_offset) ** 2 + (point_y - x.vertical_offset) ** 2),
-                    axis=1)
-                temp_data['s_contribute'] = (1 - temp_data.distances / max_distance).apply(np.clip, args=(0, 1))
+                temp_data["distances"] = temp_data.apply(
+                    lambda x: np.sqrt(
+                        (point_x - x.horizontal_offset) ** 2
+                        + (point_y - x.vertical_offset) ** 2
+                    ),
+                    axis=1,
+                )
+                temp_data["s_contribute"] = (
+                    1 - temp_data.distances / max_distance
+                ).apply(np.clip, args=(0, 1))
                 # temp_data = temp_data.assign(score=np.array([0,0,0,0,0,0,0,0,0]))
-                temp_data['score'] = [np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])] * len(temp_data)
+                temp_data["score"] = [np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])] * len(
+                    temp_data
+                )
                 for index, row in temp_data.iterrows():
-                    if index == 0: continue
-                    temp_data['score'][index] = temp_data['score'][index - 1] * (1 - param) + temp_data['s_contribute'][
-                        index] * (param)
-                temp_data['selected_target'] = temp_data.score.apply(np.argmax)
-                temp_data['stick_success'] = temp_data['selected_target'] == 4
+                    if index == 0:
+                        continue
+                    temp_data["score"][index] = temp_data["score"][index - 1] * (
+                        1 - param
+                    ) + temp_data["s_contribute"][index] * (param)
+                temp_data["selected_target"] = temp_data.score.apply(np.argmax)
+                temp_data["stick_success"] = temp_data["selected_target"] == 4
                 dwell_times = []
-                for k, g in itertools.groupby(temp_data.iterrows(),
-                                              key=lambda row: row[1]['stick_success']):
+                for k, g in itertools.groupby(
+                    temp_data.iterrows(), key=lambda row: row[1]["stick_success"]
+                ):
                     if k == True:
                         df = pd.DataFrame([r[1] for r in g])
-                        dwell_times.append(df.timestamp.values[-1] - df.timestamp.values[0])
+                        dwell_times.append(
+                            df.timestamp.values[-1] - df.timestamp.values[0]
+                        )
                         # print(df.timestamp.values[-1] - df.timestamp.values[0])
                 target_in_count = len(dwell_times)
                 time_sum = sum(dwell_times)
                 target_in_total_time = time_sum
                 target_in_mean_time = time_sum / target_in_count
                 longest_dwell_time = max(dwell_times)
-                initial_contact_time = temp_data[temp_data.stick_success == True].timestamp.values[0]
-                trial_summary = {'subject_num': sub_num,
-                                 'posture': pos,
-                                 'cursor_type': cursor_type,
-                                 'repetition': rep,
-                                 'target_num': t,
-                                 "parameter": param,
-                                 'target_in_count': target_in_count,
-                                 'time_sum': time_sum,
-                                 'target_in_total_time': target_in_total_time,
-                                 'target_in_mean_time': target_in_mean_time,
-                                 'longest_dwell_time': longest_dwell_time,
-                                 'initial_contact_time': initial_contact_time
-                                 # 'wide': wide,
-                                 }
+                initial_contact_time = temp_data[
+                    temp_data.stick_success == True
+                ].timestamp.values[0]
+                trial_summary = {
+                    "subject_num": sub_num,
+                    "posture": pos,
+                    "cursor_type": cursor_type,
+                    "repetition": rep,
+                    "target_num": t,
+                    "parameter": param,
+                    "target_in_count": target_in_count,
+                    "time_sum": time_sum,
+                    "target_in_total_time": target_in_total_time,
+                    "target_in_mean_time": target_in_mean_time,
+                    "longest_dwell_time": longest_dwell_time,
+                    "initial_contact_time": initial_contact_time,
+                    # 'wide': wide,
+                }
                 summary.loc[len(summary)] = trial_summary
             except Exception as e:
-                error_summary = {'subject_num': sub_num,
-                                 'posture': pos,
-                                 'cursor_type': cursor_type,
-                                 'repetition': rep,
-                                 'target_num': t,
-                                 'parameter': param,
-                                 # 'wide': wide,
-                                 'error': e.args
-                                 }
+                error_summary = {
+                    "subject_num": sub_num,
+                    "posture": pos,
+                    "cursor_type": cursor_type,
+                    "repetition": rep,
+                    "target_num": t,
+                    "parameter": param,
+                    # 'wide': wide,
+                    "error": e.args,
+                }
                 summary.loc[len(summary)] = error_summary
                 # print(sub_num, pos, cursor_type, rep, t, e.args)
-    final_summary = summary.groupby([summary['posture'], summary['cursor_type']]).mean()
+    final_summary = summary.groupby([summary["posture"], summary["cursor_type"]]).mean()
     if savefile:
-        final_summary.to_csv('Paramsummary' + str(param) + '.csv')
-        summary.to_csv('ParamRawsummary' + str(param) + '.csv')
-        print('saving file...', 'Paramsummary' + str(param) + '.csv')
+        final_summary.to_csv("Paramsummary" + str(param) + ".csv")
+        summary.to_csv("ParamRawsummary" + str(param) + ".csv")
+        print("saving file...", "Paramsummary" + str(param) + ".csv")
 
     return summary
 
 
-def visualize_summary(show_plot=True, show_distribution=False, subjects=range(24), suffix=""):
+def visualize_summary(
+    show_plot=True, show_distribution=False, subjects=range(24), suffix=""
+):
     # subjects = range(24)
     dfs = []
     for subject in subjects:
-        summary_subject = pd.read_csv(suffix + 'Rawsummary' + str(subject) + '.csv')
+        summary_subject = pd.read_csv(suffix + "Rawsummary" + str(subject) + ".csv")
         dfs.append(summary_subject)
     summary = pd.concat(dfs)
     errors = summary[summary.error.isna() == False]
-    print(errors.groupby(errors['error']).subject_num.count())
+    print(errors.groupby(errors["error"]).subject_num.count())
 
     def cart2pol(x, y):
         z = x + y * 1j
@@ -986,35 +1313,53 @@ def visualize_summary(show_plot=True, show_distribution=False, subjects=range(24
     #         plt.title(pos + " - " + str(t))
     #         plt.show()
 
-    if (show_plot == True):
-        fs = summary.groupby([summary.posture, summary.cursor_type, summary.wide]).mean()
+    if show_plot == True:
+        fs = summary.groupby(
+            [summary.posture, summary.cursor_type, summary.wide]
+        ).mean()
 
-        fs.to_csv('total_basic_summary.csv')
-        fs = pd.read_csv('total_basic_summary.csv')
+        fs.to_csv("total_basic_summary.csv")
+        fs = pd.read_csv("total_basic_summary.csv")
         parameters = list(fs.columns)
-        remove_columns = ['Unnamed: 0', 'subject_num', 'repetition', 'target_num']
+        remove_columns = ["Unnamed: 0", "subject_num", "repetition", "target_num"]
         for removal in remove_columns:
             parameters.remove(removal)
 
-        fig = px.bar(fs, x='cursor_type', y=parameters, barmode='group', facet_row='wide', facet_col='posture',
-                     title='total basic summary')
+        fig = px.bar(
+            fs,
+            x="cursor_type",
+            y=parameters,
+            barmode="group",
+            facet_row="wide",
+            facet_col="posture",
+            title="total basic summary",
+        )
         fig.show()
         fs_overall = summary.groupby([summary.posture, summary.cursor_type]).mean()
         # estimated target size
-        fs_overall['estimated_width'] = fs_overall.mean_offset_horizontal.apply(
-            abs) + 2 * fs_overall.std_offset_horizontal
-        fs_overall['estimated_height'] = fs_overall.mean_offset_vertical.apply(abs) + 2 * fs_overall.std_offset_vertical
-        fs_overall.to_csv('total_basic_summary_overall.csv')
-        fs_overall = pd.read_csv('total_basic_summary_overall.csv')
-        parameters.remove('wide')
-        fig = px.bar(fs_overall, x='cursor_type', y=parameters + ['estimated_width', 'estimated_height'],
-                     barmode='group',
-                     facet_col='posture',
-                     title='total basic summary')
+        fs_overall["estimated_width"] = (
+            fs_overall.mean_offset_horizontal.apply(abs)
+            + 2 * fs_overall.std_offset_horizontal
+        )
+        fs_overall["estimated_height"] = (
+            fs_overall.mean_offset_vertical.apply(abs)
+            + 2 * fs_overall.std_offset_vertical
+        )
+        fs_overall.to_csv("total_basic_summary_overall.csv")
+        fs_overall = pd.read_csv("total_basic_summary_overall.csv")
+        parameters.remove("wide")
+        fig = px.bar(
+            fs_overall,
+            x="cursor_type",
+            y=parameters + ["estimated_width", "estimated_height"],
+            barmode="group",
+            facet_col="posture",
+            title="total basic summary",
+        )
         fig.show()
         # wide = 20
         if show_distribution:
-            for posture in ['WALK', 'STAND']:
+            for posture in ["WALK", "STAND"]:
                 fig = go.Figure()
                 plt_fig, plt_ax = plt.subplots()
                 wide = 7.125
@@ -1026,15 +1371,18 @@ def visualize_summary(show_plot=True, show_distribution=False, subjects=range(24
                 y_offsets = [wide * math.cos(t * math.pi / 9 * 2) for t in range(9)]
                 plt_ax.scatter(x_offsets, y_offsets)
                 for t in range(9):
-                    for idx, cursor_type in enumerate(['EYE', 'HAND', 'HEAD']):
-                        for w in ['LARGE', 'SMALL']:
-                            if w == 'LARGE':
+                    for idx, cursor_type in enumerate(["EYE", "HAND", "HEAD"]):
+                        for w in ["LARGE", "SMALL"]:
+                            if w == "LARGE":
                                 wide = 14.04
                             else:
                                 wide = 7.125
                             cursor_data = summary[
-                                (summary['posture'] == posture) & (summary['cursor_type'] == cursor_type) & (
-                                        summary['target_num'] == t) & (summary['wide'] == w)]
+                                (summary["posture"] == posture)
+                                & (summary["cursor_type"] == cursor_type)
+                                & (summary["target_num"] == t)
+                                & (summary["wide"] == w)
+                            ]
                             cursor_data = cursor_data[cursor_data.error.isna() == True]
                             x_offset = wide * math.sin(t * math.pi / 9 * 2)
                             y_offset = wide * math.cos(t * math.pi / 9 * 2)
@@ -1046,34 +1394,52 @@ def visualize_summary(show_plot=True, show_distribution=False, subjects=range(24
                                     x=xs,
                                     y=ys,
                                     name=cursor_type,
-                                    mode='markers',
-                                    marker={'color': color}
-                                    , opacity=0.1
+                                    mode="markers",
+                                    marker={"color": color},
+                                    opacity=0.1,
                                 )
                             )
-                            fig.add_shape(type='path',
-                                          path=confidence_ellipse(xs,
-                                                                  ys),
-                                          line={'dash': 'dot'},
-                                          line_color=color)
-                            colorset = ['maroon', 'orangered', 'darkorange', 'olive', 'yellowgreen', 'darkolivegreen',
-                                        'turquoise', 'deepskyblue', 'dodgerblue']
-                            estimated_half_width = abs(
-                                cursor_data.mean_offset_horizontal.mean()) + 2 * cursor_data.std_offset_horizontal.mean()
-                            estimated_half_height = abs(
-                                cursor_data.mean_offset_vertical.mean()) + 2 * cursor_data.std_offset_vertical.mean()
+                            fig.add_shape(
+                                type="path",
+                                path=confidence_ellipse(xs, ys),
+                                line={"dash": "dot"},
+                                line_color=color,
+                            )
+                            colorset = [
+                                "maroon",
+                                "orangered",
+                                "darkorange",
+                                "olive",
+                                "yellowgreen",
+                                "darkolivegreen",
+                                "turquoise",
+                                "deepskyblue",
+                                "dodgerblue",
+                            ]
+                            estimated_half_width = (
+                                abs(cursor_data.mean_offset_horizontal.mean())
+                                + 2 * cursor_data.std_offset_horizontal.mean()
+                            )
+                            estimated_half_height = (
+                                abs(cursor_data.mean_offset_vertical.mean())
+                                + 2 * cursor_data.std_offset_vertical.mean()
+                            )
                             import matplotlib.patches as patches
+
                             plt_ax.add_patch(
                                 patches.Rectangle(
-                                    (x_offset - estimated_half_width, y_offset - estimated_half_height),
+                                    (
+                                        x_offset - estimated_half_width,
+                                        y_offset - estimated_half_height,
+                                    ),
                                     2 * estimated_half_width,
                                     2 * estimated_half_height,
                                     edgecolor=colorset[t],
-                                    fill=False
+                                    fill=False,
                                 )
                             )
 
-                fig.update_yaxes(scaleanchor='x', scaleratio=1)
+                fig.update_yaxes(scaleanchor="x", scaleratio=1)
                 fig.add_hline(y=0)
                 fig.add_vline(x=0)
                 fig.show()
@@ -1089,9 +1455,9 @@ def discover_error(sub_num):
     rep_small = [0, 2, 4, 6, 8]
     rep_large = [1, 3, 5, 7, 9]
     draw_plot = False
-    cursorTypes = ['HEAD', 'EYE', 'HAND']
+    cursorTypes = ["HEAD", "EYE", "HAND"]
 
-    postures = ['WALK']
+    postures = ["WALK"]
     targets = range(9)
     # repetitions = [4, 5, 6, 7, 8, 9]
     repetitions = range(10)
@@ -1110,70 +1476,117 @@ def discover_error(sub_num):
                 # print('searching', sub_num, cursor_type, rep, pos)
                 data = read_hololens_data(sub_num, pos, cursor_type, rep)
                 splited_data = split_target(data)
-                wide = 'SMALL' if rep in rep_small else 'LARGE'
+                wide = "SMALL" if rep in rep_small else "LARGE"
                 # for t in targets:
                 try:
 
-                    data['cursor_rotation'] = data.apply(
-                        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
-                    data['target_rotation'] = data.apply(
-                        lambda x: asSpherical(x.target_position_x - x.origin_x, x.target_position_y - x.origin_y,
-                                              x.target_position_z - x.origin_z), axis=1)
-                    data['cursor_horizontal'] = data.apply(
+                    data["cursor_rotation"] = data.apply(
+                        lambda x: asSpherical(
+                            x.direction_x, x.direction_y, x.direction_z
+                        ),
+                        axis=1,
+                    )
+                    data["target_rotation"] = data.apply(
+                        lambda x: asSpherical(
+                            x.target_position_x - x.origin_x,
+                            x.target_position_y - x.origin_y,
+                            x.target_position_z - x.origin_z,
+                        ),
+                        axis=1,
+                    )
+                    data["cursor_horizontal"] = data.apply(
                         lambda x: math.sin(math.radians(x.cursor_rotation[1])), axis=1
                     )
-                    data['cursor_vertical'] = data.apply(
+                    data["cursor_vertical"] = data.apply(
                         lambda x: x.cursor_rotation[0], axis=1
                     )
-                    data['target_horizontal'] = data.apply(
+                    data["target_horizontal"] = data.apply(
                         lambda x: math.sin(math.radians(x.target_rotation[1])), axis=1
                     )
-                    data['target_vertical'] = data.apply(
+                    data["target_vertical"] = data.apply(
                         lambda x: x.target_rotation[0], axis=1
                     )
-                    data['horizontal'] = data.apply(
-                        lambda x: change_angle(x.cursor_horizontal - x.target_horizontal), axis=1
+                    data["horizontal"] = data.apply(
+                        lambda x: change_angle(
+                            x.cursor_horizontal - x.target_horizontal
+                        ),
+                        axis=1,
                     )
-                    data['vertical'] = data.apply(
-                        lambda x: change_angle(x.cursor_vertical - x.target_vertical), axis=1
+                    data["vertical"] = data.apply(
+                        lambda x: change_angle(x.cursor_vertical - x.target_vertical),
+                        axis=1,
                     )
-                    data['target_vertical_velocity'] = (
-                            data['target_vertical'].diff(1) / data['timestamp'].diff(1)).rolling(30).mean()
-                    data['target_horizontal_velocity'] = (data['target_horizontal'].diff(1) / data['timestamp'].diff(1))
-                    data['target_horizontal_acc'] = (
-                            data['target_horizontal_velocity'].diff(1) / data['timestamp'].diff(1))
-                    data['walking_speed'] = (
-                            (data['head_position_x'].diff(1).pow(2) + data['head_position_z'].diff(1).pow(2)).apply(
-                                math.sqrt) / data[
-                                'timestamp'].diff(1)).rolling(6, min_periods=1).mean()
-                    data['walking_acc'] = (data['walking_speed'].diff(1) / data['timestamp'].diff(1))
-                    data['target_speed'] = (
-                            (data['target_position_x'].diff(1).pow(2) + data['target_position_z'].diff(1).pow(2)).apply(
-                                math.sqrt) / data[
-                                'timestamp'].diff(1)).rolling(6, min_periods=1).mean()
+                    data["target_vertical_velocity"] = (
+                        (data["target_vertical"].diff(1) / data["timestamp"].diff(1))
+                        .rolling(30)
+                        .mean()
+                    )
+                    data["target_horizontal_velocity"] = data["target_horizontal"].diff(
+                        1
+                    ) / data["timestamp"].diff(1)
+                    data["target_horizontal_acc"] = data[
+                        "target_horizontal_velocity"
+                    ].diff(1) / data["timestamp"].diff(1)
+                    data["walking_speed"] = (
+                        (
+                            (
+                                data["head_position_x"].diff(1).pow(2)
+                                + data["head_position_z"].diff(1).pow(2)
+                            ).apply(math.sqrt)
+                            / data["timestamp"].diff(1)
+                        )
+                        .rolling(6, min_periods=1)
+                        .mean()
+                    )
+                    data["walking_acc"] = data["walking_speed"].diff(1) / data[
+                        "timestamp"
+                    ].diff(1)
+                    data["target_speed"] = (
+                        (
+                            (
+                                data["target_position_x"].diff(1).pow(2)
+                                + data["target_position_z"].diff(1).pow(2)
+                            ).apply(math.sqrt)
+                            / data["timestamp"].diff(1)
+                        )
+                        .rolling(6, min_periods=1)
+                        .mean()
+                    )
                     # target_horizontal_acc += list(data['target_horizontal_acc'])
                     # walking_acc += list(data['walking_acc'])
                     # walking_speeds += list(data['walking_speed'])
-                    data['trial_check'] = data['end_num'].diff(1)
+                    data["trial_check"] = data["end_num"].diff(1)
                     data_without_change = data[(data.trial_check == 0)][5:]
                     # plt.plot(data_without_change.timestamp, data_without_change.target_horizontal_velocity)
-                    target_horizotal_vels += list(data_without_change.target_horizontal_velocity)
-                    fail_check = data_without_change[(data_without_change.target_horizontal_velocity > 5) | (
-                            data_without_change.target_horizontal_velocity < -5)]
+                    target_horizotal_vels += list(
+                        data_without_change.target_horizontal_velocity
+                    )
+                    fail_check = data_without_change[
+                        (data_without_change.target_horizontal_velocity > 5)
+                        | (data_without_change.target_horizontal_velocity < -5)
+                    ]
                     if len(fail_check) > 0:
                         fail_count += len(data.groupby(data.end_num).count())
                 except Exception as e:
-                    print(sub_num, pos, cursor_type, rep, e.args, 'fail count', fail_count)
+                    print(
+                        sub_num, pos, cursor_type, rep, e.args, "fail count", fail_count
+                    )
     # return target_horizontal_acc,walking_acc,walking_speeds
     return target_horizotal_vels, fail_count
 
 
-def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=range(9),
-                         repetitions=None, subjects=range(24)):
+def target_size_analysis(
+    target_size,
+    cursorTypes=None,
+    postures=None,
+    targets=range(9),
+    repetitions=None,
+    subjects=range(24),
+):
     if postures is None:
-        postures = ['STAND', 'WALK']
+        postures = ["STAND", "WALK"]
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'EYE', 'HAND']
+        cursorTypes = ["HEAD", "EYE", "HAND"]
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     rep_small = [0, 2, 4, 6, 8]
@@ -1191,57 +1604,85 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
     # repetitions = range(10)
     fail_count = 0
     summary = pd.DataFrame(
-        columns=['target_size', 'subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide',
-                 'mean_offset',
-                 'std_offset', 'overall_mean_offset', 'overall_std_offset',
-                 'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-                 'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
-                 'longes t_dwell',
-                 'error'])
+        columns=[
+            "target_size",
+            "subject_num",
+            "posture",
+            "cursor_type",
+            "repetition",
+            "target_num",
+            "wide",
+            "mean_offset",
+            "std_offset",
+            "overall_mean_offset",
+            "overall_std_offset",
+            "initial_contact_time",
+            "target_in_count",
+            "target_in_total_time",
+            "target_in_mean_time",
+            "mean_offset_horizontal",
+            "mean_offset_vertical",
+            "std_offset_horizontal",
+            "std_offset_vertical",
+            "longes t_dwell",
+            "error",
+        ]
+    )
     for sub_num in subjects:
         for cursor_type in cursorTypes:
             for rep in repetitions:
                 for pos in postures:
                     data = read_hololens_data(sub_num, pos, cursor_type, rep)
                     splited_data = split_target(data)
-                    wide = 'SMALL' if rep in rep_small else 'LARGE'
+                    wide = "SMALL" if rep in rep_small else "LARGE"
 
                     for t in targets:
                         try:
                             trial_summary = {
-                                'target_size': target_size,
-                                'subject_num': sub_num,
-                                'posture': pos,
-                                'cursor_type': cursor_type,
-                                'repetition': rep,
-                                'target_num': t,
-                                'wide': wide,
+                                "target_size": target_size,
+                                "subject_num": sub_num,
+                                "posture": pos,
+                                "cursor_type": cursor_type,
+                                "repetition": rep,
+                                "target_num": t,
+                                "wide": wide,
                             }
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
-                            validate, reason = validate_trial_data(temp_data, cursor_type, pos)
+                            validate, reason = validate_trial_data(
+                                temp_data, cursor_type, pos
+                            )
                             if not validate:  # in case of invalid trial.
-                                trial_summary['error'] = reason
+                                trial_summary["error"] = reason
                                 summary.loc[len(summary)] = trial_summary
                                 continue
-                            drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-                                    temp_data['direction_z'] == 0)].index
+                            drop_index = temp_data[
+                                (temp_data["direction_x"] == 0)
+                                & (temp_data["direction_y"] == 0)
+                                & (temp_data["direction_z"] == 0)
+                            ].index
                             # if len(drop_index) > 0:
                             #     print('drop length', len(drop_index), sub_num, pos, cursor_type, rep, t)
                             #     # raise ValueError
                             temp_data = temp_data.drop(drop_index)
                             # only_success = temp_data[temp_data.target_name == "Target_" + str(t)]
-                            only_success = temp_data[temp_data.cursor_angular_distance < target_size]
+                            only_success = temp_data[
+                                temp_data.cursor_angular_distance < target_size
+                            ]
 
                             if len(only_success) <= 0:
-                                raise ValueError('no success frames', len(only_success))
+                                raise ValueError("no success frames", len(only_success))
                             initial_contact_time = only_success.timestamp.values[0]
 
                             success_dwells = []
-                            temp_data['target_in'] = temp_data['cursor_angular_distance'] < target_size
-                            for k, g in itertools.groupby(temp_data.iterrows(),
-                                                          key=lambda row: row[1]['target_in']):
+                            temp_data["target_in"] = (
+                                temp_data["cursor_angular_distance"] < target_size
+                            )
+                            for k, g in itertools.groupby(
+                                temp_data.iterrows(),
+                                key=lambda row: row[1]["target_in"],
+                            ):
                                 # print(k, [t[0] for t in g])
                                 if k == True:
                                     df = pd.DataFrame([r[1] for r in g])
@@ -1249,14 +1690,20 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             time_sum = 0
                             times = []
                             for dw in success_dwells:
-                                time_sum += dw.timestamp.values[-1] - dw.timestamp.values[0]
-                                times.append(dw.timestamp.values[-1] - dw.timestamp.values[0])
+                                time_sum += (
+                                    dw.timestamp.values[-1] - dw.timestamp.values[0]
+                                )
+                                times.append(
+                                    dw.timestamp.values[-1] - dw.timestamp.values[0]
+                                )
                             longest_dwell = max(times)
                             target_in_count = len(success_dwells)
                             target_in_total_time = time_sum
                             target_in_mean_time = time_sum / target_in_count
 
-                            dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                            dwell_temp = temp_data[
+                                temp_data.timestamp >= initial_contact_time
+                            ]
                             #
                             mean_offset_horizontal = dwell_temp.horizontal_offset.mean()
                             std_offset_horizontal = dwell_temp.horizontal_offset.std()
@@ -1295,39 +1742,42 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             #                 dwell_total_hover_time += current_dwell_time
                             #                 dwell_count += 1
 
-                            trial_summary = {'target_size': target_size, 'subject_num': sub_num,
-                                             'posture': pos,
-                                             'cursor_type': cursor_type,
-                                             'repetition': rep,
-                                             'target_num': t,
-                                             'wide': wide,
-                                             'mean_offset': dwell_temp.cursor_angular_distance.mean(),
-                                             'std_offset': dwell_temp.cursor_angular_distance.std(),
-                                             'overall_mean_offset': temp_data.cursor_angular_distance.mean(),
-                                             'overall_std_offset': temp_data.cursor_angular_distance.mean(),
-                                             'initial_contact_time': initial_contact_time,
-                                             'target_in_count': float(target_in_count),
-                                             'target_in_total_time': target_in_total_time,
-                                             'target_in_mean_time': target_in_mean_time,
-                                             'mean_offset_horizontal': mean_offset_horizontal,
-                                             'mean_offset_vertical': mean_offset_vertical,
-                                             'std_offset_horizontal': std_offset_horizontal,
-                                             'std_offset_vertical': std_offset_vertical,
-                                             'longest_dwell': longest_dwell,
-                                             'error': None
-                                             }
+                            trial_summary = {
+                                "target_size": target_size,
+                                "subject_num": sub_num,
+                                "posture": pos,
+                                "cursor_type": cursor_type,
+                                "repetition": rep,
+                                "target_num": t,
+                                "wide": wide,
+                                "mean_offset": dwell_temp.cursor_angular_distance.mean(),
+                                "std_offset": dwell_temp.cursor_angular_distance.std(),
+                                "overall_mean_offset": temp_data.cursor_angular_distance.mean(),
+                                "overall_std_offset": temp_data.cursor_angular_distance.mean(),
+                                "initial_contact_time": initial_contact_time,
+                                "target_in_count": float(target_in_count),
+                                "target_in_total_time": target_in_total_time,
+                                "target_in_mean_time": target_in_mean_time,
+                                "mean_offset_horizontal": mean_offset_horizontal,
+                                "mean_offset_vertical": mean_offset_vertical,
+                                "std_offset_horizontal": std_offset_horizontal,
+                                "std_offset_vertical": std_offset_vertical,
+                                "longest_dwell": longest_dwell,
+                                "error": None,
+                            }
                             summary.loc[len(summary)] = trial_summary
                             # smalls.loc[len(smalls)] = [sub_num, 'STAND', cursor_type, rep, t, temp_data.cursor_angular_distance.mean(),
                             #                            temp_data.cursor_angular_distance.std()]
                         except Exception as e:
                             fail_count += 1
                             error_summary = {
-                                'target_size': target_size, 'subject_num': sub_num,
-                                'posture': pos,
-                                'cursor_type': cursor_type,
-                                'repetition': rep,
-                                'target_num': t,
-                                'wide': wide,
+                                "target_size": target_size,
+                                "subject_num": sub_num,
+                                "posture": pos,
+                                "cursor_type": cursor_type,
+                                "repetition": rep,
+                                "target_num": t,
+                                "wide": wide,
                                 # 'mean_offset': None,
                                 # 'std_offset': None,
                                 # 'initial_contact_time': None,
@@ -1338,10 +1788,19 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                                 # 'mean_offset_vertical': None,
                                 # 'std_offset_horizontal': None,
                                 # 'std_offset_vertical': None,
-                                'error': e.args
+                                "error": e.args,
                             }
                             summary.loc[len(summary)] = error_summary
-                            print(sub_num, pos, cursor_type, rep, t, e.args, 'fail count', fail_count)
+                            print(
+                                sub_num,
+                                pos,
+                                cursor_type,
+                                rep,
+                                t,
+                                e.args,
+                                "fail count",
+                                fail_count,
+                            )
                             # plt.plot(temp_data.timestamp, temp_data.cursor_angular_distance, label=str(pos))
                             # # plt.plot(walk_temp.timestamp, walk_temp.cursor_angular_distance, label='walk')
                             # plt.axvline(initial_contact_time)
@@ -1350,9 +1809,11 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
                             # plt.legend()
                             # plt.title(f'{cursor_type} angular offset from :target' + str(t))
                             # plt.show()
-    final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
-    final_summary.to_csv('target_size_summary' + str(target_size) + '.csv')
-    summary.to_csv('target_size_Rawsummary' + str(target_size) + '.csv')
+    final_summary = summary.groupby(
+        [summary["posture"], summary["cursor_type"], summary["wide"]]
+    ).mean()
+    final_summary.to_csv("target_size_summary" + str(target_size) + ".csv")
+    summary.to_csv("target_size_Rawsummary" + str(target_size) + ".csv")
     return summary
 
 
@@ -1360,29 +1821,30 @@ def target_size_analysis(target_size, cursorTypes=None, postures=None, targets=r
 def newStudy_basic_analysis(data, dt=1.0):
     data.timestamp -= data.timestamp.values[0]
     endnum = data.end_num.values[0]
-    data['success'] = data.target_name == "Target_" + str(endnum)
-    only_success = data[data['success'] == True]
+    data["success"] = data.target_name == "Target_" + str(endnum)
+    only_success = data[data["success"] == True]
     if len(only_success) <= 0:
-        print('no success')
+        print("no success")
         return data, None
     initial_contact_time = only_success.timestamp.values[0]
     dwell_temp = data[data.timestamp >= initial_contact_time]
     mean_error = dwell_temp.cursor_angular_distance.mean()
     median_error = dwell_temp.cursor_angular_distance.median()
-    mrt_df = data[(data.timestamp >= initial_contact_time) & (
-            data.timestamp <= dt + initial_contact_time)]
+    mrt_df = data[
+        (data.timestamp >= initial_contact_time)
+        & (data.timestamp <= dt + initial_contact_time)
+    ]
     mrt = max(list(mrt_df.cursor_angular_distance))
     all_success_dwells = []
 
     # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
-    for k, g in itertools.groupby(data.iterrows(),
-                                  key=lambda row: row[1]['success']):
+    for k, g in itertools.groupby(data.iterrows(), key=lambda row: row[1]["success"]):
         # print(k, [t[0] for t in g])
         # if k == True:
         if k == True:
             # if k == 'Target_' + str(t):
             df = pd.DataFrame([r[1] for r in g])
-            if (len(df) <= 1):
+            if len(df) <= 1:
                 continue
             all_success_dwells.append(df)
 
@@ -1411,42 +1873,322 @@ def newStudy_basic_analysis(data, dt=1.0):
             first_dwell_time = dw.timestamp.values[0]
 
 
+def rotate_towards_prev(
+    current_vector, target_vector, max_angle_degrees, max_magnitude_change
+):
+    # Normalize the input vectors
+    current_vector = np.array(current_vector) / np.linalg.norm(current_vector)
+    target_vector = np.array(target_vector) / np.linalg.norm(target_vector)
+
+    dot_product = np.dot(current_vector, target_vector)
+    angle_between = np.deg2rad(np.arccos(np.clip(dot_product, -1.0, 1.0)))
+    angle = min(np.deg2rad(max_angle_degrees), angle_between)
+
+    axis_of_rotation = np.cross(current_vector, target_vector)
+    rotation_matrix = np.array(
+        [
+            [np.cos(angle), -np.sin(angle), 0],
+            [np.sin(angle), np.cos(angle), 0],
+            [0, 0, 1],
+        ]
+    )
+
+    rotated_vector = np.dot(rotation_matrix, current_vector)
+    # return rotated_vector
+    return (
+        rotated_vector * (1 - max_magnitude_change)
+        + target_vector * max_magnitude_change
+    )
+
+
+def move_towards(
+    current: np.ndarray, target: np.ndarray, max_distance: float
+) -> np.ndarray:
+    """
+    Moves a point (current) towards a target point by a maximum distance.
+
+    Args:
+        current: The current position (2D NumPy array of floats).
+        target: The target position (2D NumPy array of floats).
+        max_distance: The maximum distance to move in this step (float).
+
+    Returns:
+        The new position after the move (2D NumPy array of floats).
+    """
+    # Calculate the direction vector
+    direction = target - current
+
+    # Get the magnitude of the direction vector
+    distance = np.linalg.norm(direction)
+
+    # Clamp the distance to the max allowed movement
+    move_amount = min(distance, max_distance)
+
+    # Normalize the direction vector
+    normalized_direction = direction / (distance or 1e-6)  # Avoid division by zero
+
+    # Move along the direction by the allowed amount
+    new_position = current + move_amount * normalized_direction
+
+    return new_position
+
+
 @timeit
-def basic_analysis_subject(subs):
+def target_expansion_simulation_subject(subs, rate,width=None,height=None):
     summary = pd.DataFrame(
-        columns=['subject', 'posture', 'cursor', 'selection', 'target', 'repetition', 'initial_contact_time',
-                 'mean_error', 'best_record', 'threshold', 'required_target_size',
-                 'mean_error_horizontal',
-                 'mean_error_vertical',
-                 'std_error_horizontal',
-                 'std_error_vertical', 'mean_cursor_speed',
-                 'overall_time', 'success', 'target_in_count', 'first_dwell_time', 'error'])
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "speed_limit",
+            "bound" "overall_time",
+            "success",
+            "target_in_count",
+            "first_dwell_time",
+            "error",
+        ]
+    )
     subjects = subs
-    cursorTypes = ['Head', 'Eye', 'Hand']
     repetitions = range(1, 5)
-    postures = ["Stand", 'Treadmill', "Walk"]
-    selections = ["Click", 'Dwell']
-    # selections = ['Dwell']
-    # targets = range(9)
+    cursorTypes = ["Head", "Eye", "Hand"]
+    postures = ["Stand", "Treadmill", "Walk"]
+    selections = ["Dwell", "Click"]
     summaries = []
-    for sub_num, cursor_type, sel, rep, pos in itertools.product(subjects, cursorTypes, selections, repetitions,
-                                                                 postures):
-        one_file_summary = basic_analysis_file(sub_num, sel, cursor_type, pos, rep)
+    for sub_num, cursor_type, sel, rep, pos in itertools.product(
+        subjects, cursorTypes, selections, repetitions, postures
+    ):
+        one_file_summary = target_expansion_simulation(
+            sub_num, sel, cursor_type, pos, rep, rate,width,height
+        )
         summaries.append(one_file_summary)
         # summary.loc[len(summary)] = one_trial_summary
     return pd.concat(summaries)
 
 
-def basic_analysis_file(sub, sel, cur, pos, r, threshold=None):
+@timeit
+def speed_reduction_simulation_subject(subs, speed_limit, bound):
     summary = pd.DataFrame(
-        columns=['subject', 'posture', 'cursor', 'selection', 'target', 'repetition', 'initial_contact_time',
-                 'mean_error', 'best_record', 'threshold', 'required_target_size',
-                 'mean_error_horizontal',
-                 'mean_error_vertical',
-                 'std_error_horizontal',
-                 'std_error_vertical', 'mean_cursor_speed',
-                 'overall_time', 'success', 'target_in_count', 'target_in_count_per_second', 'walk_speed',
-                 'first_dwell_time', 'error', 'final_point_horizontal', 'final_point_vertical', 'final_cursor_speed'])
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "speed_limit",
+            "bound" "overall_time",
+            "success",
+            "target_in_count",
+            "first_dwell_time",
+            "error",
+        ]
+    )
+    subjects = subs
+    repetitions = range(1, 5)
+    cursorTypes = ["Head", "Eye", "Hand"]
+    postures = ["Treadmill", "Walk"]
+    selections = ["Click", "Dwell"]
+    summaries = []
+    for sub_num, cursor_type, sel, rep, pos in itertools.product(
+        subjects, cursorTypes, selections, repetitions, postures
+    ):
+        one_file_summary = speed_reduction_simulation(
+            sub_num, sel, cursor_type, pos, rep, speed_limit, bound
+        )
+        summaries.append(one_file_summary)
+        # summary.loc[len(summary)] = one_trial_summary
+    return pd.concat(summaries)
+
+
+def map_range(value, start, end):
+    if value < start:
+        return start
+    elif value >= end:
+        return end
+    else:
+        return value
+
+
+def target_expansion_simulation(sub, sel, cur, pos, r, rate,width,height):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "std_error",
+            "best_record",
+            "speed_limit",
+            "bound",
+            "rate",
+            "overall_time",
+            "success",
+        ]
+    )
+    try:
+        d, success_record = read_data(sub, r, cur, sel, pos)
+        data = split_target(d)
+    except Exception as e:
+        print(e, sub, r, cur, sel, pos)
+        return None
+    for t in range(9):
+        try:
+            trial_summary = {
+                "subject": sub,
+                "posture": pos,
+                "cursor": cur,
+                "selection": sel,
+                "target": t,
+                "repetition": r,
+                "rate": rate,
+            }
+            temp_data = data[t].reset_index()
+            temp_data.timestamp -= temp_data.timestamp.values[0]
+            # temp_data['EH_distance'] = ((temp_data.head_horizontal_offset - temp_data.eyeRay_horizontal_offset) ** 2 + (
+            #         temp_data.head_vertical_offset - temp_data.eyeRay_vertical_offset) ** 2).apply(math.sqrt)
+            # temp_data['head_direction_vector'] = temp_data.apply(
+            #     lambda row: directional_vector(row['head_horizontal_offset'], row['head_vertical_offset']), axis=1)
+            # temp_data['eye_direction_vector'] = temp_data.apply(
+            #     lambda row: directional_vector(row['eyeRay_horizontal_offset'], row['eyeRay_vertical_offset']), axis=1)
+            # temp_data['newcursor_direction_vector'] = temp_data['head_direction_vector']
+            temp_data["o_success"] = temp_data.cursor_angular_distance <= 3.0
+            only_success = temp_data[
+                (temp_data.o_success == True)
+                | (temp_data.target_name == "Target_" + str(t))
+            ]
+            if len(only_success) <= 0:
+                print("no touch in ", sub, sel, cur, pos, r, t)
+                trial_summary["error"] = "no touch"
+                summary.loc[len(summary)] = trial_summary
+                continue
+
+            initial_contact_time = only_success.timestamp.values[0]
+            if width !=None :
+                temp_data["expansion_width"] = (
+                    (temp_data.timestamp - initial_contact_time) * rate
+                ).apply(map_range, start=0, end=width-3) + 3
+                temp_data["expansion_height"] = (
+                    (temp_data.timestamp - initial_contact_time) * rate
+                ).apply(map_range, start=0, end=height-3) + 3
+                
+                temp_data["success"] = temp_data.apply(
+                    lambda x: (
+                        (x["horizontal_offset"] ** 2) / (x["expansion_width"] * x["expansion_width"])
+                + (x["vertical_offset"] ** 2) / (x["expansion_height"] * x["expansion_height"])
+                <= 1
+                  )
+                    | (x.target_name == "Target_" + str(t)),
+                    axis=1,
+                )
+            else:
+                temp_data["expansion"] = (
+                    (temp_data.timestamp - initial_contact_time) * rate
+                ).apply(map_range, start=0, end=3) + 3
+            # after_contact = temp_data[temp_data.timestamp >= initial_contact_time]
+            # mean_offset = after_contact.newcursor_angular_distance.mean()
+            # std_offset = after_contact.newcursor_angular_distance.std()
+                
+                temp_data["success"] = temp_data.apply(
+                    lambda x: (x.cursor_angular_distance <= x.expansion)
+                    | (x.target_name == "Target_" + str(t)),
+                    axis=1,
+                )
+            # temp_data['success'] = temp_data[(temp_data.cursor_angular_distance <= temp_data.expansion)]
+            # | (
+            #         temp_data.target_name == "Target_" + str(t))
+            all_success_dwells = []
+            for k, g in itertools.groupby(
+                temp_data.iterrows(), key=lambda row: row[1]["success"]
+            ):
+                if k == True:
+                    df = pd.DataFrame([r[1] for r in g])
+                    all_success_dwells.append(df)
+            success_dwells = []
+            times = []
+            # target_in_count = len(all_success_dwells)
+            for dw in all_success_dwells:
+                time_record = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                times.append(time_record)
+                if time_record >= 1.0 - 1.5 / 60:
+                    success_dwells.append(dw)
+            if sel == "Dwell":
+                if len(success_dwells) > 0:
+                    success = True
+                else:
+                    success = False
+            else:
+                if temp_data["success"].values[-1] == True:
+                    success = True
+                else:
+                    success = False
+            if success_record[t] == "O":
+                success = True
+            trial_summary["initial_contact_time"] = initial_contact_time
+            # trial_summary['mean_error'] = mean_offset
+            # trial_summary['std_error'] = std_offset
+            # trial_summary['target_in_count'] = target_in_count
+            trial_summary["success"] = success
+            summary.loc[len(summary)] = trial_summary
+        except Exception as e:
+            pass
+            # print(e.args, sub, r, cur, sel, pos)
+    return summary
+
+
+def speed_reduction_simulation(sub, sel, cur, pos, r, speed_limit, bound):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "std_error",
+            "best_record",
+            "speed_limit",
+            "bound",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "target_in_count_per_second",
+            "walk_speed",
+            "first_dwell_time",
+            "error",
+            "final_point_horizontal",
+            "final_point_vertical",
+            "final_cursor_speed",
+        ]
+    )
     try:
         d, success_record = read_data(sub, r, cur, sel, pos)
         data = split_target(d)
@@ -1456,8 +2198,509 @@ def basic_analysis_file(sub, sel, cur, pos, r, threshold=None):
 
     for t in range(9):
         try:
-            trial_summary = {'subject': sub, 'posture': pos, 'cursor': cur,
-                             'selection': sel, 'target': t, 'repetition': r}
+            trial_summary = {
+                "subject": sub,
+                "posture": pos,
+                "cursor": cur,
+                "selection": sel,
+                "target": t,
+                "repetition": r,
+                "speed_limit": speed_limit,
+                "bound": bound,
+            }
+            temp_data = data[t].reset_index()
+            temp_data.timestamp -= temp_data.timestamp.values[0]
+            temp_data["EH_distance"] = (
+                (temp_data.head_horizontal_offset - temp_data.eyeRay_horizontal_offset)
+                ** 2
+                + (temp_data.head_vertical_offset - temp_data.eyeRay_vertical_offset)
+                ** 2
+            ).apply(math.sqrt)
+            temp_data["head_direction_vector"] = temp_data.apply(
+                lambda row: directional_vector(
+                    row["head_horizontal_offset"], row["head_vertical_offset"]
+                ),
+                axis=1,
+            )
+            temp_data["eye_direction_vector"] = temp_data.apply(
+                lambda row: directional_vector(
+                    row["eyeRay_horizontal_offset"], row["eyeRay_vertical_offset"]
+                ),
+                axis=1,
+            )
+            # temp_data['newcursor_direction_vector'] = temp_data['head_direction_vector']
+
+            temp_data["cursor_direction"] = temp_data.apply(
+                lambda row: [row.direction_x, row.direction_y, row.direction_z], axis=1
+            )
+            # temp_data['newcursor_direction_vector'] = temp_data['cursor_direction']
+            temp_data["newcursor_horizontal_angle"] = temp_data["horizontal_offset"]
+            temp_data["newcursor_vertical_angle"] = temp_data["vertical_offset"]
+            temp_data["success"] = temp_data.cursor_angular_distance <= 3.0
+            only_success = temp_data[
+                (temp_data.success == True)
+                | (temp_data.target_name == "Target_" + str(t))
+            ]
+            if len(only_success) <= 0:
+                print("no touch in ", sub, sel, cur, pos, r, t)
+                # trial_summary['error'] = "no touch"
+                # summary.loc[len(summary)] = trial_summary
+                continue
+
+            initial_contact_time = only_success.timestamp.values[0]
+            for index, row in temp_data.iterrows():
+                if row["timestamp"] < initial_contact_time:
+                    continue
+                eh = temp_data["EH_distance"][index]
+                # speed = speed_limit if eh < bound else 100
+                speed = speed_limit
+
+                newcursor_position_ = move_towards(
+                    np.array(
+                        [
+                            temp_data.newcursor_horizontal_angle[index - 1],
+                            temp_data.newcursor_vertical_angle[index - 1],
+                        ]
+                    ),
+                    np.array(
+                        [
+                            temp_data.horizontal_offset[index],
+                            temp_data.vertical_offset[index],
+                        ]
+                    ),
+                    (speed * (1 / 60)),
+                )
+                temp_data["newcursor_horizontal_angle"][index] = newcursor_position_[0]
+                temp_data["newcursor_vertical_angle"][index] = newcursor_position_[1]
+
+            # temp_data['newcursor_direction_vector_x'] = temp_data.apply(lambda x: x.newcursor_direction_vector[0],
+            #                                                             axis=1)
+            # temp_data['newcursor_direction_vector_y'] = temp_data.apply(lambda x: x.newcursor_direction_vector[1],
+            #                                                             axis=1)
+            # temp_data['newcursor_direction_vector_z'] = temp_data.apply(lambda x: x.newcursor_direction_vector[2],
+            #                                                             axis=1)
+            # temp_data['newcursor_rotation'] = temp_data.apply(
+            #     lambda x: asSpherical(x.newcursor_direction_vector_x, x.newcursor_direction_vector_y,
+            #                           x.newcursor_direction_vector_z), axis=1)
+            # temp_data['newcursor_horizontal_angle'] = temp_data.apply(
+            #     lambda x: x.newcursor_position_vector[0], axis=1
+            # )
+            # temp_data['newcursor_vertical_angle'] = temp_data.apply(
+            #     lambda x: x.newcursor_position_vector[1], axis=1
+            # )
+            # temp_data['newcursor_vertical_angle'] = 90 - temp_data['newcursor_vertical_angle']
+            temp_data["newcursor_angular_distance"] = (
+                temp_data["newcursor_horizontal_angle"] ** 2
+                + temp_data["newcursor_vertical_angle"] ** 2
+            ).apply(math.sqrt)
+
+            # initial_contact_time = temp_data[temp_data['newcursor_angular_distance'] <= 3.0].timestamp.values[0]
+            # after_contact = temp_data[temp_data.timestamp >= initial_contact_time]
+            # mean_offset = after_contact.newcursor_angular_distance.mean()
+            # std_offset = after_contact.newcursor_angular_distance.std()
+            all_success_dwells = []
+            # temp_data['success'] = temp_data.newcursor_angular_distance <= 3.0
+            temp_data.loc[
+                (temp_data["newcursor_angular_distance"] <= 3.0)
+                | (temp_data.target_name == "Target_" + str(t)),
+                "success",
+            ] = True
+
+            # temp_data[(temp_data.success == True) | (temp_data.target_name == "Target_" + str(t))]
+            if sel == "Dwell":
+                for k, g in itertools.groupby(
+                    temp_data.iterrows(), key=lambda row: row[1]["success"]
+                ):
+                    if k == True:
+                        df = pd.DataFrame([r[1] for r in g])
+                        all_success_dwells.append(df)
+                success_dwells = []
+                times = []
+                target_in_count = len(all_success_dwells)
+                for dw in all_success_dwells:
+                    time_record = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                    times.append(time_record)
+                    if time_record >= 1.0 - 1.5 / 60:
+                        success_dwells.append(dw)
+                if len(success_dwells) > 0:
+                    success = True
+                else:
+                    success = False
+            else:
+                if temp_data.success.values[-1]:
+                    success = True
+                else:
+                    success = False
+            if success_record[t] == "O":
+                success = True
+            # trial_summary['initial_contact_time'] = initial_contact_time
+            # trial_summary['mean_error'] = mean_offset
+            # trial_summary['std_error'] = std_offset
+            # trial_summary['target_in_count'] = target_in_count
+            trial_summary["success"] = success
+            summary.loc[len(summary)] = trial_summary
+        except Exception:
+            # pass
+            print(traceback.format_exc(), sub, r, cur, sel, pos, t)
+    return summary
+
+
+def directional_vector(horizontal_angle_degrees, vertical_angle_degrees):
+    # Convert angles to radians
+    horizontal_angle_rad = np.deg2rad(horizontal_angle_degrees)
+    vertical_angle_rad = np.deg2rad(vertical_angle_degrees)
+
+    # Calculate the directional vector components
+    x_component = np.cos(horizontal_angle_rad) * np.cos(vertical_angle_rad)
+    y_component = np.sin(vertical_angle_rad)
+    z_component = np.sin(horizontal_angle_rad) * np.cos(vertical_angle_rad)
+
+    return [z_component, y_component, x_component]
+
+
+def normalize_vector(vector):
+    # Convert the input vector to a NumPy array
+    vector = np.array(vector)
+
+    # Calculate the magnitude of the vector
+    magnitude = np.linalg.norm(vector)
+
+    # Check if the magnitude is not zero (to avoid division by zero)
+    if magnitude != 0:
+        # Normalize the vector by dividing each component by its magnitude
+        normalized_vector = vector / magnitude
+        return normalized_vector
+    else:
+        # If the magnitude is zero, return the original vector (or handle as needed)
+        return vector
+
+
+@timeit
+def threshold_analysis_subject(subs, threshold=None):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "first_dwell_time",
+            "error",
+        ]
+    )
+    subjects = subs
+    cursorTypes = ["Head", "Eye", "Hand"]
+    repetitions = range(1, 5)
+    postures = ["Stand", "Treadmill", "Walk"]
+    selections = ["Dwell"]
+    summaries = []
+    for sub_num, cursor_type, sel, rep, pos in itertools.product(
+        subjects, cursorTypes, selections, repetitions, postures
+    ):
+        one_file_summary = dwell_threshold_file(
+            sub_num, sel, cursor_type, pos, rep, threshold=threshold
+        )
+        summaries.append(one_file_summary)
+        # summary.loc[len(summary)] = one_trial_summary
+    return pd.concat(summaries)
+
+
+@timeit
+def basic_analysis_subject(subs, threshold=None, speed=False):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "first_dwell_time",
+            "error",
+        ]
+    )
+    subjects = subs
+    cursorTypes = ["Head", "Eye", "Hand"]
+    repetitions = range(1, 5)
+    postures = ["Stand", "Treadmill", "Walk"]
+    selections = ["Click", "Dwell"]
+    # selections = ['Dwell']
+    # targets = range(9)
+    summaries = []
+    for sub_num, cursor_type, sel, rep, pos in itertools.product(
+        subjects, cursorTypes, selections, repetitions, postures
+    ):
+        one_file_summary = basic_analysis_file(
+            sub_num, sel, cursor_type, pos, rep, threshold=threshold, speed=speed
+        )
+        summaries.append(one_file_summary)
+        # summary.loc[len(summary)] = one_trial_summary
+    return pd.concat(summaries)
+
+
+@timeit
+def Target_size_basic_analysis_subject(subs, _width, _height, threshold=None):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "first_dwell_time",
+            "error",
+        ]
+    )
+    subjects = subs
+    cursorTypes = ["Head", "Eye", "Hand"]
+    repetitions = range(1, 5)
+    postures = ["Stand", "Walk", "Treadmill"]
+    selections = ["Dwell", "Click"]
+    # selections = ['Dwell']
+    # targets = range(9)
+    summaries = []
+    for sub_num, cursor_type, sel, rep, pos in itertools.product(
+        subjects, cursorTypes, selections, repetitions, postures
+    ):
+        one_file_summary = Target_size_basic_analysis_file(
+            sub_num,
+            sel,
+            cursor_type,
+            pos,
+            rep,
+            _width=_width,
+            _height=_height,
+            threshold=threshold,
+        )
+        summaries.append(one_file_summary)
+        # summary.loc[len(summary)] = one_trial_summary
+    return pd.concat(summaries)
+
+
+def dwell_threshold_file(sub, sel, cur, pos, r, threshold):  # dwell only
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "target_in_count_per_second",
+            "walk_speed",
+            "first_dwell_time",
+            "error",
+            "final_point_horizontal",
+            "final_point_vertical",
+            "final_cursor_speed",
+        ]
+    )
+    try:
+        d, success_record = read_data(sub, r, cur, sel, pos)
+        data = split_target(d)
+    except Exception as e:
+        print(e, sub, r, cur, sel, pos)
+        return None
+
+    for t in range(9):
+        try:
+            trial_summary = {
+                "subject": sub,
+                "posture": pos,
+                "cursor": cur,
+                "selection": sel,
+                "target": t,
+                "repetition": r,
+                "threshold": threshold,
+            }
+            temp_data = data[t]
+            temp_data.timestamp -= temp_data.timestamp.values[0]
+            temp_data["success"] = temp_data.cursor_angular_distance <= 3.0
+            only_success = temp_data[
+                (temp_data.success == True)
+                | (temp_data.target_name == "Target_" + str(t))
+            ]
+            if len(only_success) <= 0:
+                print("no touch in ", sub, sel, cur, pos, r, t)
+                trial_summary["error"] = "no touch"
+                summary.loc[len(summary)] = trial_summary
+                continue
+
+            initial_contact_time = only_success.timestamp.values[0]
+            tt = temp_data[temp_data.timestamp >= initial_contact_time]
+            mean_error = tt.cursor_angular_distance.mean()
+            trial_summary["mean_error"] = mean_error
+            all_success_dwells = []
+            for k, g in itertools.groupby(
+                temp_data.iterrows(), key=lambda row: row[1]["success"]
+            ):
+                if k == True:
+                    df = pd.DataFrame([r[1] for r in g])
+                    all_success_dwells.append(df)
+            success_dwells = []
+            times = []
+            for dw in all_success_dwells:
+                time_record = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                times.append(time_record)
+                if time_record >= threshold - 2.5 / 60:
+                    success_dwells.append(dw)
+            if len(success_dwells) > 0:
+                trial_summary["success"] = True
+                endtime = success_dwells[0].timestamp.values[-1]
+                starttime = success_dwells[0].timestamp.values[0]
+                dwell_temp = temp_data[
+                    (temp_data.timestamp >= starttime)
+                    & (temp_data.timestamp <= endtime)
+                ]
+                trial_summary["mean_error_horizontal"] = (
+                    dwell_temp.horizontal_offset.mean()
+                )
+                trial_summary["mean_error_vertical"] = dwell_temp.vertical_offset.mean()
+                trial_summary["std_error_horizontal"] = (
+                    dwell_temp.horizontal_offset.std()
+                )
+                trial_summary["std_error_vertical"] = dwell_temp.vertical_offset.std()
+                trial_summary["mean_cursor_speed"] = (
+                    abs(dwell_temp.cursor_angular_distance.diff())
+                    / dwell_temp.timestamp.diff()
+                ).mean()
+
+                trial_summary["final_cursor_speed"] = (
+                    abs(dwell_temp.cursor_angular_distance.diff())
+                    / dwell_temp.timestamp.diff()
+                )[-6:].mean()
+                trial_summary["initial_contact_time"] = initial_contact_time
+                trial_summary["first_dwell_time"] = success_dwells[0].timestamp.values[
+                    0
+                ]
+                trial_summary["endtime"] = endtime
+                trial_summary["starttime"] = starttime
+                target_in_count = 0
+                for dw in all_success_dwells:
+                    if dw.timestamp.values[0] < endtime:
+                        target_in_count = target_in_count + 1
+                trial_summary["target_in_count"] = target_in_count
+                trial_summary["target_in_count_per_second"] = target_in_count / (
+                    dwell_temp.timestamp.values[-1] - dwell_temp.timestamp.values[0]
+                )
+                summary.loc[len(summary)] = trial_summary
+                continue
+            else:
+                if success_record[t] == "O":
+                    trial_summary["success"] = True
+                else:
+                    trial_summary["success"] = False
+                summary.loc[len(summary)] = trial_summary
+                continue
+        except Exception as e:
+            print(e, sub, r, cur, sel, pos)
+    return summary
+
+
+def basic_analysis_file(sub, sel, cur, pos, r, threshold=None, speed=False):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "target_in_count_per_second",
+            "walk_speed",
+            "first_dwell_time",
+            "error",
+            "final_point_horizontal",
+            "final_point_vertical",
+            "final_cursor_speed",
+            "dwell_speeds",
+            "before_speeds",
+        ]
+    )
+    try:
+        d, success_record = read_data(sub, r, cur, sel, pos)
+        data = split_target(d)
+    except Exception as e:
+        print(e, sub, r, cur, sel, pos)
+        return None
+
+    for t in range(9):
+        try:
+            trial_summary = {
+                "subject": sub,
+                "posture": pos,
+                "cursor": cur,
+                "selection": sel,
+                "target": t,
+                "repetition": r,
+            }
 
             if success_record[t] == "O":
                 success = True
@@ -1466,43 +2709,71 @@ def basic_analysis_file(sub, sel, cur, pos, r, threshold=None):
             dwell_time = 1.0
             if threshold != None:
                 dwell_time = threshold
-            trial_summary['success'] = success
+            # trial_summary['threshold'] = dwell_time
+            trial_summary["success"] = success
             temp_data = data[t]
             temp_data.timestamp -= temp_data.timestamp.values[0]
             overall_time = temp_data.timestamp.values[-1]
-            trial_summary['overall_time'] = overall_time
-            temp_data['success'] = temp_data.cursor_angular_distance <= 3.0
+            trial_summary["overall_time"] = overall_time
+            temp_data["success"] = temp_data.cursor_angular_distance <= 3.0
             # temp_data['success'] = temp_data.target_name == "Target_" + str(t)
-            only_success = temp_data[(temp_data.success == True) | (temp_data.target_name == "Target_" + str(t))]
+            only_success = temp_data[
+                (temp_data.success == True)
+                | (temp_data.target_name == "Target_" + str(t))
+            ]
 
-            if sel == 'Dwell':
+            if sel == "Dwell":
                 if len(only_success) <= 0:
-                    print('no touch in ', sub, sel, cur, pos, r, t)
-                    trial_summary['error'] = "no touch"
+                    print("no touch in ", sub, sel, cur, pos, r, t)
+                    trial_summary["error"] = "no touch"
                     summary.loc[len(summary)] = trial_summary
                     continue
                 initial_contact_time = only_success.timestamp.values[0]
-                walklength = (temp_data.head_origin_x.diff(1) ** 2 + temp_data.head_origin_y.diff(
-                    1) ** 2 + temp_data.head_origin_z.diff(1) ** 2).apply(
-                    math.sqrt).sum()
+                walklength = (
+                    (
+                        temp_data.head_origin_x.diff(1) ** 2
+                        + temp_data.head_origin_y.diff(1) ** 2
+                        + temp_data.head_origin_z.diff(1) ** 2
+                    )
+                    .apply(math.sqrt)
+                    .sum()
+                )
                 walk_speed = walklength / (overall_time - initial_contact_time)
-                trial_summary['walk_speed'] = walk_speed
+                trial_summary["walk_speed"] = walk_speed
                 dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                before_temp = temp_data[temp_data.timestamp < initial_contact_time]
                 mean_error = dwell_temp.cursor_angular_distance.mean()
-                trial_summary['mean_error'] = mean_error
-                trial_summary['mean_error_horizontal'] = dwell_temp.horizontal_offset.mean()
-                trial_summary['mean_error_vertical'] = dwell_temp.vertical_offset.mean()
-                trial_summary['std_error_horizontal'] = dwell_temp.horizontal_offset.std()
-                trial_summary['std_error_vertical'] = dwell_temp.vertical_offset.std()
-                trial_summary['mean_cursor_speed'] = (
-                        abs(dwell_temp.cursor_angular_distance.diff()) / dwell_temp.timestamp.diff()).mean()
-                mrt_df = temp_data[(temp_data.timestamp >= initial_contact_time) & (
-                        temp_data.timestamp <= dwell_time + initial_contact_time)]
+                trial_summary["mean_error"] = mean_error
+                trial_summary["mean_error_horizontal"] = (
+                    dwell_temp.horizontal_offset.mean()
+                )
+                trial_summary["mean_error_vertical"] = dwell_temp.vertical_offset.mean()
+                trial_summary["std_error_horizontal"] = (
+                    dwell_temp.horizontal_offset.std()
+                )
+                trial_summary["std_error_vertical"] = dwell_temp.vertical_offset.std()
+                trial_summary["mean_cursor_speed"] = (
+                    abs(dwell_temp.cursor_angular_distance.diff())
+                    / dwell_temp.timestamp.diff()
+                ).mean()
+                if speed:
+                    trial_summary["dwell_speeds"] = (
+                        dwell_temp.cursor_angular_distance.diff()
+                    )
+                    trial_summary["before_speeds"] = (
+                        before_temp.cursor_angular_distance.diff()
+                    )
+                mrt_df = temp_data[
+                    (temp_data.timestamp >= initial_contact_time)
+                    & (temp_data.timestamp <= dwell_time + initial_contact_time)
+                ]
                 mrt = max(list(mrt_df.cursor_angular_distance))
-                trial_summary['initial_contact_time'] = initial_contact_time
-                trial_summary['required_target_size'] = mrt
+                trial_summary["initial_contact_time"] = initial_contact_time
+                trial_summary["required_target_size"] = mrt
                 all_success_dwells = []
-                for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                for k, g in itertools.groupby(
+                    temp_data.iterrows(), key=lambda row: row[1]["success"]
+                ):
                     if k == True:
                         df = pd.DataFrame([r[1] for r in g])
                         all_success_dwells.append(df)
@@ -1510,40 +2781,56 @@ def basic_analysis_file(sub, sel, cur, pos, r, threshold=None):
                 times = []
 
                 target_in_count = len(all_success_dwells)
-                trial_summary['target_in_count'] = target_in_count
-                target_in_count_per_second = target_in_count / (overall_time - initial_contact_time)
-                trial_summary['target_in_count_per_second'] = target_in_count_per_second
+                trial_summary["target_in_count"] = target_in_count
+                target_in_count_per_second = target_in_count / (
+                    overall_time - initial_contact_time
+                )
+                trial_summary["target_in_count_per_second"] = target_in_count_per_second
                 for dw in all_success_dwells:
                     time_record = dw.timestamp.values[-1] - dw.timestamp.values[0]
                     times.append(time_record)
                     if time_record >= dwell_time - 1.5 / 60:
                         success_dwells.append(dw)
                 if success:
-                    trial_summary['first_dwell_time'] = overall_time - 1 + 1.5 / 60
+                    trial_summary["first_dwell_time"] = overall_time - 1 + 1.5 / 60
                 # if len(success_dwells) >0:
                 # trial_summary['']
                 summary.loc[len(summary)] = trial_summary
                 continue
-            elif sel == 'Click':
-                trial_summary['final_point_horizontal'] = temp_data.horizontal_offset.values[-1]
-                trial_summary['final_point_vertical'] = temp_data.vertical_offset.values[-1]
+            elif sel == "Click":
+                trial_summary["final_point_horizontal"] = (
+                    temp_data.horizontal_offset.values[-1]
+                )
+                trial_summary["final_point_vertical"] = (
+                    temp_data.vertical_offset.values[-1]
+                )
                 if len(only_success) <= 0:
                     # print('no touch in ', sub, sel, cur, pos, r, t)
-                    trial_summary['error'] = "no touch"
+                    trial_summary["error"] = "no touch"
                     summary.loc[len(summary)] = trial_summary
                     continue
                 initial_contact_time = only_success.timestamp.values[0]
-                trial_summary['initial_contact_time'] = initial_contact_time
-                trial_summary['final_cursor_speed'] = abs(
-                    temp_data.cursor_angular_distance.diff() / temp_data.timestamp.diff())[-12:].mean()
-                walklength = (temp_data.head_origin_x.diff(1) ** 2 + temp_data.head_origin_y.diff(
-                    1) ** 2 + temp_data.head_origin_z.diff(1) ** 2).apply(
-                    math.sqrt).sum()
+                trial_summary["initial_contact_time"] = initial_contact_time
+                trial_summary["final_cursor_speed"] = abs(
+                    temp_data.cursor_angular_distance.diff()
+                    / temp_data.timestamp.diff()
+                )[-12:].mean()
+                walklength = (
+                    (
+                        temp_data.head_origin_x.diff(1) ** 2
+                        + temp_data.head_origin_y.diff(1) ** 2
+                        + temp_data.head_origin_z.diff(1) ** 2
+                    )
+                    .apply(math.sqrt)
+                    .sum()
+                )
                 walk_speed = walklength / (overall_time - initial_contact_time)
-                trial_summary['walk_speed'] = walk_speed
+                trial_summary["walk_speed"] = walk_speed
 
                 all_success_dwells = []
-                for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                for k, g in itertools.groupby(
+                    temp_data.iterrows(), key=lambda row: row[1]["success"]
+                ):
                     if k == True:
                         df = pd.DataFrame([r[1] for r in g])
                         all_success_dwells.append(df)
@@ -1551,10 +2838,241 @@ def basic_analysis_file(sub, sel, cur, pos, r, threshold=None):
                 times = []
 
                 target_in_count = len(all_success_dwells)
-                if target_in_count>0:
-                    trial_summary['target_in_count'] = target_in_count
-                    target_in_count_per_second = target_in_count / (overall_time - initial_contact_time)
-                    trial_summary['target_in_count_per_second'] = target_in_count_per_second
+                if target_in_count > 0:
+                    trial_summary["target_in_count"] = target_in_count
+                    target_in_count_per_second = target_in_count / (
+                        overall_time - initial_contact_time
+                    )
+                    trial_summary["target_in_count_per_second"] = (
+                        target_in_count_per_second
+                    )
+                    dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                    trial_summary["mean_cursor_speed"] = (
+                        abs(dwell_temp.cursor_angular_distance.diff())
+                        / dwell_temp.timestamp.diff()
+                    ).mean()
+
+                summary.loc[len(summary)] = trial_summary
+                continue
+        except Exception as e:
+            print(e, sub, r, cur, sel, pos)
+    return summary
+
+
+def Target_size_basic_analysis_file(
+    sub,
+    sel,
+    cur,
+    pos,
+    r,
+    _width,
+    _height,
+    threshold=None,
+):
+    summary = pd.DataFrame(
+        columns=[
+            "subject",
+            "posture",
+            "cursor",
+            "selection",
+            "target",
+            "repetition",
+            "initial_contact_time",
+            "mean_error",
+            "best_record",
+            "threshold",
+            "required_target_size",
+            "mean_error_horizontal",
+            "mean_error_vertical",
+            "std_error_horizontal",
+            "std_error_vertical",
+            "mean_cursor_speed",
+            "overall_time",
+            "success",
+            "target_in_count",
+            "target_in_count_per_second",
+            "walk_speed",
+            "first_dwell_time",
+            "error",
+            "final_point_horizontal",
+            "final_point_vertical",
+            "final_cursor_speed",
+        ]
+    )
+    try:
+        d, success_record = read_data(sub, r, cur, sel, pos)
+        data = split_target(d)
+    except Exception as e:
+        print(e, sub, r, cur, sel, pos)
+        return None
+
+    for t in range(9):
+        try:
+            trial_summary = {
+                "subject": sub,
+                "posture": pos,
+                "cursor": cur,
+                "selection": sel,
+                "target": t,
+                "repetition": r,
+            }
+
+            if success_record[t] == "O":
+                success = True
+            else:
+                success = False
+            dwell_time = 1.0
+            if threshold != None:
+                dwell_time = threshold
+            # trial_summary['threshold'] = dwell_time
+            # trial_summary['success'] = success
+            temp_data = data[t]
+            temp_data.timestamp -= temp_data.timestamp.values[0]
+            overall_time = temp_data.timestamp.values[-1]
+            trial_summary["overall_time"] = overall_time
+            # temp_data['success'] = (temp_data.horizontal_offset.apply(abs) < _width) and (
+            #             temp_data.vertical_offset.apply(abs) < _height)
+
+            # temp_data.loc[(temp_data["horizontal_offset"].apply(abs) <= _width) & (
+            #         temp_data["vertical_offset"].apply(abs) < _height), "success"] = True
+            temp_data.loc[
+                (temp_data["horizontal_offset"] ** 2) / (_width * _width)
+                + (temp_data["vertical_offset"] ** 2) / (_height * _height)
+                <= 1,
+                "success",
+            ] = True
+            only_success = temp_data[(temp_data.success == True)]
+
+            if sel == "Dwell":
+                success = False
+                if len(only_success) <= 0:
+                    print("no touch in ", sub, sel, cur, pos, r, t)
+                    trial_summary["error"] = "no touch"
+                    summary.loc[len(summary)] = trial_summary
+                    continue
+                initial_contact_time = only_success.timestamp.values[0]
+                walklength = (
+                    (
+                        temp_data.head_origin_x.diff(1) ** 2
+                        + temp_data.head_origin_y.diff(1) ** 2
+                        + temp_data.head_origin_z.diff(1) ** 2
+                    )
+                    .apply(math.sqrt)
+                    .sum()
+                )
+                walk_speed = walklength / (overall_time - initial_contact_time)
+                trial_summary["walk_speed"] = walk_speed
+                dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                mean_error = dwell_temp.cursor_angular_distance.mean()
+                trial_summary["mean_error"] = mean_error
+                trial_summary["mean_error_horizontal"] = (
+                    dwell_temp.horizontal_offset.mean()
+                )
+                trial_summary["mean_error_vertical"] = dwell_temp.vertical_offset.mean()
+                trial_summary["std_error_horizontal"] = (
+                    dwell_temp.horizontal_offset.std()
+                )
+                trial_summary["std_error_vertical"] = dwell_temp.vertical_offset.std()
+                trial_summary["mean_cursor_speed"] = (
+                    abs(dwell_temp.cursor_angular_distance.diff())
+                    / dwell_temp.timestamp.diff()
+                ).mean()
+                mrt_df = temp_data[
+                    (temp_data.timestamp >= initial_contact_time)
+                    & (temp_data.timestamp <= dwell_time + initial_contact_time)
+                ]
+                mrt = max(list(mrt_df.cursor_angular_distance))
+                trial_summary["initial_contact_time"] = initial_contact_time
+                trial_summary["required_target_size"] = mrt
+                all_success_dwells = []
+                for k, g in itertools.groupby(
+                    temp_data.iterrows(), key=lambda row: row[1]["success"]
+                ):
+                    if k == True:
+                        df = pd.DataFrame([r[1] for r in g])
+                        all_success_dwells.append(df)
+                success_dwells = []
+                times = []
+
+                target_in_count = len(all_success_dwells)
+                trial_summary["target_in_count"] = target_in_count
+                target_in_count_per_second = target_in_count / (
+                    overall_time - initial_contact_time
+                )
+                trial_summary["target_in_count_per_second"] = target_in_count_per_second
+                for dw in all_success_dwells:
+                    time_record = dw.timestamp.values[-1] - dw.timestamp.values[0]
+                    times.append(time_record)
+                    if time_record >= dwell_time - 1 / 60:
+                        success = True
+                        success_dwells.append(dw)
+                # if success:
+                #     trial_summary['first_dwell_time'] = overall_time - 1 + 1.5 / 60
+                # if len(success_dwells) >0:
+                if success_record[t] == "O":
+                    success = True
+                trial_summary["success"] = success
+                summary.loc[len(summary)] = trial_summary
+                continue
+            elif sel == "Click":
+                trial_summary["final_point_horizontal"] = (
+                    temp_data.horizontal_offset.values[-1]
+                )
+                trial_summary["final_point_vertical"] = (
+                    temp_data.vertical_offset.values[-1]
+                )
+                # temp_data.loc[(temp_data["horizontal_offset"].apply(abs) <= _width) & (
+                #         temp_data["vertical_offset"].apply(abs) < _height), "success"] = True
+
+                # if (trial_summary['final_point_horizontal'] <= _width) and (
+                #         trial_summary['final_point_vertical'] < _height):
+                #     success = True
+                # temp_data.loc[
+                # (temp_data['horizontal_offset']**2) / (_width*_width) +
+                # (temp_data['vertical_offset']**2) / (_height*_height) <=1
+                #  ,"success"
+                # ]=True
+                if (
+                    trial_summary["final_point_horizontal"] ** 2 / (_width * _width)
+                    + trial_summary["final_point_vertical"] ** 2 / (_height * _height)
+                ) <= 1:
+                    success = True
+                else:
+                    success = False
+                if success_record[t] == "O":
+                    success = True
+                trial_summary["success"] = success
+                # if len(only_success) <= 0:
+                #     # print('no touch in ', sub, sel, cur, pos, r, t)
+                #     trial_summary['error'] = "no touch"
+                #     summary.loc[len(summary)] = trial_summary
+                #     continue
+                # initial_contact_time = only_success.timestamp.values[0]
+                # trial_summary['initial_contact_time'] = initial_contact_time
+                # trial_summary['final_cursor_speed'] = abs(
+                #     temp_data.cursor_angular_distance.diff() / temp_data.timestamp.diff())[-12:].mean()
+                # walklength = (temp_data.head_origin_x.diff(1) ** 2 + temp_data.head_origin_y.diff(
+                #     1) ** 2 + temp_data.head_origin_z.diff(1) ** 2).apply(
+                #     math.sqrt).sum()
+                # walk_speed = walklength / (overall_time - initial_contact_time)
+                # trial_summary['walk_speed'] = walk_speed
+                #
+                # all_success_dwells = []
+                # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['success']):
+                #     if k == True:
+                #         df = pd.DataFrame([r[1] for r in g])
+                #         all_success_dwells.append(df)
+                # success_dwells = []
+                # times = []
+                #
+                # target_in_count = len(all_success_dwells)
+                # if target_in_count > 0:
+                #     trial_summary['target_in_count'] = target_in_count
+                #     target_in_count_per_second = target_in_count / (overall_time - initial_contact_time)
+                #     trial_summary['target_in_count_per_second'] = target_in_count_per_second
+                #     dwell_temp = temp_data[temp_data.timestamp >= initial_contact_time]
+                #     trial_summary['mean_cursor_speed'] = (
+                #             abs(dwell_temp.cursor_angular_distance.diff()) / dwell_temp.timestamp.diff()).mean()
 
                 summary.loc[len(summary)] = trial_summary
                 continue
@@ -1564,12 +3082,18 @@ def basic_analysis_file(sub, sel, cur, pos, r, threshold=None):
 
 
 @timeit
-def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=range(9),
-                        repetitions=None, subjects=range(24)):
+def dwell_time_analysis(
+    dwell_time,
+    cursorTypes=None,
+    postures=None,
+    targets=range(9),
+    repetitions=None,
+    subjects=range(24),
+):
     if postures is None:
-        postures = ['STAND', 'WALK']
+        postures = ["STAND", "WALK"]
     if cursorTypes is None:
-        cursorTypes = ['HEAD', 'EYE', 'HAND']
+        cursorTypes = ["HEAD", "EYE", "HAND"]
     if repetitions is None:
         repetitions = [4, 5, 6, 7, 8, 9]
     rep_small = [0, 2, 4, 6, 8]
@@ -1577,10 +3101,26 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
 
     fail_count = 0
     summary = pd.DataFrame(
-        columns=['dwell_time', 'subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide',
-                 'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-                 'first_dwell_time', 'required_target_size', 'final_speed', 'min_target_size', 'best_record',
-                 'error'])
+        columns=[
+            "dwell_time",
+            "subject_num",
+            "posture",
+            "cursor_type",
+            "repetition",
+            "target_num",
+            "wide",
+            "initial_contact_time",
+            "target_in_count",
+            "target_in_total_time",
+            "target_in_mean_time",
+            "first_dwell_time",
+            "required_target_size",
+            "final_speed",
+            "min_target_size",
+            "best_record",
+            "error",
+        ]
+    )
     for sub_num in subjects:
         for cursor_type in cursorTypes:
             for rep in repetitions:
@@ -1589,51 +3129,68 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                     print(dwell_time, sub_num, pos, cursor_type, rep)
 
                     splited_data = split_target(data)
-                    wide = 'SMALL' if rep in rep_small else 'LARGE'
+                    wide = "SMALL" if rep in rep_small else "LARGE"
 
                     for t in targets:
                         try:
                             trial_summary = {
-                                'dwell_time': dwell_time,
-                                'subject_num': sub_num,
-                                'posture': pos,
-                                'cursor_type': cursor_type,
-                                'repetition': rep,
-                                'target_num': t,
-                                'wide': wide,
+                                "dwell_time": dwell_time,
+                                "subject_num": sub_num,
+                                "posture": pos,
+                                "cursor_type": cursor_type,
+                                "repetition": rep,
+                                "target_num": t,
+                                "wide": wide,
                             }
                             temp_data = splited_data[t]
                             temp_data.reset_index(inplace=True)
                             temp_data.timestamp -= temp_data.timestamp.values[0]
-                            drop_index = temp_data[(temp_data['direction_x'] == 0) & (temp_data['direction_y'] == 0) & (
-                                    temp_data['direction_z'] == 0)].index
+                            drop_index = temp_data[
+                                (temp_data["direction_x"] == 0)
+                                & (temp_data["direction_y"] == 0)
+                                & (temp_data["direction_z"] == 0)
+                            ].index
 
                             temp_data = check_loss(temp_data, cursor_type)
-                            trial_summary['error_frame_count'] = len(temp_data[temp_data['error_frame'] == True])
+                            trial_summary["error_frame_count"] = len(
+                                temp_data[temp_data["error_frame"] == True]
+                            )
                             # # temp_data = temp_data.drop(drop_index)
-                            validate, reason = validate_trial_data(temp_data, cursor_type, pos)
+                            validate, reason = validate_trial_data(
+                                temp_data, cursor_type, pos
+                            )
                             if not validate:  # in case of invalid trial.
-                                trial_summary['error'] = reason
+                                trial_summary["error"] = reason
                                 print(sub_num, pos, cursor_type, rep, t, reason)
                                 summary.loc[len(summary)] = trial_summary
                                 continue
-                            temp_data['cursor_speed'] = temp_data.cursor_angular_distance.diff(
-                                1) / temp_data.timestamp.diff(1)
-                            temp_data['cursor_speed'] = abs(
-                                temp_data.cursor_speed.rolling(5, min_periods=1, center=True).mean())
+                            temp_data["cursor_speed"] = (
+                                temp_data.cursor_angular_distance.diff(1)
+                                / temp_data.timestamp.diff(1)
+                            )
+                            temp_data["cursor_speed"] = abs(
+                                temp_data.cursor_speed.rolling(
+                                    5, min_periods=1, center=True
+                                ).mean()
+                            )
 
                             only_success = temp_data[temp_data.success == True]
                             if len(only_success) <= 0:
-                                trial_summary['error'] = 'no success frame'
+                                trial_summary["error"] = "no success frame"
                                 summary.loc[len(summary)] = trial_summary
                                 continue
                                 # raise ValueError('no success frames', len(only_success))
                             initial_contact_time = only_success.timestamp.values[0]
                             # mean required target size
-                            mrt_df = temp_data[(temp_data.timestamp >= initial_contact_time) & (
-                                    temp_data.timestamp <= dwell_time + initial_contact_time)]
+                            mrt_df = temp_data[
+                                (temp_data.timestamp >= initial_contact_time)
+                                & (
+                                    temp_data.timestamp
+                                    <= dwell_time + initial_contact_time
+                                )
+                            ]
                             mrt = max(list(mrt_df.angle))
-                            trial_summary['required_target_size'] = mrt
+                            trial_summary["required_target_size"] = mrt
                             maxes = []
                             frame = int(dwell_time * 60) - 3
                             # for i in range(len(temp_data.angle) - frame):
@@ -1645,8 +3202,9 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             all_success_dwells = []
 
                             # for k, g in itertools.groupby(temp_data.iterrows(), key=lambda row: row[1]['target_in']):
-                            for k, g in itertools.groupby(temp_data.iterrows(),
-                                                          key=lambda row: row[1]['success']):
+                            for k, g in itertools.groupby(
+                                temp_data.iterrows(), key=lambda row: row[1]["success"]
+                            ):
                                 # print(k, [t[0] for t in g])
                                 # if k == True:
                                 if k == True:
@@ -1657,21 +3215,29 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             success_dwells = []
                             times = []
                             for dw in all_success_dwells:
-                                time_record = dw.timestamp.values[-1] - dw.timestamp.values[0] + 2.5 / 60
+                                time_record = (
+                                    dw.timestamp.values[-1]
+                                    - dw.timestamp.values[0]
+                                    + 2.5 / 60
+                                )
                                 times.append(time_record)
                                 if time_record >= dwell_time:
                                     success_dwells.append(dw)
                             best_record = max(times)
-                            trial_summary['best_record'] = best_record
+                            trial_summary["best_record"] = best_record
                             if len(success_dwells) <= 0:
-                                trial_summary['error'] = 'no success dwell'
+                                trial_summary["error"] = "no success dwell"
                                 summary.loc[len(summary)] = trial_summary
                                 continue
                                 # raise ValueError('no success dwell', len(success_dwells))
                             time_sum = 0
 
                             for dw in success_dwells:
-                                record = dw.timestamp.values[-1] - dw.timestamp.values[0] + 2.5 / 60
+                                record = (
+                                    dw.timestamp.values[-1]
+                                    - dw.timestamp.values[0]
+                                    + 2.5 / 60
+                                )
 
                                 time_sum += record
 
@@ -1707,48 +3273,63 @@ def dwell_time_analysis(dwell_time, cursorTypes=None, postures=None, targets=ran
                             # final_speed = success_dwells[0].cursor_speed[-frame:].mean()
                             for dw in success_dwells:
                                 frame = int(dwell_time * 60)
-                                final_speed = dw.cursor_speed[frame - 3:frame].mean()
+                                final_speed = dw.cursor_speed[frame - 3 : frame].mean()
                                 final_speeds.append(final_speed)
                             mean_final_speed = sum(final_speeds) / len(final_speeds)
                             # mean_final_speed = final_speed
-                            trial_summary = {'dwell_time': dwell_time, 'subject_num': sub_num,
-                                             'posture': pos,
-                                             'cursor_type': cursor_type,
-                                             'repetition': rep,
-                                             'target_num': t,
-                                             'wide': wide,
-                                             # 'initial_contact_time': initial_contact_time,
-                                             'target_in_count': target_in_count,
-                                             # 'target_in_total_time': target_in_total_time,
-                                             # 'target_in_mean_time': target_in_mean_time,
-                                             'first_dwell_time': first_dwell_time,
-                                             'required_target_size': mrt,
-                                             'final_speed': mean_final_speed,
-                                             # 'min_target_size': min_target_size,
-                                             'best_record': best_record,
-                                             'error': None
-                                             }
+                            trial_summary = {
+                                "dwell_time": dwell_time,
+                                "subject_num": sub_num,
+                                "posture": pos,
+                                "cursor_type": cursor_type,
+                                "repetition": rep,
+                                "target_num": t,
+                                "wide": wide,
+                                # 'initial_contact_time': initial_contact_time,
+                                "target_in_count": target_in_count,
+                                # 'target_in_total_time': target_in_total_time,
+                                # 'target_in_mean_time': target_in_mean_time,
+                                "first_dwell_time": first_dwell_time,
+                                "required_target_size": mrt,
+                                "final_speed": mean_final_speed,
+                                # 'min_target_size': min_target_size,
+                                "best_record": best_record,
+                                "error": None,
+                            }
                             summary.loc[len(summary)] = trial_summary
 
                         except Exception as e:
                             fail_count += 1
                             error_summary = {
-                                'dwell_time': dwell_time, 'subject_num': sub_num,
-                                'posture': pos,
-                                'cursor_type': cursor_type,
-                                'repetition': rep,
-                                'target_num': t,
-                                'wide': wide,
+                                "dwell_time": dwell_time,
+                                "subject_num": sub_num,
+                                "posture": pos,
+                                "cursor_type": cursor_type,
+                                "repetition": rep,
+                                "target_num": t,
+                                "wide": wide,
                                 # 'required_target_size': mrt,
                                 # 'best_record': best_record,
-                                'error': e.args
+                                "error": e.args,
                             }
                             summary.loc[len(summary)] = error_summary
-                            print(dwell_time, sub_num, pos, cursor_type, rep, t, e.args, 'fail count', fail_count)
+                            print(
+                                dwell_time,
+                                sub_num,
+                                pos,
+                                cursor_type,
+                                rep,
+                                t,
+                                e.args,
+                                "fail count",
+                                fail_count,
+                            )
 
-    final_summary = summary.groupby([summary['posture'], summary['cursor_type'], summary['wide']]).mean()
-    final_summary.to_csv('dwell_time_summary' + str(dwell_time) + '.csv')
-    summary.to_csv('dwell_time_Rawsummary' + str(dwell_time) + '.csv')
+    final_summary = summary.groupby(
+        [summary["posture"], summary["cursor_type"], summary["wide"]]
+    ).mean()
+    final_summary.to_csv("dwell_time_summary" + str(dwell_time) + ".csv")
+    summary.to_csv("dwell_time_Rawsummary" + str(dwell_time) + ".csv")
     return summary
 
 
@@ -1758,19 +3339,36 @@ def watch_errors():
         rep_small = [0, 2, 4, 6, 8]
         rep_large = [1, 3, 5, 7, 9]
         draw_plot = False
-        cursorTypes = ['HEAD', 'EYE', 'HAND']
+        cursorTypes = ["HEAD", "EYE", "HAND"]
 
-        postures = ['WALK', 'STAND']
+        postures = ["WALK", "STAND"]
         targets = range(9)
         repetitions = [4, 5, 6, 7, 8, 9]
         # repetitions = range(10)
         fail_count = 0
         summary = pd.DataFrame(
-            columns=['subject_num', 'posture', 'cursor_type', 'repetition', 'target_num', 'wide', 'mean_offset',
-                     'std_offset', 'overall_mean_offset', 'overall_std_offset',
-                     'initial_contact_time', 'target_in_count', 'target_in_total_time', 'target_in_mean_time',
-                     'mean_offset_horizontal', 'mean_offset_vertical', 'std_offset_horizontal', 'std_offset_vertical',
-                     'error'])
+            columns=[
+                "subject_num",
+                "posture",
+                "cursor_type",
+                "repetition",
+                "target_num",
+                "wide",
+                "mean_offset",
+                "std_offset",
+                "overall_mean_offset",
+                "overall_std_offset",
+                "initial_contact_time",
+                "target_in_count",
+                "target_in_total_time",
+                "target_in_mean_time",
+                "mean_offset_horizontal",
+                "mean_offset_vertical",
+                "std_offset_horizontal",
+                "std_offset_vertical",
+                "error",
+            ]
+        )
         outlier_count = 0
         loss_count = 0
         total_count = 0
@@ -1779,17 +3377,19 @@ def watch_errors():
                 for pos in postures:
                     data = read_hololens_data(sub_num, pos, cursor_type, rep)
 
-                    wide = 'SMALL' if rep in rep_small else 'LARGE'
+                    wide = "SMALL" if rep in rep_small else "LARGE"
                     splited_data = split_target(data)
                     # data = data[5:]
                     for t in targets:
                         try:
                             total_count += 1
-                            validation, reason = validate_trial_data(splited_data[t], cursor_type, pos)
+                            validation, reason = validate_trial_data(
+                                splited_data[t], cursor_type, pos
+                            )
                             if validation == False:
-                                if reason == 'loss':
+                                if reason == "loss":
                                     loss_count += 1
-                                elif reason == 'jump':
+                                elif reason == "jump":
                                     outlier_count += 1
                             # temp_data = splited_data[t]
                             # temp_data.reset_index(inplace=True)
@@ -1803,11 +3403,19 @@ def watch_errors():
                             #     # print(sub_num, pos, cursor_type, rep,t,len(outlier.timestamp.values),outlier.timestamp.values)
                             #     outlier_count += 1
                         except Exception as e:
-                            print('error', sub_num, pos, cursor_type, rep, e.args)
-        print('outlier movement per person', sub_num, 'jump', outlier_count, 'loss', loss_count, total_count)
+                            print("error", sub_num, pos, cursor_type, rep, e.args)
+        print(
+            "outlier movement per person",
+            sub_num,
+            "jump",
+            outlier_count,
+            "loss",
+            loss_count,
+            total_count,
+        )
 
 
-def plt_confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
+def plt_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
     """
     Create a plot of the covariance confidence ellipse of *x* and *y*.
 
@@ -1838,8 +3446,13 @@ def plt_confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     # two-dimensionl dataset.
     ell_radius_x = np.sqrt(1 + pearson)
     ell_radius_y = np.sqrt(1 - pearson)
-    ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                      facecolor=facecolor, **kwargs)
+    ellipse = Ellipse(
+        (0, 0),
+        width=ell_radius_x * 2,
+        height=ell_radius_y * 2,
+        facecolor=facecolor,
+        **kwargs,
+    )
 
     # Calculating the stdandard deviation of x from
     # the squareroot of the variance and multiplying
@@ -1851,10 +3464,12 @@ def plt_confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     scale_y = np.sqrt(cov[1, 1]) * n_std
     mean_y = np.mean(y)
 
-    transf = transforms.Affine2D() \
-        .rotate_deg(45) \
-        .scale(scale_x, scale_y) \
+    transf = (
+        transforms.Affine2D()
+        .rotate_deg(45)
+        .scale(scale_x, scale_y)
         .translate(mean_x, mean_y)
+    )
 
     ellipse.set_transform(transf + ax.transData)
     return ax.add_patch(ellipse)
@@ -1890,7 +3505,9 @@ def confidence_ellipse(x, y, n_std=1.96, size=100):
     ell_radius_x = np.sqrt(1 + pearson)
     ell_radius_y = np.sqrt(1 - pearson)
     theta = np.linspace(0, 2 * np.pi, size)
-    ellipse_coords = np.column_stack([ell_radius_x * np.cos(theta), ell_radius_y * np.sin(theta)])
+    ellipse_coords = np.column_stack(
+        [ell_radius_x * np.cos(theta), ell_radius_y * np.sin(theta)]
+    )
 
     # Calculating the stdandard deviation of x from
     # the squareroot of the variance and multiplying
@@ -1903,29 +3520,41 @@ def confidence_ellipse(x, y, n_std=1.96, size=100):
     y_mean = np.mean(y)
 
     translation_matrix = np.tile([x_mean, y_mean], (ellipse_coords.shape[0], 1))
-    rotation_matrix = np.array([[np.cos(np.pi / 4), np.sin(np.pi / 4)],
-                                [-np.sin(np.pi / 4), np.cos(np.pi / 4)]])
-    scale_matrix = np.array([[x_scale, 0],
-                             [0, y_scale]])
-    ellipse_coords = ellipse_coords.dot(rotation_matrix).dot(scale_matrix) + translation_matrix
+    rotation_matrix = np.array(
+        [
+            [np.cos(np.pi / 4), np.sin(np.pi / 4)],
+            [-np.sin(np.pi / 4), np.cos(np.pi / 4)],
+        ]
+    )
+    scale_matrix = np.array([[x_scale, 0], [0, y_scale]])
+    ellipse_coords = (
+        ellipse_coords.dot(rotation_matrix).dot(scale_matrix) + translation_matrix
+    )
 
-    path = f'M {ellipse_coords[0, 0]}, {ellipse_coords[0, 1]}'
+    path = f"M {ellipse_coords[0, 0]}, {ellipse_coords[0, 1]}"
     for k in range(1, len(ellipse_coords)):
-        path += f'L{ellipse_coords[k, 0]}, {ellipse_coords[k, 1]}'
-    path += ' Z'
+        path += f"L{ellipse_coords[k, 0]}, {ellipse_coords[k, 1]}"
+    path += " Z"
     return path
 
 
 def find_outliers():
     summary_dataframe = visualize_offsets(show_plot=False)
     head_data = summary_dataframe[
-        (summary_dataframe['posture'] == 'WALK') & (summary_dataframe['cursor_type'] == 'HEAD')]
+        (summary_dataframe["posture"] == "WALK")
+        & (summary_dataframe["cursor_type"] == "HEAD")
+    ]
     head_horizontals = []
     for hh in head_data.horizontal.values:
         head_horizontals += list(hh)
     parameters = {}
-    for ct, pos, ax in itertools.product(['EYE', 'HAND', 'HEAD'], ['WALK', 'STAND'], ['horizontal', 'vertical']):
-        head_data = summary_dataframe[(summary_dataframe['posture'] == pos) & (summary_dataframe['cursor_type'] == ct)]
+    for ct, pos, ax in itertools.product(
+        ["EYE", "HAND", "HEAD"], ["WALK", "STAND"], ["horizontal", "vertical"]
+    ):
+        head_data = summary_dataframe[
+            (summary_dataframe["posture"] == pos)
+            & (summary_dataframe["cursor_type"] == ct)
+        ]
         head_horizontals = []
         for hh in head_data[ax].values:
             head_horizontals += list(hh)
@@ -1990,7 +3619,7 @@ def weightedAverage(data, window):
             length = len(data) - i
         else:
             length = window
-        temp = data[i - length:i]
+        temp = data[i - length : i]
         result = 0
         for j in range(len(temp)):
             result += (j + 1) * np.array(temp[j])
@@ -2004,7 +3633,7 @@ def smoothTriangle(data, degree, dropVals=False):
     smoothed = []
 
     for i in range(degree, len(data) - degree * 2):
-        point = data[i:i + len(triangle)] * triangle
+        point = data[i : i + len(triangle)] * triangle
         smoothed.append(sum(point) / sum(triangle))
     if dropVals:
         return smoothed
@@ -2021,23 +3650,23 @@ def TriangleDataframe(data, window):
     data.direction_x = weightedAverage(data.direction_x, window)
     data.direction_y = weightedAverage(data.direction_y, window)
     data.direction_z = weightedAverage(data.direction_z, window)
-    data['cursor_rotation'] = data.apply(
-        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
-    data['cursor_horizontal_angle'] = data.apply(
-        lambda x: x.cursor_rotation[1], axis=1
+    data["cursor_rotation"] = data.apply(
+        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1
     )
-    data['cursor_vertical_angle'] = data.apply(
-        lambda x: x.cursor_rotation[0], axis=1
+    data["cursor_horizontal_angle"] = data.apply(lambda x: x.cursor_rotation[1], axis=1)
+    data["cursor_vertical_angle"] = data.apply(lambda x: x.cursor_rotation[0], axis=1)
+    data["horizontal_offset"] = (
+        data.target_horizontal_angle - data.cursor_horizontal_angle
+    ).apply(correct_angle)
+    data["vertical_offset"] = (
+        data.target_vertical_angle - data.cursor_vertical_angle
+    ).apply(correct_angle)
+    data["angle"] = (data.horizontal_offset**2 + data.vertical_offset**2).apply(
+        math.sqrt
     )
-    data['horizontal_offset'] = (
-            data.target_horizontal_angle - data.cursor_horizontal_angle).apply(correct_angle)
-    data['vertical_offset'] = (
-            data.target_vertical_angle - data.cursor_vertical_angle).apply(correct_angle)
-    data['angle'] = (data.horizontal_offset ** 2 + data.vertical_offset ** 2).apply(
-        math.sqrt)
-    data['success'] = data.angle < data.max_angle
-    data['abs_horizontal_offset'] = data['horizontal_offset'].apply(abs)
-    data['abs_vertical_offset'] = data['vertical_offset'].apply(abs)
+    data["success"] = data.angle < data.max_angle
+    data["abs_horizontal_offset"] = data["horizontal_offset"].apply(abs)
+    data["abs_vertical_offset"] = data["vertical_offset"].apply(abs)
     return data
 
 
@@ -2051,21 +3680,21 @@ def MovingAverage(data, window):
     data.direction_x = data.direction_x.rolling(min_periods=1, window=window).mean()
     data.direction_y = data.direction_y.rolling(min_periods=1, window=window).mean()
     data.direction_z = data.direction_z.rolling(min_periods=1, window=window).mean()
-    data['cursor_rotation'] = data.apply(
-        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1)
-    data['cursor_horizontal_angle'] = data.apply(
-        lambda x: x.cursor_rotation[1], axis=1
+    data["cursor_rotation"] = data.apply(
+        lambda x: asSpherical(x.direction_x, x.direction_y, x.direction_z), axis=1
     )
-    data['cursor_vertical_angle'] = data.apply(
-        lambda x: x.cursor_rotation[0], axis=1
+    data["cursor_horizontal_angle"] = data.apply(lambda x: x.cursor_rotation[1], axis=1)
+    data["cursor_vertical_angle"] = data.apply(lambda x: x.cursor_rotation[0], axis=1)
+    data["horizontal_offset"] = (
+        data.target_horizontal_angle - data.cursor_horizontal_angle
+    ).apply(correct_angle)
+    data["vertical_offset"] = (
+        data.target_vertical_angle - data.cursor_vertical_angle
+    ).apply(correct_angle)
+    data["angle"] = (data.horizontal_offset**2 + data.vertical_offset**2).apply(
+        math.sqrt
     )
-    data['horizontal_offset'] = (
-            data.target_horizontal_angle - data.cursor_horizontal_angle).apply(correct_angle)
-    data['vertical_offset'] = (
-            data.target_vertical_angle - data.cursor_vertical_angle).apply(correct_angle)
-    data['angle'] = (data.horizontal_offset ** 2 + data.vertical_offset ** 2).apply(
-        math.sqrt)
-    data['success'] = data.angle < data.max_angle
-    data['abs_horizontal_offset'] = data['horizontal_offset'].apply(abs)
-    data['abs_vertical_offset'] = data['vertical_offset'].apply(abs)
+    data["success"] = data.angle < data.max_angle
+    data["abs_horizontal_offset"] = data["horizontal_offset"].apply(abs)
+    data["abs_vertical_offset"] = data["vertical_offset"].apply(abs)
     return data
