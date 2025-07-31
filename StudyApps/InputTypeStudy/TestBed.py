@@ -653,7 +653,7 @@ data = d[d.bound == 10].copy()
 # d.groupby([d.speed_limit,d.bound])
 # %% Run analysis
 # [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,19,20,21,22]
-summary = basic_analysis_subject(range(24), speed=True)
+summary = basic_analysis_subject(range(24), speed=False)
 # %%
 summary["error_trial"] = 1 - summary["success"]
 summary["error_trial"] = summary["error_trial"] * 100
@@ -687,10 +687,10 @@ by_subject_success_only = only_success.groupby(
     ]
 ).mean()
 by_subject_success_only = by_subject_success_only.reset_index()
-# by_subject.to_csv("newstudy_BySubject.csv")
-# summary1.to_csv("newstudy_summary.csv")
-by_subject.to_csv("speed_newstudy_BySubject.csv")
-summary1.to_csv("speed_newstudy_summary.csv")
+by_subject.to_csv("newstudy_BySubject.csv")
+summary1.to_csv("newstudy_summary.csv")
+# by_subject.to_csv("speed_newstudy_BySubject.csv")
+# summary1.to_csv("speed_newstudy_summary.csv")
 # %%just in case - read data
 
 by_subject = pd.read_csv("newstudy_BySubject.csv")

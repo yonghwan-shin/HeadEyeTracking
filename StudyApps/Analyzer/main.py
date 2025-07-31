@@ -12,24 +12,26 @@ import pingouin as pg
 # Use a breakpoint in the code line below to debug your script.
 
 summary = iterate_dataset(
-    subjects=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-    # subjects=[10],
+    # subjects=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    subjects=[10],
     cursors=["Head", "MM"],
     selections=["Dwell", "Score"],
-    repetitions=range(2, 10),
+    # repetitions=range(2, 10),
+    repetitions=range(10),
 )
+
 # %%
 summary[["total_time", "contact_time", "selection_time"]] = summary.apply(
     time_analysis, axis=1, result_type="expand"
 )
 summary["target_entries"] = summary.apply(entries_analysis, axis=1)
-# corner
-# summary["total_time"] = summary.apply(total_time, axis=1)
+
 results = summary.drop(["data"], axis=1).dropna()
 by_subjects = results.groupby(
     [results.subject, results.cursor, results.selection]
 ).mean()
 # %% Defining error trials
+summary["error"] = ""
 
 
 def filter_group(group):
@@ -38,17 +40,23 @@ def filter_group(group):
         "subject",
         "target",
         "total_time",
-    ]  # Columns to exclude from percentile calculation
+    ]
 
-    # Select only numeric columns except excluded ones
-    numeric_cols = results.select_dtypes(include="number").columns.difference(
+    # Select numeric columns for percentile calculations
+    numeric_cols = group.select_dtypes(include="number").columns.difference(
         exclude_cols
     )
-    # Calculate the 95th percentile (upper 5% cutoff) for each numeric column in this group.
+    # Calculate the 95th percentile for each numeric column in this group
     thresholds = group[numeric_cols].quantile(0.95)
-    # Create a mask: True for rows where all numeric values are below or equal to their threshold.
-    mask = (group[numeric_cols] <= thresholds).all(axis=1)
-    return group[mask]
+
+    # For each row, determine which numeric columns exceed the threshold
+    def row_error(row):
+        exceeded_cols = [col for col in numeric_cols if row[col] > thresholds[col]]
+        return ",".join(exceeded_cols) if exceeded_cols else ""
+
+    # Create a new column 'error' with the names of the columns that exceed thresholds
+    group["error"] = group.apply(row_error, axis=1)
+    return group
 
 
 # Group by both condition columns and apply the filtering function to each group.
